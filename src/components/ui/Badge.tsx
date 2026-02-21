@@ -9,7 +9,7 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-[color-mix(in_srgb,var(--theme-accent)_16%,white)] text-[var(--theme-text)]',
+  default: 'bg-[color-mix(in_srgb,var(--theme-accent)_24%,transparent)] text-[var(--theme-accent)]',
   success: 'bg-emerald-100 text-emerald-700',
   warning: 'bg-amber-100 text-amber-700',
   danger: 'bg-rose-100 text-rose-700',

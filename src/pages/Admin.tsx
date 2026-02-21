@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getProfiles, deleteProfile, updateProfile, getUsers } from '../services/dataLayer'
-import { Profile } from '../types'
+import { getProfiles, deleteProfile, updateProfile, getUsers, getScanEvents } from '../services/dataLayer'
+import { Profile, ScanEvent } from '../types'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -10,11 +10,13 @@ import Input from '../components/ui/Input'
 
 const Admin = () => {
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [scanEvents, setScanEvents] = useState<ScanEvent[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'all' | 'active' | 'disabled'>('all')
 
   useEffect(() => {
     setProfiles(getProfiles())
+    setScanEvents(getScanEvents())
   }, [])
 
   const usersById = useMemo(() => {
@@ -56,6 +58,7 @@ const Admin = () => {
   }
 
   const totalTaps = profiles.reduce((sum, profile) => sum + (profile.tapCount || 0), 0)
+  const totalScans = scanEvents.length
 
   const toggleStatus = (publicId: string) => {
     const profile = profiles.find((p) => p.publicId === publicId)
@@ -87,7 +90,7 @@ const Admin = () => {
         <p className="mt-2 text-sm text-[var(--theme-muted)]">Monitor profile health, ownership and engagement in one place.</p>
       </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card compact>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Profiles</p>
           <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{profiles.length}</p>
@@ -107,6 +110,10 @@ const Admin = () => {
         <Card compact>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Total Taps</p>
           <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{totalTaps}</p>
+        </Card>
+        <Card compact>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Scan Events</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{totalScans}</p>
         </Card>
       </div>
 
@@ -190,6 +197,48 @@ const Admin = () => {
                     </tr>
                   )
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Card className="mb-5">
+        <h2 className="mb-3 text-lg font-semibold text-[var(--theme-text)]">Recent Scanner Activity</h2>
+        {scanEvents.length === 0 ? (
+          <p className="text-sm text-[var(--theme-muted)]">No scanner activity recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-[color-mix(in_srgb,var(--theme-accent)_20%,transparent)] text-left text-[var(--theme-muted)]">
+                  <th className="px-3 py-3">Profile</th>
+                  <th className="px-3 py-3">Scanner</th>
+                  <th className="px-3 py-3">Contact</th>
+                  <th className="px-3 py-3">Notes</th>
+                  <th className="px-3 py-3">Location</th>
+                  <th className="px-3 py-3">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scanEvents.slice(0, 30).map((event) => (
+                  <tr key={event.id} className="border-b border-[color-mix(in_srgb,var(--theme-accent)_15%,transparent)]">
+                    <td className="px-3 py-3 font-mono text-xs text-[var(--theme-text)]">{event.profilePublicId}</td>
+                    <td className="px-3 py-3 text-[var(--theme-text)]">{event.scannerName || 'Anonymous'}</td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">
+                      {event.scannerEmail || event.scannerPhone ? (
+                        <>
+                          {event.scannerEmail || ''} {event.scannerPhone ? `• ${event.scannerPhone}` : ''}
+                        </>
+                      ) : (
+                        'Not shared'
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">{event.scannerNotes || 'No notes'}</td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">{event.locationLabel || 'Not shared'}</td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">{new Date(event.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

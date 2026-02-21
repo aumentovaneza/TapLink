@@ -10,6 +10,7 @@ import TagScan from './pages/TagScan.tsx'
 import Admin from './pages/Admin.tsx'
 import Login from './pages/Login.tsx'
 import MyTags from './pages/MyTags.tsx'
+import TagAnalytics from './pages/TagAnalytics.tsx'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/editor/:templateType/edit/:publicId" element={<ProfileEditor />} />
           <Route path="/login" element={<Login />} />
           <Route path="/my-tags" element={<MyTags />} />
+          <Route path="/my-tags/:publicId/analytics" element={<TagAnalytics />} />
           <Route path="/p/:publicId" element={<ProfileView />} />
           <Route path="/t/:tagId" element={<TagScan />} />
           <Route path="/admin" element={<Admin />} />

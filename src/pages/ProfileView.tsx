@@ -323,7 +323,10 @@ const ProfileView = () => {
             <h3 className="text-base font-semibold text-[var(--theme-text)]">More Information</h3>
             <div className="mt-3 space-y-2">
               {presentation.details.map((detail) => (
-                <div key={`${detail.label}-${detail.value}`} className="rounded-xl bg-white/55 px-3 py-2">
+                <div
+                  key={`${detail.label}-${detail.value}`}
+                  className="rounded-xl border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_88%,transparent)] px-3 py-2"
+                >
                   <p className="text-xs uppercase tracking-[0.16em] text-[var(--theme-muted)]">{detail.label}</p>
                   <p className="text-sm font-medium text-[var(--theme-text)] break-words">{detail.value}</p>
                 </div>
@@ -348,8 +351,8 @@ const ProfileView = () => {
                   onClick={() => setActiveMenuTab(section.id)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                     activeSection?.id === section.id
-                      ? 'bg-[var(--theme-accent)] text-white'
-                      : 'bg-white/70 text-[var(--theme-text)]'
+                      ? 'bg-[var(--theme-button-bg)] text-[var(--theme-button-text)]'
+                      : 'border border-[color-mix(in_srgb,var(--theme-accent)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_90%,transparent)] text-[var(--theme-text)]'
                   }`}
                 >
                   {section.name}
@@ -360,7 +363,7 @@ const ProfileView = () => {
               {(activeSection?.items || []).map((item, index) => (
                 <div
                   key={`${item.name || 'item'}-${index}`}
-                  className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_22%,transparent)] bg-white/55 p-3"
+                  className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_88%,transparent)] p-3"
                 >
                   <div className="flex gap-3">
                     {item.photo ? (
@@ -379,7 +382,9 @@ const ProfileView = () => {
                 </div>
               ))}
               {activeSection?.items?.length === 0 ? (
-                <div className="rounded-2xl bg-white/55 p-4 text-sm text-[var(--theme-muted)]">No items added in this section yet.</div>
+                <div className="rounded-2xl bg-[color-mix(in_srgb,var(--theme-card)_88%,transparent)] p-4 text-sm text-[var(--theme-muted)]">
+                  No items added in this section yet.
+                </div>
               ) : null}
             </div>
           </Card>

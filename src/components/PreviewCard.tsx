@@ -59,14 +59,17 @@ const PreviewCard = ({ profile, compact = false }: PreviewCardProps) => {
             </p>
             <div className="mt-3 space-y-2">
               {previewItems.map((item: any, index: number) => (
-                <div key={index} className="flex items-center gap-2 rounded-xl bg-white/60 p-2">
+                <div
+                  key={index}
+                  className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--theme-accent)_20%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_88%,transparent)] p-2"
+                >
                   {item.photo ? (
                     <img src={item.photo} alt={item.name || `Menu item ${index + 1}`} className="h-10 w-10 rounded-md object-cover" />
                   ) : (
                     <div className="h-10 w-10 rounded-md bg-[color-mix(in_srgb,var(--theme-accent)_15%,white)]" />
                   )}
-                  <p className="text-sm text-[var(--theme-muted)]">
-                    {item.name || 'Menu item'} {item.price ? `• ${item.price}` : ''}
+                  <p className="text-sm text-[var(--theme-text)]">
+                    <span className="font-medium">{item.name || 'Menu item'}</span> {item.price ? `• ${item.price}` : ''}
                   </p>
                 </div>
               ))}

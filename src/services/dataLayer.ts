@@ -1,10 +1,11 @@
-import { Profile, TagMapping, TemplateType, User } from '../types'
+import { Profile, ScanEvent, TagMapping, TemplateType, User } from '../types'
 
 const STORAGE_KEYS = {
   PROFILES: 'taplink_profiles',
   TAG_MAPPINGS: 'taplink_tag_mappings',
   CLAIM_CODES: 'taplink_claim_codes',
   USERS: 'taplink_users',
+  SCAN_EVENTS: 'taplink_scan_events',
   SESSION_USER_ID: 'taplink_session_user_id',
   LOGGED_IN: 'taplink_logged_in',
 }
@@ -192,6 +193,9 @@ const initializeStorage = (): void => {
   }
   if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([]))
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SCAN_EVENTS)) {
+    localStorage.setItem(STORAGE_KEYS.SCAN_EVENTS, JSON.stringify([]))
   }
 
   const users = getStoredArray<User>(STORAGE_KEYS.USERS)
@@ -425,6 +429,38 @@ export const deleteProfile = (publicId: string): boolean => {
 export const getTagMappings = (): TagMapping[] => {
   const mappings = localStorage.getItem(STORAGE_KEYS.TAG_MAPPINGS)
   return mappings ? JSON.parse(mappings) : []
+}
+
+export const getScanEvents = (): ScanEvent[] => {
+  return getStoredArray<ScanEvent>(STORAGE_KEYS.SCAN_EVENTS).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+}
+
+export const getScanEventsByProfile = (publicId: string): ScanEvent[] => {
+  return getScanEvents().filter((event) => event.profilePublicId === publicId)
+}
+
+export const getScanEventsByOwner = (ownerId: string): ScanEvent[] => {
+  const ownerProfiles = getProfilesByOwner(ownerId)
+  const ownerProfileIds = new Set(ownerProfiles.map((profile) => profile.publicId))
+  return getScanEvents().filter((event) => ownerProfileIds.has(event.profilePublicId))
+}
+
+export const createScanEvent = (
+  input: Omit<ScanEvent, 'id' | 'createdAt'>,
+): ScanEvent => {
+  const events = getStoredArray<ScanEvent>(STORAGE_KEYS.SCAN_EVENTS)
+  const event: ScanEvent = {
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    ...input,
+  }
+
+  events.push(event)
+  localStorage.setItem(STORAGE_KEYS.SCAN_EVENTS, JSON.stringify(events))
+
+  return event
 }
 
 export const getTagMapping = (tagId: string): TagMapping | null => {

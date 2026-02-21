@@ -72,3 +72,21 @@ export interface User {
   name: string
   createdAt: string
 }
+
+export interface ScanEvent {
+  id: string
+  profilePublicId: string
+  tagId: string
+  scannerUserId?: string
+  scannerName?: string
+  scannerEmail?: string
+  scannerPhone?: string
+  scannerNotes?: string
+  consentContact: boolean
+  consentLocation: boolean
+  latitude?: number
+  longitude?: number
+  locationLabel?: string
+  userAgent?: string
+  createdAt: string
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, ChangeEvent } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { createProfile, getCurrentUser, getProfileForOwner, updateOwnedProfile } from '../services/dataLayer'
 import { TemplateType } from '../types'
 import FormField from '../components/FormField'
@@ -579,6 +579,11 @@ const ProfileEditor = () => {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-4">
+        <Link to="/my-tags" className="inline-block">
+          <Button variant="outline">Back to My Tags</Button>
+        </Link>
+      </div>
       <div className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--theme-accent)]">Profile Editor</p>
         <h1 className="mt-2 text-3xl font-semibold text-[var(--theme-text)]">

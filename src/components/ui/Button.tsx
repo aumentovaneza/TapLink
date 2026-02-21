@@ -11,9 +11,9 @@ const stylesByVariant: Record<ButtonVariant, string> = {
   primary:
     'bg-[var(--theme-button-bg)] text-[var(--theme-button-text)] hover:bg-[var(--theme-button-hover)] border-transparent',
   secondary:
-    'bg-[color-mix(in_srgb,var(--theme-accent)_12%,white)] text-[var(--theme-text)] border-[color-mix(in_srgb,var(--theme-accent)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_18%,white)]',
+    'bg-[color-mix(in_srgb,var(--theme-card)_92%,transparent)] text-[var(--theme-text)] border-[color-mix(in_srgb,var(--theme-accent)_42%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_20%,var(--theme-card))]',
   outline:
-    'bg-transparent text-[var(--theme-text)] border-[color-mix(in_srgb,var(--theme-accent)_40%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_10%,white)]',
+    'bg-transparent text-[var(--theme-accent)] border-[color-mix(in_srgb,var(--theme-accent)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_16%,transparent)]',
 }
 
 const Button = ({ className, variant = 'primary', type = 'button', ...props }: ButtonProps) => {

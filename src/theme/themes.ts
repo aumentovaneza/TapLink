@@ -1,4 +1,16 @@
-export type ThemeName = 'minimal' | 'dark' | 'neon' | 'pastel' | 'glass' | 'warm'
+export type ThemeName =
+  | 'minimal'
+  | 'dark'
+  | 'neon'
+  | 'pastel'
+  | 'glass'
+  | 'warm'
+  | 'ocean'
+  | 'forest'
+  | 'sunset'
+  | 'midnight'
+  | 'royal'
+  | 'candy'
 
 export interface ThemeDefinition {
   name: ThemeName
@@ -113,6 +125,102 @@ export const themes: Record<ThemeName, ThemeDefinition> = {
     buttonText: '#fffbeb',
     borderRadius: '1.15rem',
     shadow: '0 14px 35px -20px rgba(194, 65, 12, 0.5)',
+  },
+  ocean: {
+    name: 'ocean',
+    label: 'Ocean',
+    description: 'Cool, aquatic tones',
+    background: 'linear-gradient(160deg, #dbeafe 0%, #cffafe 46%, #e0f2fe 100%)',
+    text: '#0c4a6e',
+    mutedText: '#0369a1',
+    accent: '#0284c7',
+    cardBackground: 'rgba(240, 249, 255, 0.86)',
+    cardBorder: '1px solid rgba(2, 132, 199, 0.22)',
+    buttonBackground: '#0284c7',
+    buttonHover: '#0369a1',
+    buttonText: '#f0f9ff',
+    borderRadius: '1.3rem',
+    shadow: '0 14px 35px -20px rgba(2, 132, 199, 0.45)',
+  },
+  forest: {
+    name: 'forest',
+    label: 'Forest',
+    description: 'Natural and grounded',
+    background: 'linear-gradient(155deg, #ecfdf5 0%, #d1fae5 44%, #f0fdf4 100%)',
+    text: '#14532d',
+    mutedText: '#166534',
+    accent: '#16a34a',
+    cardBackground: 'rgba(240, 253, 244, 0.88)',
+    cardBorder: '1px solid rgba(22, 163, 74, 0.24)',
+    buttonBackground: '#16a34a',
+    buttonHover: '#15803d',
+    buttonText: '#f0fdf4',
+    borderRadius: '1.2rem',
+    shadow: '0 14px 35px -20px rgba(22, 163, 74, 0.45)',
+  },
+  sunset: {
+    name: 'sunset',
+    label: 'Sunset',
+    description: 'Golden hour warmth',
+    background: 'linear-gradient(145deg, #fff7ed 0%, #fee2e2 48%, #ffedd5 100%)',
+    text: '#7c2d12',
+    mutedText: '#9a3412',
+    accent: '#f97316',
+    cardBackground: 'rgba(255, 247, 237, 0.86)',
+    cardBorder: '1px solid rgba(249, 115, 22, 0.24)',
+    buttonBackground: '#f97316',
+    buttonHover: '#ea580c',
+    buttonText: '#fff7ed',
+    borderRadius: '1.4rem',
+    shadow: '0 16px 35px -20px rgba(249, 115, 22, 0.45)',
+  },
+  midnight: {
+    name: 'midnight',
+    label: 'Midnight',
+    description: 'Deep, elegant contrast',
+    background: 'radial-gradient(circle at 30% -10%, #1e1b4b 0%, #020617 60%, #000000 100%)',
+    text: '#e0e7ff',
+    mutedText: '#a5b4fc',
+    accent: '#818cf8',
+    cardBackground: 'rgba(15, 23, 42, 0.8)',
+    cardBorder: '1px solid rgba(129, 140, 248, 0.28)',
+    buttonBackground: '#6366f1',
+    buttonHover: '#4f46e5',
+    buttonText: '#eef2ff',
+    borderRadius: '1.25rem',
+    shadow: '0 18px 40px -18px rgba(79, 70, 229, 0.6)',
+  },
+  royal: {
+    name: 'royal',
+    label: 'Royal',
+    description: 'Refined and premium',
+    background: 'linear-gradient(150deg, #f5f3ff 0%, #ede9fe 45%, #fdf4ff 100%)',
+    text: '#312e81',
+    mutedText: '#5b21b6',
+    accent: '#7c3aed',
+    cardBackground: 'rgba(250, 245, 255, 0.88)',
+    cardBorder: '1px solid rgba(124, 58, 237, 0.24)',
+    buttonBackground: '#7c3aed',
+    buttonHover: '#6d28d9',
+    buttonText: '#faf5ff',
+    borderRadius: '1.35rem',
+    shadow: '0 16px 36px -20px rgba(124, 58, 237, 0.45)',
+  },
+  candy: {
+    name: 'candy',
+    label: 'Candy',
+    description: 'Bright and playful',
+    background: 'linear-gradient(140deg, #fdf2f8 0%, #e0f2fe 45%, #fef9c3 100%)',
+    text: '#831843',
+    mutedText: '#be185d',
+    accent: '#ec4899',
+    cardBackground: 'rgba(255, 255, 255, 0.84)',
+    cardBorder: '1px solid rgba(236, 72, 153, 0.3)',
+    buttonBackground: '#ec4899',
+    buttonHover: '#db2777',
+    buttonText: '#fff1f2',
+    borderRadius: '1.5rem',
+    shadow: '0 16px 36px -20px rgba(236, 72, 153, 0.45)',
   },
 }
 
