@@ -39,11 +39,13 @@ const TagAnalytics = () => {
     const totalScans = events.length
     const contactShared = events.filter((event) => event.consentContact).length
     const locationShared = events.filter((event) => event.consentLocation && event.locationLabel).length
+    const missingPetScans = events.filter((event) => event.isMissingPetScan).length
 
     return {
       totalScans,
       contactShared,
       locationShared,
+      missingPetScans,
       contactRate: totalScans ? Math.round((contactShared / totalScans) * 100) : 0,
       locationRate: totalScans ? Math.round((locationShared / totalScans) * 100) : 0,
     }
@@ -84,7 +86,7 @@ const TagAnalytics = () => {
         </div>
       </Card>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card compact>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Taps</p>
           <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{profile.tapCount || 0}</p>
@@ -101,6 +103,10 @@ const TagAnalytics = () => {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Location Shared</p>
           <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{metrics.locationRate}%</p>
         </Card>
+        <Card compact>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--theme-muted)]">Missing-Pet Scans</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{metrics.missingPetScans}</p>
+        </Card>
       </div>
 
       <Card>
@@ -116,6 +122,7 @@ const TagAnalytics = () => {
                   <th className="px-3 py-3">Contact</th>
                   <th className="px-3 py-3">Notes</th>
                   <th className="px-3 py-3">Location</th>
+                  <th className="px-3 py-3">Type</th>
                   <th className="px-3 py-3">Consent</th>
                   <th className="px-3 py-3">Time</th>
                 </tr>
@@ -130,7 +137,19 @@ const TagAnalytics = () => {
                         : 'Not shared'}
                     </td>
                     <td className="px-3 py-3 text-[var(--theme-muted)]">{event.scannerNotes || 'No notes'}</td>
-                    <td className="px-3 py-3 text-[var(--theme-muted)]">{event.locationLabel || 'Not shared'}</td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">
+                      {event.locationLabel || event.scannerLocationDetails ? (
+                        <div className="space-y-0.5">
+                          {event.locationLabel ? <p>GPS: {event.locationLabel}</p> : null}
+                          {event.scannerLocationDetails ? <p>Reported: {event.scannerLocationDetails}</p> : null}
+                        </div>
+                      ) : (
+                        'Not shared'
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">
+                      {event.isMissingPetScan ? 'Missing Pet' : 'Standard'}
+                    </td>
                     <td className="px-3 py-3 text-[var(--theme-muted)]">
                       {event.consentContact ? 'Contact' : 'No contact'}
                       {' / '}

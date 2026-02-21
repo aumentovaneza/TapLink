@@ -16,6 +16,11 @@ const PreviewCard = ({ profile, compact = false }: PreviewCardProps) => {
         return (
           <div>
             <h4 className="mb-1.5 text-lg font-semibold text-[var(--theme-text)]">{petData.petName || 'Pet Name'}</h4>
+            {petData.isMissing ? (
+              <p className="mb-2 inline-flex rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-rose-400">
+                Missing Alert
+              </p>
+            ) : null}
             <p className="text-sm text-[var(--theme-muted)]">Owner: {petData.ownerName || 'Not provided'}</p>
             <p className="text-sm text-[var(--theme-muted)]">Emergency: {petData.emergencyContact || 'Not provided'}</p>
             {petData.medicalNotes ? <p className="mt-2 text-sm text-[var(--theme-muted)]">{petData.medicalNotes}</p> : null}

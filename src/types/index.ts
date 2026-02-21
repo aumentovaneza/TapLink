@@ -18,6 +18,9 @@ export interface PetProfile {
   ownerName: string
   emergencyContact: string
   medicalNotes: string
+  isMissing?: boolean
+  missingMessage?: string
+  missingSince?: string
   photo?: string
 }
 
@@ -81,12 +84,26 @@ export interface ScanEvent {
   scannerName?: string
   scannerEmail?: string
   scannerPhone?: string
+  scannerLocationDetails?: string
   scannerNotes?: string
   consentContact: boolean
   consentLocation: boolean
   latitude?: number
   longitude?: number
   locationLabel?: string
+  isMissingPetScan?: boolean
   userAgent?: string
+  createdAt: string
+}
+
+export interface OwnerNotification {
+  id: string
+  ownerId: string
+  profilePublicId: string
+  tagId: string
+  type: 'pet_missing_scan' | 'tag_scan'
+  title: string
+  message: string
+  read: boolean
   createdAt: string
 }

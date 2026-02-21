@@ -4,8 +4,14 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
-import { getCurrentUser, getProfilesByOwner, logoutUser } from '../services/dataLayer'
-import { Profile } from '../types'
+import {
+  getCurrentUser,
+  getOwnerNotifications,
+  getProfilesByOwner,
+  logoutUser,
+  markOwnerNotificationRead,
+} from '../services/dataLayer'
+import { OwnerNotification, Profile } from '../types'
 
 const getProfileName = (profile: Profile): string => {
   const data = profile.data as any
@@ -27,7 +33,9 @@ const getProfileName = (profile: Profile): string => {
 const MyTags = () => {
   const navigate = useNavigate()
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [notifications, setNotifications] = useState<OwnerNotification[]>([])
   const [ownerName, setOwnerName] = useState('')
+  const [ownerId, setOwnerId] = useState('')
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -37,7 +45,9 @@ const MyTags = () => {
     }
 
     setOwnerName(currentUser.name)
+    setOwnerId(currentUser.id)
     setProfiles(getProfilesByOwner(currentUser.id))
+    setNotifications(getOwnerNotifications(currentUser.id))
   }, [navigate])
 
   const stats = useMemo(() => {
@@ -52,6 +62,25 @@ const MyTags = () => {
     logoutUser()
     navigate('/login')
   }
+
+  const handleMarkRead = (notificationId: string) => {
+    if (!ownerId) {
+      return
+    }
+
+    const updated = markOwnerNotificationRead(notificationId, ownerId)
+    if (!updated) {
+      return
+    }
+
+    setNotifications((currentNotifications) =>
+      currentNotifications.map((notification) =>
+        notification.id === updated.id ? { ...notification, read: true } : notification,
+      ),
+    )
+  }
+
+  const unreadNotifications = notifications.filter((notification) => !notification.read)
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -92,6 +121,43 @@ const MyTags = () => {
               <p className="mt-2 text-2xl font-semibold text-[var(--theme-text)]">{stats.totalTaps}</p>
             </Card>
           </div>
+
+          {unreadNotifications.length > 0 ? (
+            <Card className="mb-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[var(--theme-text)]">Notifications</h2>
+                <Badge variant="success">{unreadNotifications.length} new</Badge>
+              </div>
+              <div className="space-y-2">
+                {unreadNotifications.slice(0, 6).map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_90%,transparent)] p-3"
+                  >
+                    <p className="text-sm font-semibold text-[var(--theme-text)]">{notification.title}</p>
+                    <p className="mt-1 text-xs text-[var(--theme-muted)]">{notification.message}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Link to={`/my-tags/${notification.profilePublicId}/analytics`}>
+                        <Button variant="secondary" className="px-3 py-2 text-xs">
+                          View Scan Details
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        className="px-3 py-2 text-xs"
+                        onClick={() => handleMarkRead(notification.id)}
+                      >
+                        Mark as Read
+                      </Button>
+                      <span className="text-[11px] text-[var(--theme-muted)]">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : null}
 
           <div className="space-y-3">
             {profiles.map((profile) => (

@@ -235,7 +235,16 @@ const Admin = () => {
                       )}
                     </td>
                     <td className="px-3 py-3 text-[var(--theme-muted)]">{event.scannerNotes || 'No notes'}</td>
-                    <td className="px-3 py-3 text-[var(--theme-muted)]">{event.locationLabel || 'Not shared'}</td>
+                    <td className="px-3 py-3 text-[var(--theme-muted)]">
+                      {event.locationLabel || event.scannerLocationDetails ? (
+                        <div className="space-y-0.5">
+                          {event.locationLabel ? <p>GPS: {event.locationLabel}</p> : null}
+                          {event.scannerLocationDetails ? <p>Reported: {event.scannerLocationDetails}</p> : null}
+                        </div>
+                      ) : (
+                        'Not shared'
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-[var(--theme-muted)]">{new Date(event.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}

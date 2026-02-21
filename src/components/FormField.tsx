@@ -4,7 +4,7 @@ import Textarea from './ui/Textarea'
 interface FormFieldProps {
   label: string
   name: string
-  type?: 'text' | 'email' | 'tel' | 'textarea' | 'url'
+  type?: 'text' | 'email' | 'tel' | 'textarea' | 'url' | 'date'
   value: string
   onChange: (value: string) => void
   placeholder?: string

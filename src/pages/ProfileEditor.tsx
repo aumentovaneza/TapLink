@@ -70,6 +70,9 @@ const ProfileEditor = () => {
           ownerName: '',
           emergencyContact: '',
           medicalNotes: '',
+          isMissing: false,
+          missingMessage: '',
+          missingSince: '',
           photo: '',
         }
       case 'business':
@@ -103,7 +106,7 @@ const ProfileEditor = () => {
     }
   }
 
-  const handleFieldChange = (field: string, value: string) => {
+  const handleFieldChange = (field: string, value: any) => {
     setProfileData((prev: any) => ({ ...prev, [field]: value }))
   }
 
@@ -302,6 +305,39 @@ const ProfileEditor = () => {
               onChange={(value) => handleFieldChange('emergencyContact', value)}
               required
             />
+            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_88%,transparent)] p-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-[var(--theme-text)]">
+                <input
+                  type="checkbox"
+                  checked={Boolean(profileData.isMissing)}
+                  onChange={(event) => handleFieldChange('isMissing', event.target.checked)}
+                />
+                Mark this pet as missing
+              </label>
+              <p className="mt-1 text-xs text-[var(--theme-muted)]">
+                When enabled, scans will attempt to capture an approximate location and notify you.
+              </p>
+            </div>
+            {profileData.isMissing ? (
+              <>
+                <FormField
+                  label="Missing Since"
+                  name="missingSince"
+                  type="date"
+                  value={profileData.missingSince || ''}
+                  onChange={(value) => handleFieldChange('missingSince', value)}
+                />
+                <FormField
+                  label="Missing Alert Message"
+                  name="missingMessage"
+                  type="textarea"
+                  value={profileData.missingMessage || ''}
+                  onChange={(value) => handleFieldChange('missingMessage', value)}
+                  rows={3}
+                  placeholder="Example: Please call immediately if spotted near this area."
+                />
+              </>
+            ) : null}
             <Divider />
             <FormField
               label="Medical Notes"

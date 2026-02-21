@@ -130,17 +130,21 @@ const buildProfilePresentation = (profile: any): {
   }
 
   if (profile.templateType === 'pet') {
+    const isMissing = Boolean(data.isMissing)
     const hasEmergencyCta = Boolean(data.emergencyContact)
 
-    if (hasEmergencyCta) ctas.push({ label: 'Call Emergency Contact', href: `tel:${data.emergencyContact}` })
+    if (hasEmergencyCta) ctas.push({ label: isMissing ? 'Call Owner Now' : 'Call Emergency Contact', href: `tel:${data.emergencyContact}` })
     addDetail('Owner', data.ownerName)
     if (!hasEmergencyCta) addDetail('Emergency', data.emergencyContact)
+    if (data.missingSince) addDetail('Missing Since', data.missingSince)
     addDetail('Medical Notes', data.medicalNotes)
 
     return {
       name: data.petName || 'Pet Profile',
-      subtitle: 'Pet Tag',
-      bio: 'If found, please contact the owner using the button below.',
+      subtitle: isMissing ? 'Missing Pet Alert' : 'Pet Tag',
+      bio: isMissing
+        ? data.missingMessage || 'This pet is missing. Please contact the owner immediately if spotted.'
+        : 'If found, please contact the owner using the button below.',
       avatarUrl: data.photo || '',
       ctas,
       details,
@@ -273,6 +277,7 @@ const ProfileView = () => {
   }
 
   const menuSections = profile.templateType === 'restaurant' ? presentation.menuSections : []
+  const petData = profile.templateType === 'pet' ? (profile.data as any) : null
   const activeSection =
     menuSections.find((section) => section.id === activeMenuTab) ||
     menuSections.find((section) => section.items.length > 0) ||
@@ -304,6 +309,17 @@ const ProfileView = () => {
       </section>
 
       <section className="mx-auto mt-12 max-w-xl space-y-4">
+        {petData?.isMissing ? (
+          <Card className="border-2 border-rose-400/60 bg-rose-500/10">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-300">Missing Pet</p>
+            <p className="mt-1 text-sm text-[var(--theme-text)]">
+              {petData.missingMessage || 'Please contact the owner immediately if you see this pet.'}
+            </p>
+            {petData.missingSince ? (
+              <p className="mt-1 text-xs text-rose-200">Missing since: {petData.missingSince}</p>
+            ) : null}
+          </Card>
+        ) : null}
         {presentation.ctas.map((cta) => (
           <a
             key={`${cta.label}-${cta.href}`}
@@ -343,21 +359,23 @@ const ProfileView = () => {
               <p className="text-xs uppercase tracking-[0.2em] text-[var(--theme-muted)]">Chef's Selection</p>
               <h3 className="text-2xl font-semibold text-[var(--theme-text)]">Menu Highlights</h3>
             </div>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {menuSections.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => setActiveMenuTab(section.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                    activeSection?.id === section.id
-                      ? 'bg-[var(--theme-button-bg)] text-[var(--theme-button-text)]'
-                      : 'border border-[color-mix(in_srgb,var(--theme-accent)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_90%,transparent)] text-[var(--theme-text)]'
-                  }`}
-                >
-                  {section.name}
-                </button>
-              ))}
+            <div className="mb-4 -mx-1 overflow-x-auto px-1">
+              <div className="inline-flex min-w-max gap-2">
+                {menuSections.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveMenuTab(section.id)}
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                      activeSection?.id === section.id
+                        ? 'bg-[var(--theme-button-bg)] text-[var(--theme-button-text)]'
+                        : 'border border-[color-mix(in_srgb,var(--theme-accent)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-card)_90%,transparent)] text-[var(--theme-text)]'
+                    }`}
+                  >
+                    {section.name}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-3">
               {(activeSection?.items || []).map((item, index) => (

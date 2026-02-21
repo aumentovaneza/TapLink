@@ -1,4 +1,4 @@
-import { Profile, ScanEvent, TagMapping, TemplateType, User } from '../types'
+import { OwnerNotification, Profile, ScanEvent, TagMapping, TemplateType, User } from '../types'
 
 const STORAGE_KEYS = {
   PROFILES: 'taplink_profiles',
@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   CLAIM_CODES: 'taplink_claim_codes',
   USERS: 'taplink_users',
   SCAN_EVENTS: 'taplink_scan_events',
+  OWNER_NOTIFICATIONS: 'taplink_owner_notifications',
   SESSION_USER_ID: 'taplink_session_user_id',
   LOGGED_IN: 'taplink_logged_in',
 }
@@ -196,6 +197,9 @@ const initializeStorage = (): void => {
   }
   if (!localStorage.getItem(STORAGE_KEYS.SCAN_EVENTS)) {
     localStorage.setItem(STORAGE_KEYS.SCAN_EVENTS, JSON.stringify([]))
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.OWNER_NOTIFICATIONS)) {
+    localStorage.setItem(STORAGE_KEYS.OWNER_NOTIFICATIONS, JSON.stringify([]))
   }
 
   const users = getStoredArray<User>(STORAGE_KEYS.USERS)
@@ -447,18 +451,90 @@ export const getScanEventsByOwner = (ownerId: string): ScanEvent[] => {
   return getScanEvents().filter((event) => ownerProfileIds.has(event.profilePublicId))
 }
 
+const getProfileDisplayName = (profile: Profile): string => {
+  const data = profile.data as any
+
+  if (profile.templateType === 'personal') return data.name || 'Personal profile'
+  if (profile.templateType === 'business') return data.businessName || 'Business profile'
+  if (profile.templateType === 'pet') return data.petName || 'Pet profile'
+  if (profile.templateType === 'restaurant') return data.restaurantName || 'Restaurant profile'
+  return 'TapLink profile'
+}
+
+export const getOwnerNotifications = (ownerId: string): OwnerNotification[] => {
+  return getStoredArray<OwnerNotification>(STORAGE_KEYS.OWNER_NOTIFICATIONS)
+    .filter((notification) => notification.ownerId === ownerId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+export const createOwnerNotification = (
+  input: Omit<OwnerNotification, 'id' | 'createdAt' | 'read'> & { read?: boolean },
+): OwnerNotification => {
+  const notifications = getStoredArray<OwnerNotification>(STORAGE_KEYS.OWNER_NOTIFICATIONS)
+  const notification: OwnerNotification = {
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    read: input.read ?? false,
+    ...input,
+  }
+
+  notifications.push(notification)
+  localStorage.setItem(STORAGE_KEYS.OWNER_NOTIFICATIONS, JSON.stringify(notifications))
+
+  return notification
+}
+
+export const markOwnerNotificationRead = (notificationId: string, ownerId: string): OwnerNotification | null => {
+  const notifications = getStoredArray<OwnerNotification>(STORAGE_KEYS.OWNER_NOTIFICATIONS)
+  const index = notifications.findIndex(
+    (notification) => notification.id === notificationId && notification.ownerId === ownerId,
+  )
+
+  if (index === -1) {
+    return null
+  }
+
+  notifications[index] = {
+    ...notifications[index],
+    read: true,
+  }
+  localStorage.setItem(STORAGE_KEYS.OWNER_NOTIFICATIONS, JSON.stringify(notifications))
+  return notifications[index]
+}
+
 export const createScanEvent = (
   input: Omit<ScanEvent, 'id' | 'createdAt'>,
 ): ScanEvent => {
   const events = getStoredArray<ScanEvent>(STORAGE_KEYS.SCAN_EVENTS)
+  const profile = getProfile(input.profilePublicId)
+  const isMissingPetProfile =
+    profile?.templateType === 'pet' && Boolean((profile?.data as any)?.isMissing)
   const event: ScanEvent = {
     id: generateId(),
     createdAt: new Date().toISOString(),
+    isMissingPetScan: input.isMissingPetScan ?? isMissingPetProfile,
     ...input,
   }
 
   events.push(event)
   localStorage.setItem(STORAGE_KEYS.SCAN_EVENTS, JSON.stringify(events))
+
+  if (profile?.ownerId && isMissingPetProfile) {
+    const displayName = getProfileDisplayName(profile)
+    const scannerLabel = event.scannerName || event.scannerEmail || 'A visitor'
+    const location = event.locationLabel || event.scannerLocationDetails || 'location unavailable'
+    const title = 'Missing pet scan detected'
+    const message = `${scannerLabel} scanned ${displayName}. Approximate location: ${location}.`
+
+    createOwnerNotification({
+      ownerId: profile.ownerId,
+      profilePublicId: profile.publicId,
+      tagId: profile.tagId,
+      type: 'pet_missing_scan',
+      title,
+      message,
+    })
+  }
 
   return event
 }

@@ -10,6 +10,9 @@ import {
   getProfile,
   getTagMapping,
 } from '../services/dataLayer'
+import { TemplateType } from '../types'
+
+const CONTACT_SHARE_TEMPLATES: TemplateType[] = ['personal', 'business']
 
 const TagScan = () => {
   const { tagId } = useParams<{ tagId: string }>()
@@ -19,13 +22,17 @@ const TagScan = () => {
   const [error, setError] = useState(false)
   const [targetPublicId, setTargetPublicId] = useState('')
   const [profileName, setProfileName] = useState('')
+  const [profileTemplate, setProfileTemplate] = useState<TemplateType | null>(null)
+  const [isMissingPetProfile, setIsMissingPetProfile] = useState(false)
 
   const [scannerName, setScannerName] = useState('')
   const [scannerEmail, setScannerEmail] = useState('')
   const [scannerPhone, setScannerPhone] = useState('')
+  const [scannerLocationDetails, setScannerLocationDetails] = useState('')
   const [scannerNotes, setScannerNotes] = useState('')
   const [consentLocation, setConsentLocation] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
   const [mode, setMode] = useState<'choice' | 'share'>('choice')
 
   useEffect(() => {
@@ -55,11 +62,21 @@ const TagScan = () => {
 
     setTargetPublicId(mapping.publicId)
     setProfileName(readableName)
+    setProfileTemplate(profile.templateType)
+    const missingPet = profile.templateType === 'pet' && Boolean((profile.data as any)?.isMissing)
+    setIsMissingPetProfile(missingPet)
+    if (missingPet) {
+      setConsentLocation(true)
+      setMode('share')
+    }
     setLoading(false)
   }, [tagId])
 
-  const getLocation = async (): Promise<{ latitude?: number; longitude?: number; locationLabel?: string }> => {
-    if (!consentLocation || !navigator.geolocation) {
+  const requiresMissingPetReport = isMissingPetProfile
+  const canShareContact = requiresMissingPetReport || (profileTemplate ? CONTACT_SHARE_TEMPLATES.includes(profileTemplate) : false)
+
+  const getLocation = async (shouldAttempt: boolean): Promise<{ latitude?: number; longitude?: number; locationLabel?: string }> => {
+    if (!shouldAttempt || !navigator.geolocation) {
       return {}
     }
 
@@ -80,18 +97,25 @@ const TagScan = () => {
     })
   }
 
-  const handleProceedWithoutSharing = () => {
+  const handleProceedWithoutSharing = async () => {
     if (!tagId || !targetPublicId) {
       return
     }
 
     const currentUser = getCurrentUser()
+    setFormError('')
+    setSubmitting(true)
+    const locationData = await getLocation(isMissingPetProfile)
     createScanEvent({
       profilePublicId: targetPublicId,
       tagId,
       scannerUserId: currentUser?.id,
       consentContact: false,
-      consentLocation: false,
+      consentLocation: Boolean(locationData.locationLabel),
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      locationLabel: locationData.locationLabel,
+      isMissingPetScan: isMissingPetProfile,
       userAgent: navigator.userAgent,
     })
 
@@ -103,10 +127,24 @@ const TagScan = () => {
     if (!tagId || !targetPublicId || submitting) {
       return
     }
+    if (!canShareContact) {
+      handleProceedWithoutSharing()
+      return
+    }
 
     const currentUser = getCurrentUser()
+    const isMissingFormInvalid =
+      requiresMissingPetReport &&
+      (!scannerName.trim() || !scannerPhone.trim() || !scannerLocationDetails.trim() || !scannerNotes.trim())
+    if (isMissingFormInvalid) {
+      setFormError('Please complete all required fields so the owner can locate the pet.')
+      return
+    }
+
+    setFormError('')
     setSubmitting(true)
-    const locationData = await getLocation()
+    const shouldAttemptLocation = consentLocation || isMissingPetProfile
+    const locationData = await getLocation(shouldAttemptLocation)
 
     createScanEvent({
       profilePublicId: targetPublicId,
@@ -115,12 +153,14 @@ const TagScan = () => {
       scannerName: scannerName || undefined,
       scannerEmail: scannerEmail || undefined,
       scannerPhone: scannerPhone || undefined,
+      scannerLocationDetails: scannerLocationDetails || undefined,
       scannerNotes: scannerNotes || undefined,
       consentContact: true,
-      consentLocation,
+      consentLocation: shouldAttemptLocation,
       latitude: locationData.latitude,
       longitude: locationData.longitude,
       locationLabel: locationData.locationLabel,
+      isMissingPetScan: isMissingPetProfile,
       userAgent: navigator.userAgent,
     })
 
@@ -165,8 +205,79 @@ const TagScan = () => {
         <p className="mt-2 text-sm text-[var(--theme-muted)]">
           You are about to open <span className="font-semibold text-[var(--theme-text)]">{profileName}</span>.
         </p>
+        {isMissingPetProfile ? (
+          <div className="mt-4 rounded-2xl border border-rose-400/40 bg-rose-500/10 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-300">Missing Pet Alert</p>
+            <p className="mt-1 text-sm text-[var(--theme-text)]">
+              We will request your approximate location to help the owner find this pet.
+            </p>
+          </div>
+        ) : null}
 
-        {mode === 'choice' ? (
+        {!canShareContact ? (
+          <div className="mt-6 space-y-3">
+            <p className="text-sm text-[var(--theme-muted)]">
+              {isMissingPetProfile
+                ? 'No login is required. If location permission is granted, an approximate location is shared with the owner.'
+                : 'Contact-sharing is only available for personal and business profiles.'}
+            </p>
+            <Button className="w-full" disabled={submitting} onClick={handleProceedWithoutSharing}>
+              {submitting ? 'Opening...' : isMissingPetProfile ? 'Proceed and Share Approximate Location' : 'Proceed to Profile'}
+            </Button>
+          </div>
+        ) : requiresMissingPetReport ? (
+          <form className="mt-5 space-y-3" onSubmit={handleShareAndContinue}>
+            <p className="text-sm text-[var(--theme-muted)]">
+              Please complete this report so the owner has enough information to locate their pet.
+            </p>
+            <Input
+              type="text"
+              value={scannerName}
+              onChange={(event) => setScannerName(event.target.value)}
+              placeholder="Your full name"
+              required
+            />
+            <Input
+              type="tel"
+              value={scannerPhone}
+              onChange={(event) => setScannerPhone(event.target.value)}
+              placeholder="Your phone number"
+              required
+            />
+            <Input
+              type="email"
+              value={scannerEmail}
+              onChange={(event) => setScannerEmail(event.target.value)}
+              placeholder="Your email (optional)"
+            />
+            <Input
+              type="text"
+              value={scannerLocationDetails}
+              onChange={(event) => setScannerLocationDetails(event.target.value)}
+              placeholder="Where did you see the pet? (street/landmark)"
+              required
+            />
+            <Textarea
+              value={scannerNotes}
+              onChange={(event) => setScannerNotes(event.target.value)}
+              rows={4}
+              placeholder="What was the pet doing, and when did you see it?"
+              required
+            />
+            <label className="flex items-center gap-2 text-sm text-[var(--theme-muted)]">
+              <input
+                type="checkbox"
+                checked={consentLocation}
+                onChange={(event) => setConsentLocation(event.target.checked)}
+              />
+              Share approximate GPS location too (recommended)
+            </label>
+            {formError ? <p className="text-sm text-rose-400">{formError}</p> : null}
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? 'Sending report...' : 'Send Report to Owner'}
+            </Button>
+          </form>
+        ) : mode === 'choice' ? (
           <div className="mt-6 space-y-3">
             <Button className="w-full" onClick={() => setMode('share')}>
               Share Contact Details
