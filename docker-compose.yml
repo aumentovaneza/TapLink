@@ -38,7 +38,7 @@ services:
     volumes:
       - ./server:/app
       - taplink_backend_node_modules:/app/node_modules
-    command: sh -c "corepack enable && yarn install && yarn prisma:generate && yarn db:push && yarn prisma:seed && yarn dev"
+    command: sh -c "corepack enable && yarn install && yarn prisma:generate && yarn db:push && yarn dev"
 
   frontend:
     image: node:22-alpine
