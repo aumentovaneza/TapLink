@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taplink-db
+    environment:
+      POSTGRES_DB: taplink
+      POSTGRES_USER: taplink
+      POSTGRES_PASSWORD: taplink
+    ports:
+      - "5432:5432"
+    volumes:
+      - taplink_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taplink -d taplink"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: dev
+    container_name: taplink-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://taplink:taplink@db:5432/taplink?schema=public
+      JWT_SECRET: local-dev-secret-change-me
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server:/app
+      - taplink_backend_node_modules:/app/node_modules
+    command: sh -c "corepack enable && yarn install && yarn prisma:generate && yarn db:push && yarn prisma:seed && yarn dev"
+
+  frontend:
+    image: node:22-alpine
+    container_name: taplink-frontend
+    working_dir: /app
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      VITE_API_URL: http://localhost:3000
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/app
+      - taplink_frontend_node_modules:/app/node_modules
+    command: sh -c "corepack enable && yarn install && yarn dev --host 0.0.0.0 --port 5173"
+
+volumes:
+  taplink_db_data:
+  taplink_backend_node_modules:
+  taplink_frontend_node_modules:

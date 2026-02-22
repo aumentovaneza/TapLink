@@ -1,10 +1,11 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "motion/react";
 import {
   LayoutDashboard, Users, Activity, Wifi, Settings,
-  Plus, X,
+  Plus, X, LogOut,
 } from "lucide-react";
+import { clearSession } from "../../lib/session";
 
 const ITEMS = [
   { icon: LayoutDashboard, label: "Overview",  path: "/dashboard" },
@@ -21,6 +22,14 @@ interface Props {
 
 function NavContent({ isDark, onClose }: { isDark: boolean; onClose: () => void }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearSession();
+    onClose();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="p-4">
       <div className="space-y-1">
@@ -74,6 +83,17 @@ function NavContent({ isDark, onClose }: { isDark: boolean; onClose: () => void 
           <Plus size={14} />
           New Profile
         </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={`mt-1 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+            isDark ? "text-rose-400 hover:bg-rose-950/30" : "text-rose-600 hover:bg-rose-50"
+          }`}
+          style={{ fontWeight: 500 }}
+        >
+          <LogOut size={14} />
+          Logout
+        </button>
       </div>
     </div>
   );

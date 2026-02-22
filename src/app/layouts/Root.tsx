@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
@@ -10,7 +10,9 @@ import {
   X,
   Wifi,
   LogIn,
+  LayoutDashboard,
 } from "lucide-react";
+import { dashboardPathForRole, getSessionUser, SessionUser } from "../lib/session";
 
 const navItems: { label: string; path: string }[] = [];
 
@@ -19,8 +21,14 @@ export function Root() {
   const isDark = theme === "dark";
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const [sessionUser, setSessionUserState] = useState<SessionUser | null>(() => getSessionUser());
+
+  useEffect(() => {
+    setSessionUserState(getSessionUser());
+  }, [location.pathname]);
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
+  const dashboardPath = sessionUser ? dashboardPathForRole(sessionUser.role) : "/login";
 
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? "bg-slate-950 text-white" : "bg-white text-slate-900"}`}>
@@ -120,7 +128,7 @@ export function Root() {
 
               {/* Login */}
               <Link
-                to="/login"
+                to={dashboardPath}
                 className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
                   isDark
                     ? "text-slate-400 hover:text-white hover:bg-slate-800"
@@ -128,8 +136,8 @@ export function Root() {
                 }`}
                 style={{ fontWeight: 500 }}
               >
-                <LogIn size={14} />
-                Log in
+                {sessionUser ? <LayoutDashboard size={14} /> : <LogIn size={14} />}
+                {sessionUser ? "Dashboard" : "Log in"}
               </Link>
 
               {/* Mobile menu button */}
@@ -187,15 +195,15 @@ export function Root() {
                 })}
                 <div className={`border-t mt-2 pt-3 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
                   <Link
-                    to="/login"
+                    to={dashboardPath}
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
                       isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
                     }`}
                     style={{ fontWeight: 500 }}
                   >
-                    <LogIn size={14} />
-                    Log in
+                    {sessionUser ? <LayoutDashboard size={14} /> : <LogIn size={14} />}
+                    {sessionUser ? "Dashboard" : "Log in"}
                   </Link>
                   <Link
                     to="/editor"

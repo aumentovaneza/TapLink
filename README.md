@@ -49,6 +49,71 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
+## Full Stack (Docker + Yarn)
+
+This repo now includes a backend (`/server`) with Fastify + Prisma + PostgreSQL.
+
+Run the full stack in an isolated Docker environment:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3000`
+- PostgreSQL: `localhost:5432`
+
+To stop the stack:
+
+```bash
+docker compose down
+```
+
+To also remove DB data volume:
+
+```bash
+docker compose down -v
+```
+
+Seeded test accounts:
+
+- Admin: `admin@taplink.io` / `Admin123!`
+- User: `alex@taplink.io` / `Password123!`
+
+Backend env template:
+
+- `server/.env.example`
+
+## Backend API (MVP)
+
+Base URL: `http://localhost:3000`
+
+- `GET /health`
+- `POST /auth/signup`
+- `POST /auth/signin`
+- `GET /auth/me` (Bearer token)
+- `GET /tags/mine` (Bearer token)
+- `POST /tags/claim` (Bearer token)
+- `PATCH /tags/:tagId/status` (Bearer token)
+- `GET /scan/:tagId`
+- `GET /profiles/:id`
+- `POST /profiles` (Bearer token)
+- `PATCH /profiles/:id` (Bearer token)
+- `PUT /profiles/:id/links` (Bearer token)
+- `POST /events/tap`
+- `POST /events/link-click`
+- `GET /analytics/tag/:tagId` (Bearer token)
+- `GET /analytics/admin/overview` (Admin token)
+- `GET /admin/profiles` (Admin token)
+- `GET /admin/tags` (Admin token)
+- `POST /admin/tags/generate` (Admin token)
+- `GET /admin/settings` (Admin token)
+- `PATCH /admin/settings` (Admin token)
+- `GET /admin/api-keys` (Admin token)
+- `POST /admin/api-keys/rotate` (Admin token)
+
 ## Available Scripts
 
 - `npm run dev` - Start development server

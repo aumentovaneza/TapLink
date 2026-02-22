@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -12,6 +12,15 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { themes, getTheme, suggestedThemes, palettes, getGradient } from "../data/themes";
+import { ApiError, apiRequest } from "../lib/api";
+import {
+  type CafeMenuSection,
+  getDefaultCafeMenuSections,
+  getDefaultCafeMenuSectionsJson,
+  parseCafeMenuSections,
+  serializeCafeMenuSections,
+} from "../lib/cafeMenu";
+import { clearAccessToken, getAccessToken } from "../lib/session";
 
 // ── Photos ────────────────────────────────────────────────────────────────────
 const DEMO_PHOTO  = "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -22,7 +31,7 @@ const DEMO_MUSIC  = "https://images.unsplash.com/photo-1771191057577-e216395637a
 const DEMO_EVENT  = "https://images.unsplash.com/photo-1761223976145-a85ffe11fc57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldmVudCUyMGNvbmZlcmVuY2UlMjBzdGFnZSUyMHNldHVwfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
 
 // ── Field definitions per template ────────────────────────────────────────────
-type FieldType = "text" | "email" | "tel" | "url" | "textarea" | "select";
+type FieldType = "text" | "email" | "tel" | "url" | "textarea" | "select" | "toggle";
 
 interface FieldDef {
   key: string;
@@ -114,6 +123,7 @@ const templateSections: Record<string, SectionDef[]> = {
         { key: "gender",  label: "Gender",      type: "select", options: ["Male", "Female", "Unknown"], placeholder: "Select" },
         { key: "color",   label: "Coat / Color",placeholder: "Golden, fluffy" },
         { key: "bio",     label: "Fun Facts & Personality", type: "textarea", placeholder: "Loves belly rubs, scared of thunder, favourite toy is a squeaky duck…", maxLength: 200 },
+        { key: "isLost",  label: "Pet is currently lost", type: "toggle", hint: "When enabled, the public profile will show a LOST alert and a report form for guests." },
       ],
     },
     {
@@ -356,7 +366,7 @@ const templateTypes: TemplateTypeDef[] = [
     id: "pet", label: "Pet", icon: PawPrint, color: "#F59E0B",
     defaultPhoto: DEMO_DOG, photoShape: "circle",
     description: "Pet ID tag with emergency owner contact",
-    defaultFields: { name: "Buddy", species: "Dog", breed: "Golden Retriever", age: "3 years old", gender: "Male", ownerName: "Jamie Rivera", ownerPhone: "" },
+    defaultFields: { name: "Buddy", species: "Dog", breed: "Golden Retriever", age: "3 years old", gender: "Male", isLost: "false", ownerName: "Jamie Rivera", ownerPhone: "" },
     defaultLinks: [
       { id: "1", type: "phone",    label: "🚨 Call Owner", url: "" },
       { id: "2", type: "phone",    label: "My Vet",        url: "" },
@@ -367,7 +377,14 @@ const templateTypes: TemplateTypeDef[] = [
     id: "cafe", label: "Café & Restaurant", icon: Coffee, color: "#92400E",
     defaultPhoto: DEMO_CAFE, photoShape: "banner",
     description: "Menu, orders, reservations, and hours",
-    defaultFields: { name: "The Bean House", cuisine: "Coffee & Brunch", tagline: "Your neighbourhood third place.", hoursWeekday: "Mon–Fri: 7am – 7pm", hoursWeekend: "Sat–Sun: 8am – 5pm" },
+    defaultFields: {
+      name: "The Bean House",
+      cuisine: "Coffee & Brunch",
+      tagline: "Your neighbourhood third place.",
+      hoursWeekday: "Mon–Fri: 7am – 7pm",
+      hoursWeekend: "Sat–Sun: 8am – 5pm",
+      menuSections: getDefaultCafeMenuSectionsJson(),
+    },
     defaultLinks: [
       { id: "1", type: "website", label: "📋 View Menu",    url: "" },
       { id: "2", type: "website", label: "📦 Order Online", url: "" },
@@ -426,11 +443,128 @@ interface ProfileData {
   fields: Record<string, string>;
 }
 
-const tabs = [
-  { id: "profile", label: "Profile",  icon: User },
-  { id: "links",   label: "Links",    icon: Link2 },
-  { id: "theme",   label: "Theme",    icon: Paintbrush },
-];
+interface ApiProfileLink {
+  id: string;
+  type: string;
+  label: string;
+  url: string;
+  position: number;
+}
+
+interface ApiProfile {
+  id: string;
+  slug: string;
+  templateType: string;
+  theme: string;
+  palette: string;
+  showGraphic: boolean;
+  photoUrl: string | null;
+  fields: Record<string, string>;
+  links: ApiProfileLink[];
+}
+
+interface ProfileResponse {
+  profile: ApiProfile;
+}
+
+interface ProfileMineResponse {
+  items: ApiProfile[];
+}
+
+interface ProfileLinkPayload {
+  type: string;
+  label: string;
+  url: string;
+}
+
+function linkUrlErrorKey(linkId: string): string {
+  return `link-url-${linkId}`;
+}
+
+function localLinkId(seed = ""): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${seed}`;
+}
+
+function localMenuSectionId(): string {
+  return `menu-section-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function localMenuItemId(sectionId: string): string {
+  return `${sectionId}-item-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function getDefaultProfile(typeId: string): ProfileData {
+  const def = templateTypes.find((template) => template.id === typeId) || templateTypes[0];
+  return {
+    templateType: typeId,
+    photo: def.defaultPhoto,
+    theme: "wave",
+    palette: "original",
+    showGraphic: true,
+    links: def.defaultLinks.map((link, index) => ({ ...link, id: localLinkId(`${index}`) })),
+    fields: { ...def.defaultFields },
+  };
+}
+
+function mapApiProfileToEditor(profile: ApiProfile): ProfileData {
+  const typeDef = templateTypes.find((template) => template.id === profile.templateType) || templateTypes[0];
+  const fields = { ...(profile.fields || {}) };
+
+  if (profile.templateType === "cafe" && !fields.menuSections?.trim()) {
+    fields.menuSections = getDefaultCafeMenuSectionsJson();
+  }
+
+  return {
+    templateType: profile.templateType,
+    photo: profile.photoUrl || typeDef.defaultPhoto,
+    theme: profile.theme || "wave",
+    palette: profile.palette || "original",
+    showGraphic: profile.showGraphic ?? true,
+    links: profile.links.map((link, index) => ({
+      id: link.id || localLinkId(`${index}`),
+      type: link.type,
+      label: link.label,
+      url: link.url,
+    })),
+    fields,
+  };
+}
+
+function mapEditorLinksToPayload(links: LinkItem[]): ProfileLinkPayload[] {
+  return links.slice(0, 10).map((link) => {
+    const type = link.type.trim() || "website";
+    const label = link.label.trim() || type.charAt(0).toUpperCase() + type.slice(1);
+    return {
+      type,
+      label,
+      url: link.url.trim(),
+    };
+  });
+}
+
+function asErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return fallback;
+}
+
+const linksTabLabels: Record<string, string> = {
+  individual: "Socials",
+  business: "Contact",
+  pet: "Emergency",
+  cafe: "Menu",
+  event: "Tickets",
+  creator: "Platforms",
+};
+
+function getLinksTabLabel(templateType: string): string {
+  const normalized = templateType.trim().toLowerCase();
+  return linksTabLabels[normalized] || "Links";
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function FieldInput({
@@ -444,6 +578,7 @@ function FieldInput({
       : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white"
   }`;
   const Icon = def.icon;
+  const toggleOn = value.trim().toLowerCase() === "true";
 
   return (
     <div>
@@ -462,6 +597,35 @@ function FieldInput({
             maxLength={def.maxLength}
             className={`${base} resize-none ${Icon ? "pl-10" : ""}`}
           />
+        ) : def.type === "toggle" ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={toggleOn}
+            onClick={() => onChange(toggleOn ? "false" : "true")}
+            className={`w-full h-11 px-3 rounded-xl border flex items-center justify-between transition-colors ${
+              toggleOn
+                ? "border-rose-400 bg-rose-50/70 dark:bg-rose-950/30"
+                : isDark
+                ? "bg-slate-800/70 border-slate-700"
+                : "bg-slate-50 border-slate-200"
+            }`}
+          >
+            <span className={`text-sm ${isDark ? "text-slate-200" : "text-slate-700"}`} style={{ fontWeight: 600 }}>
+              {toggleOn ? "Enabled" : "Disabled"}
+            </span>
+            <span
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                toggleOn ? "bg-rose-500" : isDark ? "bg-slate-700" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  toggleOn ? "translate-x-5 left-0.5" : "translate-x-0 left-0.5"
+                }`}
+              />
+            </span>
+          </button>
         ) : def.type === "select" ? (
           <div className="relative">
             <select
@@ -556,12 +720,241 @@ function EditorSection({ section, fields, onChange, isDark, errors }: {
   );
 }
 
+function CafeMenuEditor({
+  sections,
+  onChange,
+  isDark,
+}: {
+  sections: CafeMenuSection[];
+  onChange: (sections: CafeMenuSection[]) => void;
+  isDark: boolean;
+}) {
+  const addSection = () => {
+    const sectionId = localMenuSectionId();
+    onChange([
+      ...sections,
+      {
+        id: sectionId,
+        name: "New Section",
+        items: [
+          { id: localMenuItemId(sectionId), name: "", description: "", price: "" },
+        ],
+      },
+    ]);
+  };
+
+  const removeSection = (sectionId: string) => {
+    onChange(sections.filter((section) => section.id !== sectionId));
+  };
+
+  const updateSectionName = (sectionId: string, value: string) => {
+    onChange(
+      sections.map((section) => (section.id === sectionId ? { ...section, name: value } : section))
+    );
+  };
+
+  const addItem = (sectionId: string) => {
+    onChange(
+      sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              items: [...section.items, { id: localMenuItemId(sectionId), name: "", description: "", price: "" }],
+            }
+          : section
+      )
+    );
+  };
+
+  const updateItem = (sectionId: string, itemId: string, key: "name" | "description" | "price", value: string) => {
+    onChange(
+      sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              items: section.items.map((item) => (item.id === itemId ? { ...item, [key]: value } : item)),
+            }
+          : section
+      )
+    );
+  };
+
+  const removeItem = (sectionId: string, itemId: string) => {
+    onChange(
+      sections.map((section) =>
+        section.id === sectionId
+          ? { ...section, items: section.items.filter((item) => item.id !== itemId) }
+          : section
+      )
+    );
+  };
+
+  const resetDefaults = () => {
+    onChange(getDefaultCafeMenuSections());
+  };
+
+  return (
+    <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
+      <div className={`px-5 py-4 border-b ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className={`text-sm flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+              <Layers size={15} className="text-amber-500" />
+              Menu Builder
+            </p>
+            <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              Add menu sections like Appetizers, Drinks, and custom categories.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetDefaults}
+              className={`h-8 px-3 rounded-lg text-xs border transition-colors ${
+                isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+              style={{ fontWeight: 600 }}
+            >
+              Reset Defaults
+            </button>
+            <button
+              type="button"
+              onClick={addSection}
+              className="h-8 px-3 rounded-lg text-xs text-white transition-all hover:opacity-90"
+              style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 700 }}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Plus size={12} />
+                Add Section
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 space-y-3">
+        {sections.length === 0 && (
+          <div className={`rounded-xl border px-3 py-2.5 text-xs ${isDark ? "border-slate-700 bg-slate-800 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+            No menu sections yet. Click "Add Section" to start.
+          </div>
+        )}
+
+        {sections.map((section) => (
+          <div key={section.id} className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/60" : "border-slate-200 bg-slate-50/70"}`}>
+            <div className="flex items-center gap-2">
+              <input
+                value={section.name}
+                onChange={(event) => updateSectionName(section.id, event.target.value)}
+                placeholder="Section name (e.g. Appetizers)"
+                className={`flex-1 h-9 px-3 rounded-lg text-sm border outline-none ${
+                  isDark
+                    ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                    : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => removeSection(section.id)}
+                className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${
+                  isDark
+                    ? "border-slate-700 text-slate-400 hover:text-rose-300 hover:border-rose-500/50"
+                    : "border-slate-200 text-slate-500 hover:text-rose-500 hover:border-rose-300"
+                }`}
+                aria-label={`Remove ${section.name || "menu section"}`}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {section.items.map((item) => (
+                <div key={item.id} className={`rounded-lg border p-2.5 ${isDark ? "border-slate-700 bg-slate-900/50" : "border-slate-200 bg-white"}`}>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_120px_40px]">
+                    <input
+                      value={item.name}
+                      onChange={(event) => updateItem(section.id, item.id, "name", event.target.value)}
+                      placeholder="Menu item name"
+                      className={`h-9 px-3 rounded-lg text-sm border outline-none ${
+                        isDark
+                          ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                          : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                      }`}
+                    />
+                    <input
+                      value={item.price}
+                      onChange={(event) => updateItem(section.id, item.id, "price", event.target.value)}
+                      placeholder="$12"
+                      className={`h-9 px-3 rounded-lg text-sm border outline-none ${
+                        isDark
+                          ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                          : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(section.id, item.id)}
+                      className={`h-9 rounded-lg border flex items-center justify-center transition-colors ${
+                        isDark
+                          ? "border-slate-700 text-slate-400 hover:text-rose-300 hover:border-rose-500/50"
+                          : "border-slate-200 text-slate-500 hover:text-rose-500 hover:border-rose-300"
+                      }`}
+                      aria-label={`Remove ${item.name || "menu item"}`}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  <input
+                    value={item.description}
+                    onChange={(event) => updateItem(section.id, item.id, "description", event.target.value)}
+                    placeholder="Description (optional)"
+                    className={`mt-2 h-9 w-full px-3 rounded-lg text-sm border outline-none ${
+                      isDark
+                        ? "bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                        : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => addItem(section.id)}
+              className={`mt-2 h-8 px-3 rounded-lg text-xs border transition-colors ${
+                isDark ? "border-slate-700 text-slate-300 hover:bg-slate-700/60" : "border-slate-200 text-slate-600 hover:bg-white"
+              }`}
+              style={{ fontWeight: 600 }}
+            >
+              <span className="inline-flex items-center gap-1">
+                <Plus size={11} />
+                Add Item
+              </span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Live preview — template-aware ──────────────────────────────────────────────
 function MobilePreview({ data, typeDef }: { data: ProfileData; typeDef: TemplateTypeDef }) {
   const t = getTheme(data.theme);
   const Graphic = t.Graphic;
   const { gradient: resolvedGradient, text: resolvedText } = getGradient(data.theme, data.palette);
   const f = data.fields;
+  const petIsLost = data.templateType === "pet" && f.isLost?.trim().toLowerCase() === "true";
+  const linksTabLabel = getLinksTabLabel(data.templateType);
+  const cafeMenuHighlights =
+    data.templateType === "cafe"
+      ? parseCafeMenuSections(f.menuSections, { fallbackToDefault: true })
+          .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => item.name || item.description || item.price),
+          }))
+          .filter((section) => section.items.length > 0)
+          .slice(0, 2)
+      : [];
 
   const nameDisplay = f.name || typeDef.defaultFields.name || "Name";
   const subtitleDisplay = (() => {
@@ -578,7 +971,7 @@ function MobilePreview({ data, typeDef }: { data: ProfileData; typeDef: Template
 
   const badgeDisplay = (() => {
     switch (data.templateType) {
-      case "pet":     return f.ownerName ? `👤 Owner: ${f.ownerName}` : null;
+      case "pet":     return petIsLost ? "🚨 LOST PET" : (f.ownerName ? `👤 Owner: ${f.ownerName}` : null);
       case "cafe":    return f.rating || null;
       case "event":   return f.venueName || null;
       case "creator": return f.status || null;
@@ -655,6 +1048,32 @@ function MobilePreview({ data, typeDef }: { data: ProfileData; typeDef: Template
               )}
             </div>
           )}
+          {data.templateType === "cafe" && cafeMenuHighlights.length > 0 && (
+            <div className="mb-3 rounded-xl px-3 py-2 space-y-1.5" style={{ background: "rgba(255,255,255,0.14)" }}>
+              <p className="text-[11px] uppercase tracking-wide opacity-80" style={{ color: resolvedText, fontWeight: 700 }}>
+                Menu Highlights
+              </p>
+              {cafeMenuHighlights.map((section) => (
+                <div key={section.id}>
+                  <p className="text-[10px] opacity-85" style={{ color: resolvedText, fontWeight: 700 }}>
+                    {section.name}
+                  </p>
+                  {section.items.slice(0, 2).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] opacity-80 truncate" style={{ color: resolvedText }}>
+                        {item.name}
+                      </span>
+                      {item.price && (
+                        <span className="text-[10px] opacity-80" style={{ color: resolvedText, fontWeight: 600 }}>
+                          {item.price}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
           {data.templateType === "event" && f.date && (
             <div className="mb-3 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.12)" }}>
               <div className="flex items-center gap-1.5">
@@ -670,9 +1089,16 @@ function MobilePreview({ data, typeDef }: { data: ProfileData; typeDef: Template
             </div>
           )}
           {data.templateType === "pet" && (f.ownerName || f.ownerPhone) && (
-            <div className="mb-3 rounded-xl px-3 py-2" style={{ background: "rgba(239,68,68,0.25)" }}>
-              <p className="text-xs text-center" style={{ color: resolvedText, fontWeight: 700 }}>🚨 If Found Please Call:</p>
+            <div className="mb-3 rounded-xl px-3 py-2" style={{ background: petIsLost ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.3)" }}>
+              <p className="text-xs text-center" style={{ color: resolvedText, fontWeight: 700 }}>
+                {petIsLost ? "🚨 LOST PET ALERT" : "🐾 Pet Contact Card"}
+              </p>
               {f.ownerName && <p className="text-xs text-center opacity-90 mt-0.5" style={{ color: resolvedText }}>{f.ownerName}</p>}
+              {petIsLost && (
+                <p className="text-[10px] text-center opacity-80 mt-1" style={{ color: resolvedText }}>
+                  Guests can submit a sighting report on profile view
+                </p>
+              )}
             </div>
           )}
 
@@ -680,7 +1106,7 @@ function MobilePreview({ data, typeDef }: { data: ProfileData; typeDef: Template
           <div className="mt-auto space-y-2">
             {data.links.length === 0 ? (
               <div className="py-3 px-4 rounded-xl text-xs text-center opacity-30" style={{ background: "rgba(255,255,255,0.15)", color: resolvedText }}>
-                Add links in the Links tab
+                Add items in the {linksTabLabel} tab
               </div>
             ) : (
               data.links.map((link) => {
@@ -706,53 +1132,135 @@ export function ProfileEditor() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedProfileId = searchParams.get("profile")?.trim() || "";
 
   const [activeTab,      setActiveTab]      = useState("profile");
   const [saving,         setSaving]         = useState(false);
   const [saved,          setSaved]          = useState(false);
   const [errors,         setErrors]         = useState<Record<string, string>>({});
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadError,      setLoadError]      = useState("");
+  const [saveError,      setSaveError]      = useState("");
   const [showPreview,    setShowPreview]    = useState(false);
   const [showTypeModal,  setShowTypeModal]  = useState(false);
-
-  const getDefaultProfile = (typeId: string): ProfileData => {
-    const def = templateTypes.find((t) => t.id === typeId) || templateTypes[0];
-    return {
-      templateType: typeId,
-      photo:  def.defaultPhoto,
-      theme:  "wave",
-      palette: "original",
-      showGraphic: true,
-      links:  def.defaultLinks.map((l) => ({ ...l, id: Date.now().toString() + l.id })),
-      fields: { ...def.defaultFields },
-    };
-  };
-
-  const [profile, setProfile] = useState<ProfileData>(getDefaultProfile("individual"));
+  const [profileId,      setProfileId]      = useState<string | null>(null);
+  const [profileSlug,    setProfileSlug]    = useState<string | null>(null);
+  const [photoUrlForSave, setPhotoUrlForSave] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfileData>(() => getDefaultProfile("individual"));
 
   const typeDef = templateTypes.find((t) => t.id === profile.templateType) || templateTypes[0];
   const sections = templateSections[profile.templateType] || templateSections.individual;
   const suggestions = suggestedLinks[profile.templateType] || suggestedLinks.individual;
+  const cafeMenuSections = useMemo(
+    () =>
+      profile.templateType === "cafe"
+        ? parseCafeMenuSections(profile.fields.menuSections, { fallbackToDefault: true })
+        : [],
+    [profile.templateType, profile.fields.menuSections]
+  );
   const TypeIcon = typeDef.icon;
+  const linksTabLabel = getLinksTabLabel(profile.templateType);
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "links", label: linksTabLabel, icon: Link2 },
+    { id: "theme", label: "Theme", icon: Paintbrush },
+  ];
+  const previewProfilePath = profileSlug ? `/profile/${encodeURIComponent(profileSlug)}` : "/profile";
+
+  const loadEditorProfile = async () => {
+    setLoadingProfile(true);
+    setLoadError("");
+    setSaveError("");
+    setSaved(false);
+
+    try {
+      if (requestedProfileId) {
+        const byId = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(requestedProfileId)}`);
+        setProfile(mapApiProfileToEditor(byId.profile));
+        setProfileId(byId.profile.id);
+        setProfileSlug(byId.profile.slug);
+        setPhotoUrlForSave(byId.profile.photoUrl);
+        return;
+      }
+
+      if (!getAccessToken()) {
+        setProfile(getDefaultProfile("individual"));
+        setProfileId(null);
+        setProfileSlug(null);
+        setPhotoUrlForSave(null);
+        return;
+      }
+
+      const mine = await apiRequest<ProfileMineResponse>("/profiles/mine", { auth: true });
+      const first = mine.items[0];
+
+      if (!first) {
+        setProfile(getDefaultProfile("individual"));
+        setProfileId(null);
+        setProfileSlug(null);
+        setPhotoUrlForSave(null);
+        return;
+      }
+
+      setProfile(mapApiProfileToEditor(first));
+      setProfileId(first.id);
+      setProfileSlug(first.slug);
+      setPhotoUrlForSave(first.photoUrl);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearAccessToken();
+        setLoadError("Your session expired. Sign in again to edit your profile.");
+      } else {
+        setLoadError(asErrorMessage(error, "Unable to load editor data."));
+      }
+      setProfile(getDefaultProfile("individual"));
+      setProfileId(null);
+      setProfileSlug(null);
+      setPhotoUrlForSave(null);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadEditorProfile();
+  }, [requestedProfileId]);
 
   const updateField = (key: string, val: string) => {
     setProfile((p) => ({ ...p, fields: { ...p.fields, [key]: val } }));
     setSaved(false);
+    setSaveError("");
+  };
+  const updateCafeMenuSections = (nextSections: CafeMenuSection[]) => {
+    updateField("menuSections", serializeCafeMenuSections(nextSections));
   };
   const updateTop = <K extends keyof ProfileData>(key: K, val: ProfileData[K]) => {
     setProfile((p) => ({ ...p, [key]: val }));
     setSaved(false);
+    setSaveError("");
   };
 
   const switchTemplate = (id: string) => {
-    setProfile(getDefaultProfile(id));
+    setProfile((current) => {
+      const next = getDefaultProfile(id);
+      return {
+        ...next,
+        theme: current.theme,
+        palette: current.palette,
+        showGraphic: current.showGraphic,
+      };
+    });
     setShowTypeModal(false);
     setSaved(false);
+    setSaveError("");
+    setErrors({});
   };
 
   const addLink = (suggestion?: { type: string; label: string }) => {
     if (profile.links.length >= 10) return;
     const newLink: LinkItem = {
-      id: Date.now().toString(),
+      id: localLinkId(),
       type: suggestion?.type || "website",
       label: suggestion?.label || "",
       url: "",
@@ -760,8 +1268,23 @@ export function ProfileEditor() {
     updateTop("links", [...profile.links, newLink]);
   };
   const removeLink  = (id: string) => updateTop("links", profile.links.filter((l) => l.id !== id));
-  const updateLink  = (id: string, k: keyof LinkItem, v: string) =>
+  const updateLink  = (id: string, k: keyof LinkItem, v: string) => {
     updateTop("links", profile.links.map((l) => (l.id === id ? { ...l, [k]: v } : l)));
+    if (k === "url") {
+      const errorKey = linkUrlErrorKey(id);
+      setErrors((current) => {
+        if (!current[errorKey]) {
+          return current;
+        }
+        if (!v.trim()) {
+          return current;
+        }
+        const next = { ...current };
+        delete next[errorKey];
+        return next;
+      });
+    }
+  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -773,19 +1296,102 @@ export function ProfileEditor() {
         }
       });
     });
+    profile.links.forEach((link) => {
+      if (!link.url.trim()) {
+        errs[linkUrlErrorKey(link.id)] = "URL is required";
+      }
+    });
     return errs;
   };
 
   const handleSave = async () => {
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); setActiveTab("profile"); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const hasLinkErrors = Object.keys(errs).some((key) => key.startsWith("link-url-"));
+      setActiveTab(hasLinkErrors ? "links" : "profile");
+      return;
+    }
+    if (!getAccessToken()) {
+      setSaveError("Sign in to save and publish your profile.");
+      navigate("/login");
+      return;
+    }
+
     setErrors({});
+    setSaveError("");
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => navigate("/profile"), 900);
+
+    try {
+      const links = mapEditorLinksToPayload(profile.links);
+      const basePayload = {
+        templateType: profile.templateType,
+        theme: profile.theme,
+        palette: profile.palette,
+        showGraphic: profile.showGraphic,
+        photoUrl: photoUrlForSave,
+        fields: profile.fields,
+      };
+
+      let savedProfile: ApiProfile;
+
+      if (profileId) {
+        await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(profileId)}`, {
+          method: "PATCH",
+          auth: true,
+          body: basePayload,
+        });
+
+        const linksResponse = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(profileId)}/links`, {
+          method: "PUT",
+          auth: true,
+          body: { links },
+        });
+        savedProfile = linksResponse.profile;
+      } else {
+        const created = await apiRequest<ProfileResponse>("/profiles", {
+          method: "POST",
+          auth: true,
+          body: {
+            ...basePayload,
+            links,
+          },
+        });
+        savedProfile = created.profile;
+      }
+
+      setProfile(mapApiProfileToEditor(savedProfile));
+      setProfileId(savedProfile.id);
+      setProfileSlug(savedProfile.slug);
+      setPhotoUrlForSave(savedProfile.photoUrl);
+      setSaved(true);
+      setTimeout(() => navigate(`/profile/${encodeURIComponent(savedProfile.slug)}`), 900);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearAccessToken();
+        setSaveError("Your session expired. Please sign in again.");
+        navigate("/login");
+        return;
+      }
+      setSaveError(asErrorMessage(error, "Unable to save this profile."));
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loadingProfile) {
+    return (
+      <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className={`mb-6 h-14 animate-pulse rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-100"}`} />
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <div className={`h-[620px] animate-pulse rounded-2xl ${isDark ? "bg-slate-900" : "bg-white shadow-sm"}`} />
+            <div className={`h-[620px] animate-pulse rounded-2xl ${isDark ? "bg-slate-900" : "bg-white shadow-sm"}`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
@@ -830,6 +1436,14 @@ export function ProfileEditor() {
           </div>
         </div>
       </div>
+
+      {(loadError || saveError) && (
+        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+          <div className={`rounded-xl border px-4 py-2.5 text-sm ${isDark ? "border-rose-900/50 bg-rose-950/30 text-rose-300" : "border-rose-200 bg-rose-50 text-rose-700"}`}>
+            {saveError || loadError}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
@@ -897,6 +1511,14 @@ export function ProfileEditor() {
                       errors={errors}
                     />
                   ))}
+
+                  {profile.templateType === "cafe" && (
+                    <CafeMenuEditor
+                      sections={cafeMenuSections}
+                      onChange={updateCafeMenuSections}
+                      isDark={isDark}
+                    />
+                  )}
                 </motion.div>
               )}
 
@@ -951,35 +1573,49 @@ export function ProfileEditor() {
 
                     <div className="space-y-2.5">
                       <AnimatePresence>
-                        {profile.links.map((link) => (
-                          <motion.div key={link.id}
-                            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                            className={`p-3.5 rounded-xl border ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-slate-50"}`}>
-                            <div className="flex items-center gap-2">
-                              <GripVertical size={15} className={`flex-shrink-0 cursor-move ${isDark ? "text-slate-600" : "text-slate-300"}`} />
-                              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div className="relative">
-                                  <select value={link.type} onChange={(e) => updateLink(link.id, "type", e.target.value)}
-                                    className={`w-full h-9 pl-3 pr-7 rounded-lg text-xs outline-none appearance-none border ${isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-700"}`}
-                                    style={{ fontWeight: 500 }}>
-                                    {linkTypes.map((lt) => <option key={lt.value} value={lt.value}>{lt.label}</option>)}
-                                  </select>
-                                  <ChevronDown size={11} className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+                        {profile.links.map((link) => {
+                          const urlError = errors[linkUrlErrorKey(link.id)];
+                          return (
+                            <motion.div key={link.id}
+                              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                              className={`p-3.5 rounded-xl border ${isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-slate-50"}`}>
+                              <div className="flex items-start gap-2">
+                                <GripVertical size={15} className={`mt-2 flex-shrink-0 cursor-move ${isDark ? "text-slate-600" : "text-slate-300"}`} />
+                                <div className="flex-1">
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <div className="relative">
+                                      <select value={link.type} onChange={(e) => updateLink(link.id, "type", e.target.value)}
+                                        className={`w-full h-9 pl-3 pr-7 rounded-lg text-xs outline-none appearance-none border ${isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-slate-200 text-slate-700"}`}
+                                        style={{ fontWeight: 500 }}>
+                                        {linkTypes.map((lt) => <option key={lt.value} value={lt.value}>{lt.label}</option>)}
+                                      </select>
+                                      <ChevronDown size={11} className={`absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-slate-400" : "text-slate-400"}`} />
+                                    </div>
+                                    <input value={link.label} onChange={(e) => updateLink(link.id, "label", e.target.value)}
+                                      placeholder="Button label"
+                                      className={`h-9 px-3 rounded-lg text-xs outline-none border ${isDark ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"}`} />
+                                    <input value={link.url} onChange={(e) => updateLink(link.id, "url", e.target.value)}
+                                      placeholder="URL, email or phone"
+                                      className={`h-9 px-3 rounded-lg text-xs outline-none border ${
+                                        urlError
+                                          ? isDark
+                                            ? "bg-slate-700 border-rose-500 text-white placeholder:text-slate-500"
+                                            : "bg-white border-rose-400 text-slate-700 placeholder:text-slate-400"
+                                          : isDark
+                                          ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+                                          : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"
+                                      }`} />
+                                  </div>
+                                  {urlError && <p className="mt-1.5 text-xs text-rose-500">{urlError}</p>}
                                 </div>
-                                <input value={link.label} onChange={(e) => updateLink(link.id, "label", e.target.value)}
-                                  placeholder="Button label"
-                                  className={`h-9 px-3 rounded-lg text-xs outline-none border ${isDark ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"}`} />
-                                <input value={link.url} onChange={(e) => updateLink(link.id, "url", e.target.value)}
-                                  placeholder="URL, email or phone"
-                                  className={`h-9 px-3 rounded-lg text-xs outline-none border ${isDark ? "bg-slate-700 border-slate-600 text-white placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"}`} />
+                                <button onClick={() => removeLink(link.id)}
+                                  className="mt-0.5 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
+                                  <Trash2 size={13} />
+                                </button>
                               </div>
-                              <button onClick={() => removeLink(link.id)}
-                                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </motion.div>
+                          );
+                        })}
                       </AnimatePresence>
                       {profile.links.length === 0 && (
                         <div className={`py-10 text-center rounded-xl border-2 border-dashed ${isDark ? "border-slate-700" : "border-slate-200"}`}>
@@ -1238,10 +1874,10 @@ export function ProfileEditor() {
               </div>
               <MobilePreview data={profile} typeDef={typeDef} />
               <p className={`text-xs text-center mt-3 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Updates live as you type</p>
-              <Link to="/profile"
+              <Link to={previewProfilePath}
                 className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm transition-all hover:opacity-90"
                 style={{ background: isDark ? "rgba(79,70,229,0.15)" : "rgba(79,70,229,0.08)", color: "#6366F1", border: "1px solid rgba(79,70,229,0.2)", fontWeight: 600 }}>
-                <Zap size={14} />View Demo Profile
+                <Zap size={14} />View Profile
               </Link>
             </div>
           </div>

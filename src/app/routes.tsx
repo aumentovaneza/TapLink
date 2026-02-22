@@ -15,6 +15,7 @@ import { Login } from "./pages/Login";
 import { MyTags } from "./pages/MyTags";
 import { TagAnalytics } from "./pages/TagAnalytics";
 import { NotFound } from "./pages/NotFound";
+import { RedirectAuthenticatedFromLogin, RequireAdmin, RequireAuth } from "./components/auth/RouteGuards";
 
 export const router = createBrowserRouter([
   {
@@ -28,21 +29,32 @@ export const router = createBrowserRouter([
       { path: "profile/:id",      Component: ProfileView },
       { path: "profile",          Component: ProfileView },
 
-      // ── Admin pages ────────────────────────────────────────────────────────
-      { path: "dashboard",            Component: AdminDashboard },
-      { path: "dashboard/profiles",   Component: AdminProfiles  },
-      { path: "dashboard/analytics",  Component: AdminAnalytics },
-      { path: "dashboard/tags",       Component: AdminNfcTags   },
-      { path: "dashboard/settings",   Component: AdminSettings  },
-
       // ── Other pages ────────────────────────────────────────────────────────
       { path: "scan",             Component: TagScan },
       { path: "scan/:tagId",      Component: TagScan },
       { path: "claim",            Component: ClaimFlow },
       { path: "claim/:code",      Component: ClaimFlow },
-      { path: "login",            Component: Login },
-      { path: "my-tags",          Component: MyTags },
-      { path: "analytics/:tagId", Component: TagAnalytics },
+      {
+        Component: RedirectAuthenticatedFromLogin,
+        children: [{ path: "login", Component: Login }],
+      },
+      {
+        Component: RequireAuth,
+        children: [
+          { path: "my-tags", Component: MyTags },
+          { path: "analytics/:tagId", Component: TagAnalytics },
+        ],
+      },
+      {
+        Component: RequireAdmin,
+        children: [
+          { path: "dashboard", Component: AdminDashboard },
+          { path: "dashboard/profiles", Component: AdminProfiles },
+          { path: "dashboard/analytics", Component: AdminAnalytics },
+          { path: "dashboard/tags", Component: AdminNfcTags },
+          { path: "dashboard/settings", Component: AdminSettings },
+        ],
+      },
 
       { path: "*",                Component: NotFound },
     ],

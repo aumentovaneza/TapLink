@@ -1,336 +1,590 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { useTheme } from "next-themes";
 import { motion } from "motion/react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import {
-  Activity, TrendingUp, Users, Target, ArrowUpRight,
-  ArrowDownRight, Menu, Globe, Smartphone, Monitor,
+  Activity,
+  TrendingUp,
+  Users,
+  Tag,
+  ArrowUpRight,
+  ArrowDownRight,
+  Menu,
+  Monitor,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
+
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
+import { ApiError, apiRequest } from "../../lib/api";
+import { clearSession } from "../../lib/session";
 
-// ── Mock data ──────────────────────────────────────────────────────────────────
-const DAILY_30: { date: string; taps: number; visitors: number }[] = [
-  { date:"Jan 24", taps:1520, visitors:940  },
-  { date:"Jan 25", taps:1840, visitors:1120 },
-  { date:"Jan 26", taps:1680, visitors:1010 },
-  { date:"Jan 27", taps:2100, visitors:1300 },
-  { date:"Jan 28", taps:1950, visitors:1180 },
-  { date:"Jan 29", taps:1400, visitors:870  },
-  { date:"Jan 30", taps:1200, visitors:740  },
-  { date:"Jan 31", taps:2380, visitors:1440 },
-  { date:"Feb 1",  taps:2640, visitors:1600 },
-  { date:"Feb 2",  taps:2420, visitors:1480 },
-  { date:"Feb 3",  taps:2900, visitors:1770 },
-  { date:"Feb 4",  taps:3100, visitors:1880 },
-  { date:"Feb 5",  taps:2700, visitors:1640 },
-  { date:"Feb 6",  taps:2200, visitors:1340 },
-  { date:"Feb 7",  taps:3350, visitors:2040 },
-  { date:"Feb 8",  taps:3600, visitors:2180 },
-  { date:"Feb 9",  taps:3420, visitors:2080 },
-  { date:"Feb 10", taps:3800, visitors:2310 },
-  { date:"Feb 11", taps:4100, visitors:2490 },
-  { date:"Feb 12", taps:3750, visitors:2280 },
-  { date:"Feb 13", taps:3100, visitors:1890 },
-  { date:"Feb 14", taps:4400, visitors:2670 },
-  { date:"Feb 15", taps:4820, visitors:2930 },
-  { date:"Feb 16", taps:4560, visitors:2770 },
-  { date:"Feb 17", taps:5100, visitors:3100 },
-  { date:"Feb 18", taps:5380, visitors:3270 },
-  { date:"Feb 19", taps:4900, visitors:2980 },
-  { date:"Feb 20", taps:4200, visitors:2560 },
-  { date:"Feb 21", taps:5620, visitors:3420 },
-  { date:"Feb 22", taps:4128, visitors:2510 },
-];
+type Trend = "up" | "down" | "neutral";
 
-const DAILY_7  = DAILY_30.slice(-7);
-const DAILY_14 = DAILY_30.slice(-14);
-const DAILY_90 = DAILY_30; // same data but labelled as 90d for demo
+interface OverviewSummary {
+  totalTaps: number;
+  uniqueVisitors: number;
+  avgTapsPerDay: number;
+  totalProfiles: number;
+  activeTags: number;
+}
 
-const HOURLY = [
-  { h:"0",  v:18 }, { h:"1",  v:11 }, { h:"2",  v:8  }, { h:"3",  v:6  },
-  { h:"4",  v:9  }, { h:"5",  v:22 }, { h:"6",  v:48 }, { h:"7",  v:92 },
-  { h:"8",  v:210 }, { h:"9",  v:310 }, { h:"10", v:380 }, { h:"11", v:420 },
-  { h:"12", v:390 }, { h:"13", v:430 }, { h:"14", v:465 }, { h:"15", v:480 },
-  { h:"16", v:510 }, { h:"17", v:540 }, { h:"18", v:590 }, { h:"19", v:620 },
-  { h:"20", v:560 }, { h:"21", v:440 }, { h:"22", v:280 }, { h:"23", v:140 },
-];
+interface OverviewTimelineItem {
+  date: string;
+  taps: number;
+  visitors: number;
+}
 
-const DEVICES = [
-  { name:"iOS",     value:54, color:"#4F46E5" },
-  { name:"Android", value:32, color:"#7C3AED" },
-  { name:"Other",   value:14, color:"#06B6D4" },
-];
+interface OverviewDeviceItem {
+  name: string;
+  value: number;
+}
 
-const COUNTRIES = [
-  { country:"United States", pct:42, taps:24180 },
-  { country:"United Kingdom",pct:18, taps:10362 },
-  { country:"Canada",        pct:12, taps:6908  },
-  { country:"Australia",     pct:8,  taps:4605  },
-  { country:"Germany",       pct:6,  taps:3454  },
-  { country:"Others",        pct:14, taps:8058  },
-];
+interface OverviewTemplateItem {
+  name: string;
+  taps: number;
+  profiles: number;
+  pct: number;
+}
 
-const TOP_PROFILES = [
-  { name:"TechSummit 2026", taps:4108, change:67 },
-  { name:"Jordan Lee",      taps:3210, change:24 },
-  { name:"Neon Circuit",    taps:2671, change:42 },
-  { name:"Elena Torres",    taps:2188, change:0  },
-  { name:"Alex Rivera",     taps:1847, change:12 },
-];
+interface OverviewTopProfileItem {
+  rank: number;
+  name: string;
+  taps: number;
+}
 
-const TEMPLATES = [
-  { name:"Individual", taps:15847, profiles:38, pct:100 },
-  { name:"Business",   taps:7234,  profiles:14, pct:46  },
-  { name:"Event",      taps:4108,  profiles:5,  pct:26  },
-  { name:"Musician",   taps:2671,  profiles:8,  pct:17  },
-  { name:"Café",       taps:892,   profiles:3,  pct:6   },
-  { name:"Pet",        taps:423,   profiles:7,  pct:3   },
-];
+interface AdminOverviewResponse {
+  range: string;
+  summary: OverviewSummary;
+  timeline: OverviewTimelineItem[];
+  devices: OverviewDeviceItem[];
+  templates: OverviewTemplateItem[];
+  topProfiles: OverviewTopProfileItem[];
+}
 
-const RANGE_OPTIONS = [
-  { label:"7d",  data: DAILY_7  },
-  { label:"14d", data: DAILY_14 },
-  { label:"30d", data: DAILY_30 },
-  { label:"90d", data: DAILY_90 },
-];
+const RANGE_OPTIONS = ["7d", "14d", "30d", "90d"] as const;
+
+const DEVICE_COLORS: Record<string, string> = {
+  iOS: "#4F46E5",
+  Android: "#7C3AED",
+  Other: "#06B6D4",
+};
+
+function formatShortDate(input: string): string {
+  const date = new Date(`${input}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return input;
+  }
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatLongDate(input: string): string {
+  const date = new Date(`${input}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return input;
+  }
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function calcPercentDelta(current: number, previous: number): { value: string; trend: Trend } {
+  if (previous <= 0) {
+    return { value: "Current", trend: "neutral" };
+  }
+
+  const delta = ((current - previous) / previous) * 100;
+  if (Math.abs(delta) < 0.1) {
+    return { value: "0.0%", trend: "neutral" };
+  }
+
+  return {
+    value: `${delta > 0 ? "+" : ""}${delta.toFixed(1)}%`,
+    trend: delta > 0 ? "up" : "down",
+  };
+}
+
+function buildWeeklyData(timeline: OverviewTimelineItem[]): Array<{ day: string; taps: number }> {
+  const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayTotals = new Map<string, number>(dayOrder.map((day) => [day, 0]));
+
+  for (const item of timeline) {
+    const date = new Date(`${item.date}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) {
+      continue;
+    }
+
+    const dayIndex = date.getUTCDay();
+    const day = dayOrder[(dayIndex + 6) % 7];
+    dayTotals.set(day, (dayTotals.get(day) ?? 0) + item.taps);
+  }
+
+  return dayOrder.map((day) => ({ day, taps: dayTotals.get(day) ?? 0 }));
+}
+
+function resolveDateRangeLabel(timeline: OverviewTimelineItem[]): string {
+  if (!timeline.length) {
+    return "No activity data";
+  }
+
+  const first = timeline[0]?.date;
+  const last = timeline[timeline.length - 1]?.date;
+  return `${formatLongDate(first)} - ${formatLongDate(last)}`;
+}
+
+function trendBadgeClasses(trend: Trend): string {
+  if (trend === "up") {
+    return "bg-emerald-100 text-emerald-600";
+  }
+  if (trend === "down") {
+    return "bg-rose-100 text-rose-600";
+  }
+  return "bg-slate-100 text-slate-500";
+}
 
 export function AdminAnalytics() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const navigate = useNavigate();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [rangeIdx, setRangeIdx]       = useState(2); // default 30d
+  const [range, setRange] = useState<(typeof RANGE_OPTIONS)[number]>("30d");
 
-  const chartData   = RANGE_OPTIONS[rangeIdx].data;
-  const chartColor  = isDark ? "#6366F1" : "#4F46E5";
+  const [overview, setOverview] = useState<AdminOverviewResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+
+  const chartColor = isDark ? "#6366F1" : "#4F46E5";
   const chartColor2 = isDark ? "#06B6D4" : "#0EA5E9";
-  const gridColor   = isDark ? "#1E293B" : "#F1F5F9";
-  const axisColor   = isDark ? "#475569" : "#94A3B8";
-  const card        = `p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`;
+  const gridColor = isDark ? "#1E293B" : "#F1F5F9";
+  const axisColor = isDark ? "#475569" : "#94A3B8";
+  const card = `p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`;
 
-  const totalTaps  = chartData.reduce((s, d) => s + d.taps, 0);
-  const totalVisit = chartData.reduce((s, d) => s + d.visitors, 0);
+  const loadOverview = async (nextRange: (typeof RANGE_OPTIONS)[number], silent = false) => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError("");
+
+    try {
+      const response = await apiRequest<AdminOverviewResponse>(`/analytics/admin/overview?range=${nextRange}`, { auth: true });
+      setOverview(response);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSession();
+        navigate("/login", { replace: true });
+        return;
+      }
+      if (err instanceof ApiError && err.status === 403) {
+        navigate("/my-tags", { replace: true });
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Unable to load analytics.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadOverview(range, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  const timeline = overview?.timeline ?? [];
+  const areaData = useMemo(
+    () => timeline.map((item) => ({ date: formatShortDate(item.date), taps: item.taps, visitors: item.visitors })),
+    [timeline]
+  );
+  const weeklyData = useMemo(() => buildWeeklyData(timeline), [timeline]);
+  const deviceData = useMemo(
+    () =>
+      (overview?.devices ?? []).map((device) => ({
+        ...device,
+        color: DEVICE_COLORS[device.name] ?? "#94A3B8",
+      })),
+    [overview]
+  );
+
+  const topProfiles = overview?.topProfiles ?? [];
+  const templates = overview?.templates ?? [];
+  const dateRangeLabel = resolveDateRangeLabel(timeline);
+
+  const summary = overview?.summary ?? {
+    totalTaps: 0,
+    uniqueVisitors: 0,
+    avgTapsPerDay: 0,
+    totalProfiles: 0,
+    activeTags: 0,
+  };
+
+  const lastDay = timeline[timeline.length - 1];
+  const previousDay = timeline[timeline.length - 2];
+  const tapChange = calcPercentDelta(lastDay?.taps ?? 0, previousDay?.taps ?? 0);
+  const visitorChange = calcPercentDelta(lastDay?.visitors ?? 0, previousDay?.visitors ?? 0);
 
   const kpis = [
-    { label:"Total Taps",      value: totalTaps.toLocaleString(),   change:"+24.3%", up:true,  icon:Activity, grad:"linear-gradient(135deg,#4F46E5,#7C3AED)", bg:"rgba(79,70,229,0.08)"  },
-    { label:"Unique Visitors", value: totalVisit.toLocaleString(),  change:"+18.7%", up:true,  icon:Users,    grad:"linear-gradient(135deg,#0EA5E9,#2563EB)", bg:"rgba(14,165,233,0.08)" },
-    { label:"Avg Taps/Day",    value: Math.round(totalTaps/chartData.length).toLocaleString(), change:"+9.1%", up:true, icon:TrendingUp, grad:"linear-gradient(135deg,#10B981,#059669)", bg:"rgba(16,185,129,0.08)" },
-    { label:"Conversion Rate", value:"23.8%",                       change:"-2.1%",  up:false, icon:Target,   grad:"linear-gradient(135deg,#F59E0B,#D97706)", bg:"rgba(245,158,11,0.08)" },
+    {
+      label: "Total Taps",
+      value: summary.totalTaps.toLocaleString(),
+      change: tapChange.value,
+      trend: tapChange.trend,
+      icon: Activity,
+      grad: "linear-gradient(135deg,#4F46E5,#7C3AED)",
+      bg: "rgba(79,70,229,0.08)",
+    },
+    {
+      label: "Unique Visitors",
+      value: summary.uniqueVisitors.toLocaleString(),
+      change: visitorChange.value,
+      trend: visitorChange.trend,
+      icon: Users,
+      grad: "linear-gradient(135deg,#0EA5E9,#2563EB)",
+      bg: "rgba(14,165,233,0.08)",
+    },
+    {
+      label: "Avg Taps / Day",
+      value: summary.avgTapsPerDay.toLocaleString(),
+      change: "Current",
+      trend: "neutral" as Trend,
+      icon: TrendingUp,
+      grad: "linear-gradient(135deg,#10B981,#059669)",
+      bg: "rgba(16,185,129,0.08)",
+    },
+    {
+      label: "Active Tags",
+      value: summary.activeTags.toLocaleString(),
+      change: `${summary.totalProfiles.toLocaleString()} profiles`,
+      trend: "neutral" as Trend,
+      icon: Tag,
+      grad: "linear-gradient(135deg,#F59E0B,#D97706)",
+      bg: "rgba(245,158,11,0.08)",
+    },
   ];
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen pt-16 flex ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+        <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex-1 lg:ml-56 p-8">
+          <div className={`h-10 w-56 rounded-xl animate-pulse ${isDark ? "bg-slate-900" : "bg-slate-200"}`} />
+          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className={`h-28 rounded-2xl animate-pulse ${isDark ? "bg-slate-900" : "bg-white border border-slate-100"}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen pt-16 flex ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 lg:ml-56 min-w-0">
-        {/* Header */}
         <div className={`sticky top-16 z-20 border-b px-4 sm:px-6 lg:px-8 py-4 ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className={`lg:hidden w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-200"}`}>
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className={`lg:hidden w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-500 hover:bg-slate-200"}`}
+              >
                 <Menu size={18} />
               </button>
               <div>
-                <h1 className={isDark ? "text-white" : "text-slate-900"} style={{ fontWeight:800, letterSpacing:"-0.02em" }}>Analytics</h1>
-                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Platform-wide performance metrics</p>
+                <h1 className={isDark ? "text-white" : "text-slate-900"} style={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+                  Analytics
+                </h1>
+                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>{dateRangeLabel}</p>
               </div>
             </div>
-            {/* Range selector */}
-            <div className={`flex items-center gap-1 p-1 rounded-xl ${isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"}`}>
-              {RANGE_OPTIONS.map((r, i) => (
-                <button key={r.label} onClick={() => setRangeIdx(i)}
-                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${i === rangeIdx ? "text-white" : isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
-                  style={{ background: i === rangeIdx ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : "transparent", fontWeight: i === rangeIdx ? 600 : 400 }}>
-                  {r.label}
-                </button>
-              ))}
+
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-1 p-1 rounded-xl ${isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"}`}>
+                {RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setRange(option)}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      option === range
+                        ? "text-white"
+                        : isDark
+                        ? "text-slate-400 hover:text-white"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                    style={{
+                      background: option === range ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : "transparent",
+                      fontWeight: option === range ? 600 : 400,
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => void loadOverview(range, true)}
+                disabled={refreshing}
+                className={`flex items-center gap-2 h-9 px-3 rounded-lg text-sm transition-colors ${
+                  isDark
+                    ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 disabled:opacity-60"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 disabled:opacity-60"
+                }`}
+                style={{ fontWeight: 500 }}
+              >
+                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                <span className="hidden sm:inline">{refreshing ? "Refreshing..." : "Refresh"}</span>
+              </button>
             </div>
           </div>
         </div>
 
         <div className="p-4 sm:p-6 lg:p-8 space-y-5">
-          {/* KPI cards */}
+          {error && (
+            <div
+              className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+                isDark ? "border-rose-900/40 bg-rose-950/20 text-rose-300" : "border-rose-200 bg-rose-50 text-rose-700"
+              }`}
+            >
+              <AlertCircle size={15} />
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {kpis.map((k, i) => {
-              const Icon = k.icon;
+            {kpis.map((kpi, index) => {
+              const Icon = kpi.icon;
               return (
-                <motion.div key={k.label} initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.07 }} className={card}>
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07 }} className={card}>
                   <div className="flex items-start justify-between mb-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:k.bg }}>
-                      <Icon size={17} style={{ background:k.grad, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }} />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: kpi.bg }}>
+                      <Icon size={17} style={{ background: kpi.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }} />
                     </div>
-                    <span className={`flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full ${k.up ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`} style={{ fontWeight:600 }}>
-                      {k.up ? <ArrowUpRight size={10}/> : <ArrowDownRight size={10}/>}{k.change}
+                    <span className={`flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full ${trendBadgeClasses(kpi.trend)}`} style={{ fontWeight: 600 }}>
+                      {kpi.trend === "up" && <ArrowUpRight size={10} />}
+                      {kpi.trend === "down" && <ArrowDownRight size={10} />}
+                      {kpi.change}
                     </span>
                   </div>
-                  <div className={isDark ? "text-white" : "text-slate-900"} style={{ fontSize:"1.5rem", fontWeight:800, letterSpacing:"-0.03em" }}>{k.value}</div>
-                  <div className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{k.label}</div>
+                  <div className={isDark ? "text-white" : "text-slate-900"} style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.03em" }}>
+                    {kpi.value}
+                  </div>
+                  <div className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{kpi.label}</div>
                 </motion.div>
               );
             })}
           </div>
 
-          {/* Main area chart */}
           <div className={card}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className={isDark ? "text-white" : "text-slate-900"} style={{ fontWeight:700 }}>Tap & Visitor Activity</h3>
-                <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Last {RANGE_OPTIONS[rangeIdx].label}</p>
+                <h3 className={isDark ? "text-white" : "text-slate-900"} style={{ fontWeight: 700 }}>
+                  Tap & Visitor Activity
+                </h3>
+                <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Last {range}</p>
               </div>
               <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background:chartColor, display:"inline-block" }} /><span className={isDark ? "text-slate-400" : "text-slate-500"}>Taps</span></span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background:chartColor2, display:"inline-block" }} /><span className={isDark ? "text-slate-400" : "text-slate-500"}>Visitors</span></span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 rounded" style={{ background: chartColor, display: "inline-block" }} />
+                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>Taps</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 rounded" style={{ background: chartColor2, display: "inline-block" }} />
+                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>Visitors</span>
+                </span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={chartData} margin={{ top:5, right:5, bottom:0, left:-15 }}>
-                <defs>
-                  <linearGradient id="ag1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={chartColor}  stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor={chartColor}  stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="ag2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={chartColor2} stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor={chartColor2} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="date" tick={{ fill:axisColor, fontSize:10 }} tickLine={false} axisLine={false} interval={Math.floor(chartData.length/6)} />
-                <YAxis tick={{ fill:axisColor, fontSize:10 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: isDark ? "#1e293b" : "#fff", border:`1px solid ${isDark ? "#334155" : "#E2E8F0"}`, borderRadius:"12px", color: isDark ? "#fff" : "#1e293b", fontSize:12 }} />
-                <Area type="monotone" dataKey="taps"     stroke={chartColor}  strokeWidth={2} fill="url(#ag1)" />
-                <Area type="monotone" dataKey="visitors" stroke={chartColor2} strokeWidth={2} fill="url(#ag2)" />
-              </AreaChart>
-            </ResponsiveContainer>
+
+            {areaData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={areaData} margin={{ top: 5, right: 5, bottom: 0, left: -15 }}>
+                  <defs>
+                    <linearGradient id="adminAnalyticsA" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartColor} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="adminAnalyticsB" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartColor2} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={chartColor2} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="date" tick={{ fill: axisColor, fontSize: 10 }} tickLine={false} axisLine={false} interval={Math.floor(areaData.length / 6)} />
+                  <YAxis tick={{ fill: axisColor, fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: isDark ? "#1e293b" : "#fff", border: `1px solid ${isDark ? "#334155" : "#E2E8F0"}`, borderRadius: "12px", color: isDark ? "#fff" : "#1e293b", fontSize: 12 }} />
+                  <Area type="monotone" dataKey="taps" stroke={chartColor} strokeWidth={2} fill="url(#adminAnalyticsA)" />
+                  <Area type="monotone" dataKey="visitors" stroke={chartColor2} strokeWidth={2} fill="url(#adminAnalyticsB)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className={`text-sm py-12 text-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>No tap activity for this range.</p>
+            )}
           </div>
 
-          {/* Row: hourly + device + countries */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Hourly */}
-            <div className={`lg:col-span-1 ${card}`}>
-              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>Hourly Distribution</h3>
+            <div className={card}>
+              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                Weekly Distribution
+              </h3>
               <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={HOURLY} barSize={6} margin={{ top:0, right:0, bottom:0, left:-20 }}>
-                  <XAxis dataKey="h" tick={{ fill:axisColor, fontSize:9 }} tickLine={false} axisLine={false} interval={3} />
+                <BarChart data={weeklyData} barSize={10} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+                  <XAxis dataKey="day" tick={{ fill: axisColor, fontSize: 9 }} tickLine={false} axisLine={false} />
                   <YAxis hide />
-                  <Tooltip contentStyle={{ background: isDark ? "#1e293b" : "#fff", border:"none", borderRadius:"10px", fontSize:11, color: isDark ? "#fff" : "#1e293b" }} />
-                  <Bar dataKey="v" fill={chartColor} radius={[3,3,0,0]} />
+                  <Tooltip contentStyle={{ background: isDark ? "#1e293b" : "#fff", border: "none", borderRadius: "10px", fontSize: 11, color: isDark ? "#fff" : "#1e293b" }} />
+                  <Bar dataKey="taps" fill={chartColor} radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-              <p className={`text-xs mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Peak hours: 6 PM – 9 PM</p>
+              <p className={`text-xs mt-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Derived from {range} timeline data</p>
             </div>
 
-            {/* Device split */}
-            <div className={card}>
-              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>Device Breakdown</h3>
-              <div className="flex items-center gap-5">
-                <PieChart width={100} height={100}>
-                  <Pie data={DEVICES} cx={45} cy={45} innerRadius={28} outerRadius={46} dataKey="value" strokeWidth={0}>
-                    {DEVICES.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                </PieChart>
-                <div className="space-y-3 flex-1">
-                  {DEVICES.map(d => (
-                    <div key={d.name} className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background:d.color }} />
-                        <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>{d.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`h-1.5 rounded-full`} style={{ width:`${d.value * 0.6}px`, background:d.color, opacity:0.4 }} />
-                        <span className={`text-xs ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>{d.value}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Countries */}
             <div className={card}>
               <div className="flex items-center gap-2 mb-4">
-                <Globe size={15} className={isDark ? "text-slate-400" : "text-slate-500"} />
-                <h3 className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>Top Countries</h3>
+                <Monitor size={15} className={isDark ? "text-slate-400" : "text-slate-500"} />
+                <h3 className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                  Device Breakdown
+                </h3>
               </div>
-              <div className="space-y-2.5">
-                {COUNTRIES.map(c => (
-                  <div key={c.country}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`} style={{ fontWeight:500 }}>{c.country}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.taps.toLocaleString()}</span>
-                        <span className={`text-xs ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>{c.pct}%</span>
+
+              {deviceData.length > 0 ? (
+                <div className="flex items-center gap-5">
+                  <PieChart width={100} height={100}>
+                    <Pie data={deviceData} cx={45} cy={45} innerRadius={28} outerRadius={46} dataKey="value" strokeWidth={0}>
+                      {deviceData.map((device, index) => (
+                        <Cell key={`${device.name}-${index}`} fill={device.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                  <div className="space-y-3 flex-1">
+                    {deviceData.map((device) => (
+                      <div key={device.name} className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: device.color }} />
+                          <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>{device.name}</span>
+                        </div>
+                        <span className={`text-xs ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                          {device.value}%
+                        </span>
                       </div>
-                    </div>
-                    <div className={`h-1 rounded-full overflow-hidden ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
-                      <motion.div className="h-full rounded-full" style={{ background:"linear-gradient(90deg,#4F46E5,#7C3AED)" }}
-                        initial={{ width:0 }} animate={{ width:`${c.pct}%` }} transition={{ duration:0.8, delay:0.2 }} />
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <p className={`text-sm py-8 ${isDark ? "text-slate-500" : "text-slate-400"}`}>No device analytics yet.</p>
+              )}
+            </div>
+
+            <div className={card}>
+              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                Top Profiles by Taps
+              </h3>
+              {topProfiles.length > 0 ? (
+                <div className="space-y-3">
+                  {topProfiles.slice(0, 6).map((profile, index) => {
+                    const maxTaps = topProfiles[0]?.taps || 1;
+                    const width = Math.max(10, Math.round((profile.taps / maxTaps) * 100));
+                    return (
+                      <div key={`${profile.name}-${profile.rank}`} className="flex items-center gap-3">
+                        <span className={`text-xs w-4 text-center ${isDark ? "text-slate-500" : "text-slate-400"}`} style={{ fontWeight: 700 }}>
+                          #{profile.rank}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-xs truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} style={{ fontWeight: 600 }}>
+                              {profile.name}
+                            </span>
+                            <span className={`text-xs ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                              {profile.taps.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
+                            <motion.div
+                              className="h-full rounded-full"
+                              style={{ background: "linear-gradient(90deg,#4F46E5,#7C3AED)", opacity: 1 - index * 0.1 }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${width}%` }}
+                              transition={{ duration: 0.7, delay: 0.08 * index }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className={`text-sm py-8 ${isDark ? "text-slate-500" : "text-slate-400"}`}>No top profile data yet.</p>
+              )}
             </div>
           </div>
 
-          {/* Row: top profiles + template performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Top profiles */}
-            <div className={card}>
-              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>Top Profiles by Taps</h3>
-              <div className="space-y-3">
-                {TOP_PROFILES.map((p, i) => (
-                  <div key={p.name} className="flex items-center gap-3">
-                    <span className={`text-xs w-4 text-center ${isDark ? "text-slate-500" : "text-slate-400"}`} style={{ fontWeight:700 }}>#{i+1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs truncate ${isDark ? "text-slate-200" : "text-slate-800"}`} style={{ fontWeight:600 }}>{p.name}</span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className={`text-xs ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>{p.taps.toLocaleString()}</span>
-                          {p.change > 0 && <span className="text-xs text-emerald-500 flex items-center gap-0.5"><ArrowUpRight size={10}/>{p.change}%</span>}
-                        </div>
-                      </div>
-                      <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
-                        <motion.div className="h-full rounded-full" style={{ background:`linear-gradient(90deg,#4F46E5,#7C3AED)`, opacity: 1 - i * 0.15 }}
-                          initial={{ width:0 }} animate={{ width:`${(p.taps/4108)*100}%` }} transition={{ duration:0.9, delay:0.1*i }} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Template performance */}
-            <div className={card}>
-              <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:700 }}>Template Performance</h3>
-              <div className={`rounded-xl overflow-hidden border ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className={`${isDark ? "bg-slate-800/60 text-slate-400" : "bg-slate-50 text-slate-500"}`}>
-                      <th className="text-left px-3 py-2" style={{ fontWeight:600 }}>Template</th>
-                      <th className="text-right px-3 py-2" style={{ fontWeight:600 }}>Profiles</th>
-                      <th className="text-right px-3 py-2" style={{ fontWeight:600 }}>Total Taps</th>
-                      <th className="text-right px-3 py-2" style={{ fontWeight:600 }}>Avg Taps</th>
+          <div className={card}>
+            <h3 className={`text-sm mb-4 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+              Template Performance
+            </h3>
+            <div className={`rounded-xl overflow-hidden border ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className={`${isDark ? "bg-slate-800/60 text-slate-400" : "bg-slate-50 text-slate-500"}`}>
+                    <th className="text-left px-3 py-2" style={{ fontWeight: 600 }}>
+                      Template
+                    </th>
+                    <th className="text-right px-3 py-2" style={{ fontWeight: 600 }}>
+                      Profiles
+                    </th>
+                    <th className="text-right px-3 py-2" style={{ fontWeight: 600 }}>
+                      Total Taps
+                    </th>
+                    <th className="text-right px-3 py-2" style={{ fontWeight: 600 }}>
+                      Avg Taps
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {templates.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className={`px-3 py-5 text-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                        No template metrics available.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {TEMPLATES.map((t, i) => (
-                      <tr key={t.name} className={`border-t ${isDark ? "border-slate-800 hover:bg-slate-800/40" : "border-slate-100 hover:bg-slate-50"} transition-colors`}>
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-5 rounded-full" style={{ background:`linear-gradient(180deg,#4F46E5,#7C3AED)`, opacity: 1 - i*0.12 }} />
-                            <span className={isDark ? "text-slate-200" : "text-slate-800"} style={{ fontWeight:500 }}>{t.name}</span>
-                          </div>
-                        </td>
-                        <td className={`text-right px-3 py-2.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{t.profiles}</td>
-                        <td className={`text-right px-3 py-2.5 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight:600 }}>{t.taps.toLocaleString()}</td>
-                        <td className={`text-right px-3 py-2.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{Math.round(t.taps/t.profiles).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  )}
+                  {templates.map((template, index) => (
+                    <tr
+                      key={`${template.name}-${index}`}
+                      className={`border-t ${isDark ? "border-slate-800 hover:bg-slate-800/40" : "border-slate-100 hover:bg-slate-50"} transition-colors`}
+                    >
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-5 rounded-full" style={{ background: "linear-gradient(180deg,#4F46E5,#7C3AED)", opacity: 1 - index * 0.12 }} />
+                          <span className={isDark ? "text-slate-200" : "text-slate-800"} style={{ fontWeight: 500 }}>
+                            {template.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className={`text-right px-3 py-2.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{template.profiles}</td>
+                      <td className={`text-right px-3 py-2.5 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 600 }}>
+                        {template.taps.toLocaleString()}
+                      </td>
+                      <td className={`text-right px-3 py-2.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        {(template.profiles > 0 ? Math.round(template.taps / template.profiles) : 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

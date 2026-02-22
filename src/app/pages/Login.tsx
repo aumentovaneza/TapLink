@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
@@ -6,6 +6,8 @@ import {
   Mail, Lock, Eye, EyeOff, Zap, ArrowRight,
   Check, AlertCircle, User, ChevronRight, Shield
 } from "lucide-react";
+import { ApiError, apiRequest } from "../lib/api";
+import { dashboardPathForRole, getAccessToken, getSessionUser, SessionUser, setAccessToken, setSessionUser } from "../lib/session";
 
 const features = [
   "Create unlimited NFC tag profiles",
@@ -13,6 +15,11 @@ const features = [
   "8 visual themes for every template",
   "Share via NFC or QR code",
 ];
+
+interface AuthResponse {
+  user: SessionUser;
+  accessToken: string;
+}
 
 export function Login() {
   const { theme } = useTheme();
@@ -27,6 +34,16 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [forgotSent, setForgotSent] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    const currentUser = getSessionUser();
+    if (token && currentUser) {
+      navigate(dashboardPathForRole(currentUser.role), { replace: true });
+    }
+  }, [navigate]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -41,11 +58,59 @@ export function Login() {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
+    setSubmitError("");
+
+    if (mode === "forgot") {
+      setForgotSent(true);
+      return;
+    }
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    if (mode === "forgot") { setForgotSent(true); return; }
-    navigate("/my-tags");
+    try {
+      const payload = mode === "signup"
+        ? await apiRequest<AuthResponse>("/auth/signup", {
+            method: "POST",
+            body: { name, email, password },
+          })
+        : await apiRequest<AuthResponse>("/auth/signin", {
+            method: "POST",
+            body: { email, password },
+          });
+
+      setAccessToken(payload.accessToken);
+      setSessionUser(payload.user);
+      navigate(dashboardPathForRole(payload.user.role), { replace: true });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError("Unable to sign in right now.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInDemoUser = async () => {
+    setSubmitError("");
+    setDemoLoading(true);
+    try {
+      const payload = await apiRequest<AuthResponse>("/auth/signin", {
+        method: "POST",
+        body: { email: "alex@taplink.io", password: "Password123!" },
+      });
+      setAccessToken(payload.accessToken);
+      setSessionUser(payload.user);
+      navigate(dashboardPathForRole(payload.user.role), { replace: true });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError("Unable to sign in with demo account.");
+      }
+    } finally {
+      setDemoLoading(false);
+    }
   };
 
   const inputCls = (hasError?: boolean) =>
@@ -168,7 +233,7 @@ export function Login() {
                 {mode !== "forgot" && (
                   <div className={`flex p-1 rounded-xl mb-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-slate-100"}`}>
                     {(["signup", "signin"] as const).map((m) => (
-                      <button key={m} onClick={() => { setMode(m); setErrors({}); }}
+                      <button key={m} onClick={() => { setMode(m); setErrors({}); setSubmitError(""); }}
                         className={`flex-1 py-2.5 rounded-lg text-sm transition-all ${mode === m ? "text-white shadow-sm" : isDark ? "text-slate-400" : "text-slate-500"}`}
                         style={{ background: mode === m ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent", fontWeight: mode === m ? 600 : 400 }}>
                         {m === "signup" ? "Sign Up" : "Sign In"}
@@ -181,7 +246,7 @@ export function Login() {
                 {mode !== "forgot" && (
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     {["Google", "Apple"].map((p) => (
-                      <button key={p} onClick={() => navigate("/my-tags")}
+                      <button key={p} onClick={() => setSubmitError("Social sign-in is not enabled yet. Use email/password.")}
                         className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm transition-all hover:opacity-80 active:scale-98 ${
                           isDark ? "bg-slate-900 border-slate-800 text-white hover:bg-slate-800" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                         }`} style={{ fontWeight: 500 }}>
@@ -193,6 +258,13 @@ export function Login() {
                         {p}
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {submitError && (
+                  <div className="rounded-xl border border-rose-300/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-500 flex items-center gap-1.5">
+                    <AlertCircle size={12} />
+                    {submitError}
                   </div>
                 )}
 
@@ -313,15 +385,22 @@ export function Login() {
               👆 Demo: click "Sign In" with any email to explore
             </p>
             <button
-              onClick={() => navigate("/my-tags")}
+              onClick={signInDemoUser}
+              disabled={demoLoading}
               className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm transition-all ${
                 isDark ? "text-indigo-400 bg-slate-800 hover:bg-slate-700" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
               }`}
               style={{ fontWeight: 600 }}
             >
-              <Zap size={14} />
-              Skip to Demo Dashboard
-              <ChevronRight size={14} />
+              {demoLoading ? (
+                <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : (
+                <>
+                  <Zap size={14} />
+                  Sign In as Demo User
+                  <ChevronRight size={14} />
+                </>
+              )}
             </button>
           </div>
         </div>

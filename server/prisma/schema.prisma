@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TagStatus {
+  ACTIVE
+  INACTIVE
+  UNCLAIMED
+}
+
+enum ScanMethod {
+  NFC
+  QR
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(USER)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  profiles     Profile[]
+  ownedTags    Tag[]      @relation("TagOwner")
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[] @relation("AuditActor")
+}
+
+model Tag {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  uid        String?    @unique
+  claimCode  String?    @unique
+  status     TagStatus  @default(UNCLAIMED)
+  ownerId    String?
+  owner      User?      @relation("TagOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  profileId  String?    @unique
+  profile    Profile?   @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  taps       Int        @default(0)
+  lastTapAt  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  tapEvents  TapEvent[]
+
+  @@index([ownerId])
+  @@index([profileId])
+}
+
+model Profile {
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  ownerId         String
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  templateType    String
+  theme           String
+  palette         String           @default("original")
+  showGraphic     Boolean          @default(true)
+  photoUrl        String?
+  fields          Json
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  links           ProfileLink[]
+  tag             Tag?
+  tapEvents       TapEvent[]
+  linkClickEvents LinkClickEvent[]
+
+  @@index([ownerId])
+  @@index([templateType])
+}
+
+model ProfileLink {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  position  Int
+  type      String
+  label     String
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId, position])
+}
+
+model TapEvent {
+  id         String      @id @default(cuid())
+  tagId       String
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  profileId   String?
+  profile     Profile?    @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  scanMethod  ScanMethod  @default(NFC)
+  device      String?
+  city        String?
+  country     String?
+  referrer    String?
+  occurredAt  DateTime    @default(now())
+
+  @@index([tagId, occurredAt])
+  @@index([profileId, occurredAt])
+}
+
+model LinkClickEvent {
+  id         String    @id @default(cuid())
+  profileId  String
+  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  linkId     String?
+  linkLabel  String?
+  occurredAt DateTime  @default(now())
+
+  @@index([profileId, occurredAt])
+}
+
+model AdminSetting {
+  id                 Int      @id @default(1)
+  platformName       String   @default("TapLink")
+  supportEmail       String   @default("support@taplink.io")
+  platformUrl        String   @default("https://taplink.io")
+  maxProfilesPerUser Int      @default(10)
+  maintenanceMode    Boolean  @default(false)
+  config             Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  name        String
+  keyHash     String    @unique
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([createdById, createdAt])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorId    String?
+  actor      User?     @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
