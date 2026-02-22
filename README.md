@@ -1,28 +1,33 @@
-# TapLink - NFC Tag Platform
+# TapLink
 
-A frontend-only prototype for a web app that turns any NFC tag into an instant profile. Built with React, TypeScript, and Tailwind CSS.
+A modern web application built with React, TypeScript, and Tailwind CSS. This project uses Vite for fast development and includes a comprehensive component library with Radix UI primitives.
 
 ## Features
 
-- **Template-based Profiles**: Choose from Pet, Business, Personal, or Restaurant templates
-- **Claim Code System**: Simulate NFC tag activation with mock claim codes
-- **Profile Management**: Create, view, and manage profiles through an admin panel
-- **Private-by-Link**: Profiles are only accessible via direct URLs
-- **Mobile-First Design**: Responsive UI that works great on all devices
-- **No Backend Required**: Everything runs in the browser using localStorage
+- **Modern React Architecture**: Built with React 18 and TypeScript for type safety
+- **Component Library**: Extensive UI components using Radix UI primitives
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Fast Development**: Vite for lightning-fast development and building
+- **Theme Support**: Dark/light theme system with next-themes
+- **Form Handling**: React Hook Form for robust form management
+- **Rich UI Components**: Carousels, charts, dialogs, and more
 
 ## Tech Stack
 
-- **React 19** with TypeScript
-- **Vite** for fast development
-- **React Router** for navigation
-- **Tailwind CSS** for styling
-- **localStorage** for data persistence
+- **React 18** with TypeScript
+- **Vite 6** for fast development and building
+- **React Router 7** for navigation
+- **Tailwind CSS 4** for styling
+- **Radix UI** for accessible component primitives
+- **Lucide React** for icons
+- **React Hook Form** for form management
+- **Motion** for animations
+- **Recharts** for data visualization
 
 ## Prerequisites
 
-- **Node.js 20.19+ or 22.12+** (required for Vite 7.x)
-- npm or yarn
+- **Node.js 20+** (recommended)
+- npm, yarn, or pnpm
 
 ## Installation
 
@@ -48,81 +53,65 @@ npm run dev
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build locally
+- `npm run serve` - Serve production build
+- `npm run serve:build` - Build and serve in one command
 
 ## Application Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── Navbar.tsx
-│   ├── TemplateCard.tsx
-│   ├── FormField.tsx
-│   └── PreviewCard.tsx
-├── pages/              # Page components
-│   ├── LandingPage.tsx
-│   ├── ClaimFlow.tsx
-│   ├── Templates.tsx
-│   ├── ProfileEditor.tsx
-│   ├── ProfileView.tsx
-│   ├── TagScan.tsx
-│   └── Admin.tsx
-├── services/           # Data layer and utilities
-│   └── dataLayer.ts
-├── types/              # TypeScript type definitions
-│   └── index.ts
-├── App.tsx             # Main app component with routing
-├── main.tsx           # App entry point
-└── index.css          # Tailwind CSS imports
+├── app/                    # Main application directory
+│   ├── components/         # Reusable UI components
+│   ├── data/              # Data and configuration
+│   ├── layouts/           # Layout components
+│   ├── pages/             # Page components
+│   ├── App.tsx            # Main app component
+│   └── routes.tsx         # Route configuration
+├── styles/                # Global styles
+│   ├── fonts.css
+│   ├── index.css
+│   └── tailwind.css
+└── main.tsx              # App entry point
 ```
 
-## Routes
+## Key Dependencies
 
-- `/` - Landing page with hero section and CTAs
-- `/claim/:code` - Claim code validation flow
-- `/templates` - Template selection page
-- `/editor/:templateType` - Profile editor for specific template
-- `/p/:publicId` - Public profile view
-- `/t/:tagId` - Tag scan simulation (redirects to profile)
-- `/admin` - Admin panel for managing profiles
+### UI Framework
+- **@mui/material**: Material-UI components
+- **@radix-ui/***: Headless UI primitives for accessibility
+- **lucide-react**: Modern icon library
+- **tailwindcss**: Utility-first CSS framework
 
-## Mock Claim Codes
+### Data & Forms
+- **react-hook-form**: Performant forms with easy validation
+- **react-router**: Client-side routing
+- **recharts**: Chart library for data visualization
 
-The app includes these pre-configured claim codes for testing:
-- `DEMO-1234` - General demo
-- `PET-0001` - Pet profile demo
-- `BIZ-0001` - Business profile demo
+### Utilities
+- **clsx & tailwind-merge**: Conditional class utilities
+- **date-fns**: Date manipulation library
+- **sonner**: Toast notifications
 
-## Demo Data
+## Development
 
-The app includes demo data that works out of the box:
-- Visit `/p/demo-public-id` to see a sample pet profile
-- Visit `/t/demo-tag-id` to simulate a tag scan
+### Getting Started
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Start development server with `npm run dev`
+4. Open `http://localhost:5173` in your browser
 
-## How It Works
+### Building
+- `npm run build` creates optimized production build in `dist/`
+- `npm run preview` serves the production build locally
+- `npm run serve:build` builds and serves in one command
 
-1. **Claim a Tag**: Use a claim code to activate your NFC tag
-2. **Choose Template**: Select from available profile templates
-3. **Fill Information**: Complete the form with your details
-4. **Get Links**: Receive public and tag URLs for sharing
-5. **Manage Profiles**: Use the admin panel to manage all profiles
+## Configuration
 
-## Data Storage
-
-All data is stored in the browser's localStorage:
-- Profiles are stored as JSON objects
-- Tag mappings link tag IDs to profile public IDs
-- Claim codes are validated against a predefined list
-- No backend or database required
-
-## Development Notes
-
-- The app is fully frontend-only and works offline after initial load
-- TypeScript is configured with strict mode for better type safety
-- Tailwind CSS is used for all styling with a modern SaaS design
-- Components are built with reusability in mind
-- The data layer provides a clean API for localStorage operations
+- **Vite**: Modern build tool with HMR
+- **TypeScript**: Strict mode enabled for type safety
+- **Tailwind CSS 4**: Latest version with improved performance
+- **PostCSS**: CSS processing pipeline
 
 ## Browser Support
 
