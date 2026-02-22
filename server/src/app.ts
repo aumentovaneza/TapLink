@@ -1,8 +1,9 @@
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import Fastify, { type FastifyInstance } from "fastify";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
-import type { AppConfig } from "./lib/config";
+import { loadConfig, type AppConfig } from "./lib/config";
 import { authRoutes } from "./routes/auth";
 import { adminRoutes } from "./routes/admin";
 import { analyticsRoutes } from "./routes/analytics";
@@ -17,6 +18,33 @@ function parseCorsOrigins(raw: string): string[] {
     .filter(Boolean);
 }
 
+function originMatchesPattern(origin: string, pattern: string): boolean {
+  if (pattern === "*") {
+    return true;
+  }
+
+  if (!pattern.startsWith("*.")) {
+    return origin === pattern;
+  }
+
+  // Supports wildcard hosts, e.g. "*.vercel.app".
+  try {
+    const originUrl = new URL(origin);
+    const suffix = pattern.slice(1); // ".vercel.app"
+    return originUrl.hostname.endsWith(suffix);
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedOrigin(origin: string, allowedOrigins: string[]): boolean {
+  if (allowedOrigins.length === 0) {
+    return true;
+  }
+
+  return allowedOrigins.some((pattern) => originMatchesPattern(origin, pattern));
+}
+
 export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   const app = Fastify({
     logger: true,
@@ -26,7 +54,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
 
   await app.register(cors, {
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      if (!origin || isAllowedOrigin(origin, allowedOrigins)) {
         callback(null, true);
         return;
       }
@@ -56,4 +84,36 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(adminRoutes, { prefix: "/admin" });
 
   return app;
+}
+
+let vercelAppPromise: Promise<FastifyInstance> | null = null;
+
+async function getVercelApp(): Promise<FastifyInstance> {
+  if (!vercelAppPromise) {
+    vercelAppPromise = (async () => {
+      const config = loadConfig();
+      const app = await buildApp(config);
+      await app.ready();
+      return app;
+    })();
+  }
+
+  return vercelAppPromise;
+}
+
+// Vercel Node.js runtime entrypoint.
+export default async function handler(request: IncomingMessage, response: ServerResponse): Promise<void> {
+  try {
+    const app = await getVercelApp();
+    app.server.emit("request", request, response);
+  } catch (error) {
+    response.statusCode = 500;
+    response.setHeader("content-type", "application/json; charset=utf-8");
+    response.end(
+      JSON.stringify({
+        error: "Failed to initialize API",
+        details: error instanceof Error ? error.message : "Unknown error",
+      })
+    );
+  }
 }

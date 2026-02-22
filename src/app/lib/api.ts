@@ -2,8 +2,23 @@ import { getAccessToken } from "./session";
 
 const DEFAULT_API_BASE_URL = "http://localhost:3000";
 
-const rawBaseUrl = (import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL).trim();
-export const API_BASE_URL = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+function normalizeApiBaseUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  // Allow relative API URLs (e.g. "/api") for reverse-proxy setups.
+  if (trimmed.startsWith("/")) {
+    return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return withProtocol.endsWith("/") ? withProtocol.slice(0, -1) : withProtocol;
+}
+
+const rawBaseUrl = import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL;
+export const API_BASE_URL = normalizeApiBaseUrl(rawBaseUrl);
 
 export class ApiError extends Error {
   status: number;
