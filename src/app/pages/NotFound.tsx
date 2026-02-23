@@ -11,7 +11,7 @@ export function NotFound() {
       <div className="text-center px-4">
         <div
           className="text-8xl mb-6 select-none"
-          style={{ fontWeight: 900, background: "linear-gradient(135deg, #4F46E5, #7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+          style={{ fontWeight: 900, background: "linear-gradient(135deg, #DC2626, #EA580C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
         >
           404
         </div>
@@ -23,7 +23,7 @@ export function NotFound() {
           <Link
             to="/"
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-white"
-            style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+            style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
           >
             <Zap size={15} />
             Go Home

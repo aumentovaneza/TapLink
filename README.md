@@ -1,4 +1,4 @@
-# TapLink
+# Taparoo
 
 A modern web application built with React, TypeScript, and Tailwind CSS. This project uses Vite for fast development and includes a comprehensive component library with Radix UI primitives.
 

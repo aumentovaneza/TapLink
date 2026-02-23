@@ -191,12 +191,12 @@ function resolveRangeLabel(range: string): string {
 
 function deviceColor(name: string): string {
   if (name === "iOS") {
-    return "#4F46E5";
+    return "#DC2626";
   }
   if (name === "Android") {
-    return "#7C3AED";
+    return "#EA580C";
   }
-  return "#06B6D4";
+  return "#FBBF24";
 }
 
 function CustomTooltip({
@@ -369,7 +369,7 @@ export function TagAnalytics() {
                   void loadAnalytics();
                 }}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
               >
                 <RefreshCw size={14} />
                 Retry
@@ -490,7 +490,7 @@ export function TagAnalytics() {
               <Link
                 to={data?.tag.profileId ? `/editor?profile=${encodeURIComponent(data.tag.profileId)}` : "/editor"}
                 className="flex h-10 items-center gap-2 rounded-xl px-4 text-sm text-white transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
               >
                 <Edit size={14} />
                 <span className="hidden sm:inline">Edit Profile</span>
@@ -503,13 +503,13 @@ export function TagAnalytics() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}>
-            <StatCard label="Total Taps" value={data.totals.totalTaps} sub="All time" icon={Zap} color="#4F46E5" isDark={isDark} />
+            <StatCard label="Total Taps" value={data.totals.totalTaps} sub="All time" icon={Zap} color="#DC2626" isDark={isDark} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-            <StatCard label="Unique Visitors" value={data.totals.uniqueVisitors} sub="Distinct scanners" icon={Users} color="#7C3AED" isDark={isDark} />
+            <StatCard label="Unique Visitors" value={data.totals.uniqueVisitors} sub="Distinct scanners" icon={Users} color="#EA580C" isDark={isDark} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-            <StatCard label="Avg Taps / Day" value={data.totals.avgDaily} sub={`Last ${rangeLabel}`} icon={TrendingUp} color="#06B6D4" isDark={isDark} />
+            <StatCard label="Avg Taps / Day" value={data.totals.avgDaily} sub={`Last ${rangeLabel}`} icon={TrendingUp} color="#FBBF24" isDark={isDark} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <StatCard label="Top Link" value={data.totals.topLink || "No data"} sub="Most clicked" icon={BarChart3} color="#F59E0B" isDark={isDark} />
@@ -531,8 +531,8 @@ export function TagAnalytics() {
             </div>
             <div className="flex items-center gap-4">
               {[
-                { label: "Total", color: "#4F46E5" },
-                { label: "Unique", color: "#06B6D4" },
+                { label: "Total", color: "#DC2626" },
+                { label: "Unique", color: "#FBBF24" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full" style={{ background: item.color }} />
@@ -549,20 +549,20 @@ export function TagAnalytics() {
               <AreaChart data={timelineData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                 <defs>
                   <linearGradient id="tapGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4F46E5" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#4F46E5" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#DC2626" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#DC2626" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="uniqueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#06B6D4" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#FBBF24" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                 <XAxis dataKey="date" tick={{ fill: textColor, fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fill: textColor, fontSize: 11 }} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip isDark={isDark} />} />
-                <Area type="monotone" dataKey="taps" name="Total Taps" stroke="#4F46E5" strokeWidth={2.5} fill="url(#tapGrad)" dot={false} activeDot={{ r: 5, fill: "#4F46E5" }} />
-                <Area type="monotone" dataKey="unique" name="Unique" stroke="#06B6D4" strokeWidth={2} strokeDasharray="4 2" fill="url(#uniqueGrad)" dot={false} activeDot={{ r: 4, fill: "#06B6D4" }} />
+                <Area type="monotone" dataKey="taps" name="Total Taps" stroke="#DC2626" strokeWidth={2.5} fill="url(#tapGrad)" dot={false} activeDot={{ r: 5, fill: "#DC2626" }} />
+                <Area type="monotone" dataKey="unique" name="Unique" stroke="#FBBF24" strokeWidth={2} strokeDasharray="4 2" fill="url(#uniqueGrad)" dot={false} activeDot={{ r: 4, fill: "#FBBF24" }} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -646,7 +646,7 @@ export function TagAnalytics() {
                   <XAxis dataKey="hour" tick={{ fill: textColor, fontSize: 10 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: textColor, fontSize: 10 }} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: isDark ? "rgba(79,70,229,0.08)" : "rgba(79,70,229,0.05)" }} content={<CustomTooltip isDark={isDark} />} />
-                  <Bar dataKey="taps" name="Taps" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="taps" name="Taps" fill="#DC2626" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -686,7 +686,7 @@ export function TagAnalytics() {
                       <div className={`h-2 overflow-hidden rounded-full ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
                         <motion.div
                           className="h-full rounded-full"
-                          style={{ background: "linear-gradient(90deg, #4F46E5, #7C3AED)" }}
+                          style={{ background: "linear-gradient(90deg, #DC2626, #EA580C)" }}
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.6, delay: index * 0.08 }}
@@ -734,7 +734,7 @@ export function TagAnalytics() {
                       <div className={`h-1.5 overflow-hidden rounded-full ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
                         <motion.div
                           className="h-full rounded-full"
-                          style={{ background: "linear-gradient(90deg, #4F46E5, #7C3AED)" }}
+                          style={{ background: "linear-gradient(90deg, #DC2626, #EA580C)" }}
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.max(3, location.pct)}%` }}
                           transition={{ duration: 0.6, delay: index * 0.08 }}
@@ -804,7 +804,7 @@ export function TagAnalytics() {
                     className="rounded-full px-2.5 py-1 text-xs"
                     style={{
                       background: scan.method === "NFC" ? "rgba(79,70,229,0.1)" : "rgba(16,185,129,0.1)",
-                      color: scan.method === "NFC" ? "#6366F1" : "#10B981",
+                      color: scan.method === "NFC" ? "#EA580C" : "#10B981",
                       fontWeight: 600,
                     }}
                   >

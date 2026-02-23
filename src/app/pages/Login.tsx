@@ -6,6 +6,7 @@ import {
   Mail, Lock, Eye, EyeOff, Zap, ArrowRight,
   Check, AlertCircle, User, ChevronRight, Shield
 } from "lucide-react";
+import { BrandLogo } from "../components/shared/BrandLogo";
 import { ApiError, apiRequest } from "../lib/api";
 import { dashboardPathForRole, getAccessToken, getSessionUser, SessionUser, setAccessToken, setSessionUser } from "../lib/session";
 
@@ -135,21 +136,18 @@ export function Login() {
           backgroundSize: "40px 40px",
         }} />
         {/* Glow */}
-        <div className="absolute top-0 left-0 w-80 h-80 rounded-full opacity-20 pointer-events-none" style={{ background: "radial-gradient(circle, #4F46E5, transparent)" }} />
+        <div className="absolute top-0 left-0 w-80 h-80 rounded-full opacity-20 pointer-events-none" style={{ background: "radial-gradient(circle, #DC2626, transparent)" }} />
 
         {/* Logo */}
-        <Link to="/" className="relative flex items-center gap-2.5 z-10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
-            <Zap size={18} className="text-white" />
-          </div>
-          <span className="text-white" style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.02em" }}>TapLink</span>
+        <Link to="/" className="relative z-10">
+          <BrandLogo variant="color" size={36} nameClassName="text-xl" />
         </Link>
 
         {/* Center content */}
         <div className="relative z-10">
           <h2 className="text-white mb-3" style={{ fontWeight: 800, fontSize: "2rem", lineHeight: 1.2, letterSpacing: "-0.03em" }}>
             Your identity,<br />
-            <span style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               one tap away.
             </span>
           </h2>
@@ -190,11 +188,8 @@ export function Login() {
       {/* ── Right panel — form ─────────────────────────────── */}
       <div className={`flex-1 flex flex-col items-center justify-center px-5 py-10 ${isDark ? "bg-slate-950" : "bg-white"}`}>
         {/* Mobile logo */}
-        <Link to="/" className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
-            <Zap size={16} className="text-white" />
-          </div>
-          <span className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700, fontSize: 18 }}>TapLink</span>
+        <Link to="/" className="lg:hidden mb-8">
+          <BrandLogo size={32} variant={isDark ? "mono" : "color"} nameClassName="text-lg" />
         </Link>
 
         <div className="w-full max-w-md">
@@ -235,7 +230,7 @@ export function Login() {
                     {(["signup", "signin"] as const).map((m) => (
                       <button key={m} onClick={() => { setMode(m); setErrors({}); setSubmitError(""); }}
                         className={`flex-1 py-2.5 rounded-lg text-sm transition-all ${mode === m ? "text-white shadow-sm" : isDark ? "text-slate-400" : "text-slate-500"}`}
-                        style={{ background: mode === m ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent", fontWeight: mode === m ? 600 : 400 }}>
+                        style={{ background: mode === m ? "linear-gradient(135deg, #DC2626, #EA580C)" : "transparent", fontWeight: mode === m ? 600 : 400 }}>
                         {m === "signup" ? "Sign Up" : "Sign In"}
                       </button>
                     ))}
@@ -354,7 +349,7 @@ export function Login() {
                     type="submit"
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-70 mt-2"
-                    style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 700, boxShadow: "0 6px 20px rgba(79,70,229,0.35)" }}
+                    style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 6px 20px rgba(79,70,229,0.35)" }}
                   >
                     {loading ? (
                       <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />

@@ -52,7 +52,7 @@ function NavContent({ isDark, onClose }: { isDark: boolean; onClose: () => void 
               }`}
               style={{
                 background: isActive
-                  ? "linear-gradient(135deg, #4F46E5, #7C3AED)"
+                  ? "linear-gradient(135deg, #DC2626, #EA580C)"
                   : "transparent",
                 fontWeight: isActive ? 600 : 400,
               }}

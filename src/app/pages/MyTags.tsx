@@ -48,7 +48,7 @@ const PHOTO_CAFE =
   "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
 const templateMeta: Record<string, { icon: typeof User; color: string; label: string }> = {
-  individual: { icon: User, color: "#4F46E5", label: "Individual" },
+  individual: { icon: User, color: "#DC2626", label: "Individual" },
   business: { icon: Building2, color: "#0EA5E9", label: "Business" },
   pet: { icon: PawPrint, color: "#F59E0B", label: "Pet" },
   cafe: { icon: Coffee, color: "#92400E", label: "Cafe & Restaurant" },
@@ -58,7 +58,7 @@ const templateMeta: Record<string, { icon: typeof User; color: string; label: st
 };
 
 const themeGradients: Record<string, string> = {
-  wave: "linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4)",
+  wave: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)",
   sunset: "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)",
   ocean: "linear-gradient(135deg, #0ea5e9, #2563eb)",
   forest: "linear-gradient(135deg, #065f46, #059669)",
@@ -544,8 +544,8 @@ export function MyTags() {
   const activeTags = tags.filter((tag) => tag.status === "active").length;
 
   const statCards = [
-    { label: "Total Tags", value: tags.length, icon: Tag, color: "#4F46E5", sub: `${activeTags} active` },
-    { label: "Total Taps", value: totalTaps.toLocaleString(), icon: Zap, color: "#7C3AED", sub: "All time" },
+    { label: "Total Tags", value: tags.length, icon: Tag, color: "#DC2626", sub: `${activeTags} active` },
+    { label: "Total Taps", value: totalTaps.toLocaleString(), icon: Zap, color: "#EA580C", sub: "All time" },
     { label: "Active Tags", value: activeTags, icon: Wifi, color: "#10B981", sub: "Currently live" },
     { label: "Avg Taps/Tag", value: tags.length ? Math.round(totalTaps / tags.length) : 0, icon: BarChart3, color: "#F59E0B", sub: "Per tag" },
   ];
@@ -557,7 +557,7 @@ export function MyTags() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="mb-1 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)" }}>
                   <Tag size={14} className="text-white" />
                 </div>
                 <h1 className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 800, letterSpacing: "-0.02em" }}>My Tags</h1>
@@ -589,7 +589,7 @@ export function MyTags() {
               <Link
                 to="/claim"
                 className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
               >
                 <Plus size={14} />
                 Claim New Tag
@@ -664,7 +664,7 @@ export function MyTags() {
                     filterStatus === status ? "text-white shadow-sm" : isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
                   }`}
                   style={{
-                    background: filterStatus === status ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent",
+                    background: filterStatus === status ? "linear-gradient(135deg, #DC2626, #EA580C)" : "transparent",
                     fontWeight: filterStatus === status ? 600 : 400,
                   }}
                 >
@@ -684,7 +684,7 @@ export function MyTags() {
                   className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
                     view === mode ? "text-white shadow-sm" : isDark ? "text-slate-400 hover:text-white" : "text-slate-500"
                   }`}
-                  style={{ background: view === mode ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent" }}
+                  style={{ background: view === mode ? "linear-gradient(135deg, #DC2626, #EA580C)" : "transparent" }}
                 >
                   <Icon size={15} />
                 </button>

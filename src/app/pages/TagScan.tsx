@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { BrandLogo } from "../components/shared/BrandLogo";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { apiRequest } from "../lib/api";
 
@@ -62,7 +63,7 @@ function getDeviceName(): string {
   return navigator.userAgent.slice(0, 80);
 }
 
-function NFCPulse({ color = "#4F46E5" }: { color?: string }) {
+function NFCPulse({ color = "#DC2626" }: { color?: string }) {
   return (
     <div className="relative flex h-40 w-40 items-center justify-center">
       {[1, 2, 3].map((index) => (
@@ -231,11 +232,8 @@ export function TagScan() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1e1b4b 40%, #0c1445 100%)" }}>
       <div className="flex items-center justify-between px-5 py-4 pt-8">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
-            <Zap size={15} className="text-white" />
-          </div>
-          <span className="text-white" style={{ fontSize: 17, fontWeight: 700 }}>TapLink</span>
+        <Link to="/" className="flex items-center">
+          <BrandLogo variant="color" size={32} nameClassName="text-[17px]" />
         </Link>
 
         {state !== "scanning" && state !== "detected" && (
@@ -259,7 +257,7 @@ export function TagScan() {
               <AnimatePresence mode="wait">
                 {state === "scanning" ? (
                   <motion.div key="pulse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <NFCPulse color="#4F46E5" />
+                    <NFCPulse color="#DC2626" />
                   </motion.div>
                 ) : (
                   <motion.div key="detected" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex h-40 w-40 items-center justify-center">
@@ -460,7 +458,7 @@ export function TagScan() {
                   Try Again
                 </button>
                 <Link to="/" className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white/60 transition-colors hover:text-white">
-                  Go to TapLink Homepage
+                  Go to Taparoo Homepage
                 </Link>
               </div>
             </motion.div>
@@ -469,10 +467,8 @@ export function TagScan() {
       </div>
 
       <div className="flex items-center justify-center gap-2 pb-8 pt-5">
-        <div className="flex h-4 w-4 items-center justify-center rounded" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
-          <Zap size={9} className="text-white" />
-        </div>
-        <p className="text-xs text-white/30">Powered by TapLink</p>
+        <BrandLogo variant="mono" size={16} showName={false} />
+        <p className="text-xs text-white/30">Powered by Taparoo</p>
       </div>
     </div>
   );

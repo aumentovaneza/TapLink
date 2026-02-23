@@ -57,7 +57,7 @@ export function EmptyState({ icon, title, description, actions = [], size = "md"
                 ? "bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700"
                 : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
             }`;
-            const style = isPrimary ? { background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 } : { fontWeight: 500 };
+            const style = isPrimary ? { background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 } : { fontWeight: 500 };
 
             if (action.href) return <Link key={action.label} to={action.href} className={cls} style={style}>{action.label}</Link>;
             return <button key={action.label} onClick={action.onClick} className={cls} style={style}>{action.label}</button>;

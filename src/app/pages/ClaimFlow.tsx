@@ -51,7 +51,7 @@ interface AuthResponse {
 }
 
 const templateTypes: Array<{ id: TemplateType; icon: typeof User; label: string; desc: string; color: string }> = [
-  { id: "individual", icon: User, label: "Individual", desc: "Personal bio & social links", color: "#4F46E5" },
+  { id: "individual", icon: User, label: "Individual", desc: "Personal bio & social links", color: "#DC2626" },
   { id: "business", icon: Building2, label: "Business", desc: "Company brand & services", color: "#0EA5E9" },
   { id: "pet", icon: PawPrint, label: "Pet", desc: "Pet ID with owner contact", color: "#F59E0B" },
   { id: "cafe", icon: Coffee, label: "Café & Restaurant", desc: "Menu, orders & reservations", color: "#92400E" },
@@ -169,7 +169,7 @@ function StepCode({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg"
-        style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}
+        style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)" }}
       >
         <Tag size={28} className="text-white" />
       </motion.div>
@@ -198,7 +198,7 @@ function StepCode({
         onClick={handleNext}
         disabled={checking}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90 disabled:opacity-70"
-        style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 700 }}
+        style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
       >
         {checking ? (
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -269,7 +269,7 @@ function StepAccount({
               mode === item ? "text-white shadow-sm" : isDark ? "text-slate-400" : "text-slate-500"
             }`}
             style={{
-              background: mode === item ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent",
+              background: mode === item ? "linear-gradient(135deg, #DC2626, #EA580C)" : "transparent",
               fontWeight: mode === item ? 600 : 400,
             }}
           >
@@ -324,7 +324,7 @@ function StepAccount({
           type="submit"
           disabled={loading}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-white transition-all hover:opacity-90 disabled:opacity-70"
-          style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 700 }}
+          style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
         >
           {loading ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -451,7 +451,7 @@ function StepTemplate({
         onClick={handleNext}
         disabled={!selected || submitting}
         className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90 disabled:opacity-40"
-        style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 700 }}
+        style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
       >
         {submitting ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <><span>Continue</span><ArrowRight size={15} /></>}
       </button>
@@ -469,7 +469,7 @@ function StepActivated({ templateId, profilePath, isDark }: { templateId: Templa
     id: index,
     x: Math.random() * 300 - 150,
     y: -(Math.random() * 200 + 100),
-    color: ["#4F46E5", "#7C3AED", "#06B6D4", "#F59E0B", "#10B981", "#EC4899"][Math.floor(Math.random() * 6)],
+    color: ["#DC2626", "#EA580C", "#FBBF24", "#F59E0B", "#10B981", "#EC4899"][Math.floor(Math.random() * 6)],
     size: Math.random() * 8 + 4,
     rotate: Math.random() * 360,
   }));
@@ -538,7 +538,7 @@ function StepActivated({ templateId, profilePath, isDark }: { templateId: Templa
           <button
             onClick={() => navigate(editorPath)}
             className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white"
-            style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 700 }}
+            style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
           >
             <Sparkles size={16} />
             Customize Profile
@@ -665,7 +665,7 @@ export function ClaimFlow() {
 
   return (
     <div className={`flex min-h-screen flex-col pt-16 ${isDark ? "bg-slate-950" : "bg-white"}`}>
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 60%, #06B6D4 100%)" }}>
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 60%, #FBBF24 100%)" }}>
         <div
           className="absolute inset-0 opacity-10"
           style={{

@@ -123,9 +123,9 @@ model LinkClickEvent {
 
 model AdminSetting {
   id                 Int      @id @default(1)
-  platformName       String   @default("TapLink")
-  supportEmail       String   @default("support@taplink.io")
-  platformUrl        String   @default("https://taplink.io")
+  platformName       String   @default("Taparoo")
+  supportEmail       String   @default("support@taparoo.io")
+  platformUrl        String   @default("https://taparoo.io")
   maxProfilesPerUser Int      @default(10)
   maintenanceMode    Boolean  @default(false)
   config             Json?

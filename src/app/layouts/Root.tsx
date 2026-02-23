@@ -8,10 +8,10 @@ import {
   Sun,
   Menu,
   X,
-  Wifi,
   LogIn,
   LayoutDashboard,
 } from "lucide-react";
+import { BrandLogo } from "../components/shared/BrandLogo";
 import { dashboardPathForRole, getSessionUser, SessionUser } from "../lib/session";
 
 const navItems: { label: string; path: string }[] = [];
@@ -45,30 +45,15 @@ export function Root() {
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center gap-2 group"
+              className="group"
               onClick={() => setMobileOpen(false)}
             >
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}
-              >
-                <Wifi size={16} className="text-white" />
-              </div>
-              <span
-                className={`text-base ${isDark ? "text-white" : "text-slate-900"}`}
-                style={{ fontWeight: 800, letterSpacing: "-0.02em" }}
-              >
-                Tap
-                <span
-                  style={{
-                    background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  Link
-                </span>
-              </span>
+              <BrandLogo
+                size={32}
+                variant={isDark ? "mono" : "color"}
+                className="transition-transform group-hover:scale-[1.02]"
+                nameClassName={`text-base ${isDark ? "drop-shadow-sm" : ""}`}
+              />
             </Link>
 
             {/* Desktop nav links */}
@@ -118,7 +103,7 @@ export function Root() {
                 to="/editor"
                 className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-px shadow-md"
                 style={{
-                  background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+                  background: "var(--brand-gradient)",
                   fontWeight: 600,
                 }}
               >
@@ -210,7 +195,7 @@ export function Root() {
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 mt-1 px-4 py-3 rounded-xl text-sm text-white"
                     style={{
-                      background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+                      background: "var(--brand-gradient)",
                       fontWeight: 600,
                     }}
                   >

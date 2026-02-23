@@ -79,9 +79,9 @@ interface AdminOverviewResponse {
 const RANGE_OPTIONS = ["7d", "14d", "30d", "90d"] as const;
 
 const DEVICE_COLORS: Record<string, string> = {
-  iOS: "#4F46E5",
-  Android: "#7C3AED",
-  Other: "#06B6D4",
+  iOS: "#DC2626",
+  Android: "#EA580C",
+  Other: "#FBBF24",
 };
 
 function formatShortDate(input: string): string {
@@ -167,8 +167,8 @@ export function AdminAnalytics() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const chartColor = isDark ? "#6366F1" : "#4F46E5";
-  const chartColor2 = isDark ? "#06B6D4" : "#0EA5E9";
+  const chartColor = isDark ? "#EA580C" : "#DC2626";
+  const chartColor2 = isDark ? "#FBBF24" : "#0EA5E9";
   const gridColor = isDark ? "#1E293B" : "#F1F5F9";
   const axisColor = isDark ? "#475569" : "#94A3B8";
   const card = `p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`;
@@ -245,7 +245,7 @@ export function AdminAnalytics() {
       change: tapChange.value,
       trend: tapChange.trend,
       icon: Activity,
-      grad: "linear-gradient(135deg,#4F46E5,#7C3AED)",
+      grad: "linear-gradient(135deg,#DC2626,#EA580C)",
       bg: "rgba(79,70,229,0.08)",
     },
     {
@@ -329,7 +329,7 @@ export function AdminAnalytics() {
                         : "text-slate-500 hover:text-slate-900"
                     }`}
                     style={{
-                      background: option === range ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : "transparent",
+                      background: option === range ? "linear-gradient(135deg,#DC2626,#EA580C)" : "transparent",
                       fontWeight: option === range ? 600 : 400,
                     }}
                   >
@@ -514,7 +514,7 @@ export function AdminAnalytics() {
                           <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
                             <motion.div
                               className="h-full rounded-full"
-                              style={{ background: "linear-gradient(90deg,#4F46E5,#7C3AED)", opacity: 1 - index * 0.1 }}
+                              style={{ background: "linear-gradient(90deg,#DC2626,#EA580C)", opacity: 1 - index * 0.1 }}
                               initial={{ width: 0 }}
                               animate={{ width: `${width}%` }}
                               transition={{ duration: 0.7, delay: 0.08 * index }}
@@ -568,7 +568,7 @@ export function AdminAnalytics() {
                     >
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-5 rounded-full" style={{ background: "linear-gradient(180deg,#4F46E5,#7C3AED)", opacity: 1 - index * 0.12 }} />
+                          <div className="w-1.5 h-5 rounded-full" style={{ background: "linear-gradient(180deg,#DC2626,#EA580C)", opacity: 1 - index * 0.12 }} />
                           <span className={isDark ? "text-slate-200" : "text-slate-800"} style={{ fontWeight: 500 }}>
                             {template.name}
                           </span>

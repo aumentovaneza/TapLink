@@ -380,7 +380,7 @@ export function ProfileView() {
 
   const themeDef = profile ? getTheme(profile.theme || "wave") : null;
   const ThemeGraphic = themeDef?.Graphic;
-  const cardGradient = scanGradient || gradientInfo?.gradient || themeDef?.gradient || "linear-gradient(135deg, #4F46E5, #7C3AED)";
+  const cardGradient = scanGradient || gradientInfo?.gradient || themeDef?.gradient || "linear-gradient(135deg, #DC2626, #EA580C)";
   const textColor = gradientInfo?.text || themeDef?.text || "#fff";
   const shareUrl = profile ? createShareUrl(profile.slug) : "";
   const petLost = profile?.templateType === "pet" && isPetMarkedLost(profile.fields);
@@ -539,7 +539,7 @@ export function ProfileView() {
                   void loadProfile();
                 }}
                 className="rounded-xl px-4 py-2.5 text-sm text-white"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
               >
                 Retry
               </button>
@@ -569,7 +569,7 @@ export function ProfileView() {
           <div className="flex items-center gap-2">
             <Zap size={13} className="text-indigo-500" />
             <span className={isDark ? "text-slate-300" : "text-slate-600"} style={{ fontWeight: 500 }}>
-              Public Profile — TapLink
+              Public Profile — Taparoo
             </span>
           </div>
           <Link to={`/editor?profile=${encodeURIComponent(profile.id)}`} className="flex items-center gap-1 text-xs text-indigo-500 transition-colors hover:text-indigo-400" style={{ fontWeight: 600 }}>
@@ -645,7 +645,7 @@ export function ProfileView() {
           <div className="flex items-center justify-center gap-2 px-6 py-3 text-xs" style={{ background: "rgba(0,0,0,0.15)", color: textColor }}>
             <TrendingUp size={12} style={{ opacity: 0.8 }} />
             <span style={{ fontWeight: 600 }}>
-              {tapCount !== null ? `${tapCount.toLocaleString()} profile taps` : "TapLink profile"}
+              {tapCount !== null ? `${tapCount.toLocaleString()} profile taps` : "Taparoo profile"}
             </span>
           </div>
         </motion.div>
@@ -772,7 +772,7 @@ export function ProfileView() {
           <button
             onClick={() => setShowShare(true)}
             className="flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white transition-all hover:opacity-90 active:scale-95"
-            style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", boxShadow: "0 4px 15px rgba(79,70,229,0.3)", fontWeight: 600 }}
+            style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", boxShadow: "0 4px 15px rgba(79,70,229,0.3)", fontWeight: 600 }}
           >
             <Share2 size={15} />
             Share Profile
@@ -906,13 +906,13 @@ export function ProfileView() {
             Powered by
             <span
               style={{
-                background: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+                background: "linear-gradient(135deg, #DC2626, #EA580C)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 fontWeight: 700,
               }}
             >
-              TapLink
+              Taparoo
             </span>
           </Link>
         </div>
@@ -955,7 +955,7 @@ export function ProfileView() {
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-white transition-all"
-                  style={{ background: copied ? "#10B981" : "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                  style={{ background: copied ? "#10B981" : "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
                 >
                   {copied ? <Check size={12} /> : <Copy size={12} />}
                   {copied ? "Copied!" : "Copy"}
@@ -1026,7 +1026,7 @@ export function ProfileView() {
                 <button
                   onClick={handleCopy}
                   className="flex-1 rounded-xl py-3 text-sm text-white"
-                  style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                  style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
                 >
                   Copy Link
                 </button>

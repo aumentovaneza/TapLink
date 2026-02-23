@@ -55,16 +55,16 @@ const templateTypes: TemplateType[] = [
     description: "Perfect for professionals, freelancers, and anyone who wants to share who they are — their links, skills, and story — in one tap.",
     category: "Personal",
     icon: User,
-    accentColor: "#4F46E5",
+    accentColor: "#DC2626",
     bgGradient: "linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)",
-    cardBg: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
+    cardBg: "linear-gradient(135deg, #DC2626 0%, #EA580C 100%)",
     photo: PHOTO_PERSON,
     photoShape: "circle",
     profileName: "Alex Rivera",
     profileSub: "Product Designer · San Francisco",
     links: [
       { icon: Linkedin, label: "LinkedIn", accent: "#0077B5" },
-      { icon: Globe, label: "Portfolio", accent: "#4F46E5" },
+      { icon: Globe, label: "Portfolio", accent: "#DC2626" },
       { icon: Mail, label: "Email Me", accent: "#EA4335" },
       { icon: Phone, label: "Book a Call", accent: "#10B981" },
     ],
@@ -446,8 +446,8 @@ export function TemplateGallery() {
               Choose Your Profile Type
             </h1>
             <p className={`text-lg max-w-2xl mx-auto mb-8 ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ lineHeight: 1.7 }}>
-              Templates define the <span style={{ fontWeight: 700, color: "#4F46E5" }}>structure and purpose</span> of your profile.
-              After picking a template, choose a <span style={{ fontWeight: 700, color: "#7C3AED" }}>visual theme</span> to make it uniquely yours.
+              Templates define the <span style={{ fontWeight: 700, color: "#DC2626" }}>structure and purpose</span> of your profile.
+              After picking a template, choose a <span style={{ fontWeight: 700, color: "#EA580C" }}>visual theme</span> to make it uniquely yours.
             </p>
 
             {/* Templates vs Themes explainer */}
@@ -459,7 +459,7 @@ export function TemplateGallery() {
                   activeView === "templates" ? "text-white shadow-md" : isDark ? "text-slate-300 hover:text-white" : "text-slate-500 hover:text-slate-800"
                 }`}
                 style={{
-                  background: activeView === "templates" ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : "transparent",
+                  background: activeView === "templates" ? "linear-gradient(135deg, #DC2626, #EA580C)" : "transparent",
                   fontWeight: activeView === "templates" ? 700 : 400,
                 }}
               >
@@ -545,7 +545,7 @@ export function TemplateGallery() {
                     }`}
                     style={{
                       fontWeight: activeCategory === cat ? 600 : 400,
-                      background: activeCategory === cat ? "linear-gradient(135deg, #4F46E5, #7C3AED)" : undefined,
+                      background: activeCategory === cat ? "linear-gradient(135deg, #DC2626, #EA580C)" : undefined,
                     }}
                   >
                     {cat}
@@ -775,7 +775,7 @@ export function TemplateGallery() {
                 </div>
                 <button onClick={() => setActiveView("templates")}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}>
+                  style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}>
                   <Layers size={14} />
                   Browse Templates
                 </button>

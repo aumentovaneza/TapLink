@@ -40,8 +40,8 @@ const profileTypes: ProfileType[] = [
     id: "individual",
     icon: User,
     label: "Individual",
-    color: "#4F46E5",
-    cardGradient: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #06B6D4 100%)",
+    color: "#DC2626",
+    cardGradient: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)",
     textColor: "#fff",
     photo: PHOTO_PERSON,
     photoShape: "circle",
@@ -53,7 +53,7 @@ const profileTypes: ProfileType[] = [
     id: "business",
     icon: Building2,
     label: "Business",
-    color: "#0EA5E9",
+    color: "#0369A1",
     cardGradient: "linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)",
     textColor: "#fff",
     photo: PHOTO_BIZ,
@@ -93,8 +93,8 @@ const profileTypes: ProfileType[] = [
     id: "creator",
     icon: Sparkles,
     label: "Creator",
-    color: "#EC4899",
-    cardGradient: "linear-gradient(135deg, #9333EA 0%, #EC4899 55%, #F97316 100%)",
+    color: "#EA580C",
+    cardGradient: "linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #FBBF24 100%)",
     textColor: "#fff",
     photo: PHOTO_CREATOR,
     photoShape: "circle",
@@ -106,8 +106,8 @@ const profileTypes: ProfileType[] = [
     id: "event",
     icon: Calendar,
     label: "Event",
-    color: "#8B5CF6",
-    cardGradient: "linear-gradient(135deg, #4C1D95 0%, #7C3AED 60%, #8B5CF6 100%)",
+    color: "#B45309",
+    cardGradient: "linear-gradient(135deg, #7C2D12 0%, #C2410C 55%, #F59E0B 100%)",
     textColor: "#fff",
     photo: PHOTO_MUSIC, // stage/event photo
     photoShape: "banner",
@@ -159,9 +159,9 @@ const templateDetails: Record<string, { description: string; features: string[];
 
 // ─── Themes preview (visual styling only) ─────────────────────────────────────
 const themeSwatches = [
-  { name: "Wave", gradient: "linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4)" },
-  { name: "Sunset", gradient: "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)" },
-  { name: "Dark Pro", gradient: "linear-gradient(135deg, #0f0c29, #302b63)" },
+  { name: "Wave", gradient: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)" },
+  { name: "Sunset", gradient: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)" },
+  { name: "Dark Pro", gradient: "linear-gradient(135deg, #1C0500, #3F1A0A)" },
   { name: "Ocean", gradient: "linear-gradient(135deg, #0ea5e9, #2563eb)" },
   { name: "Rose", gradient: "linear-gradient(135deg, #fda4af, #e11d48)" },
   { name: "Forest", gradient: "linear-gradient(135deg, #065f46, #059669)" },
@@ -196,7 +196,7 @@ const testimonials = [
     name: "Sarah Mitchell",
     title: "Marketing Director",
     photo: PHOTO_PERSON2,
-    text: "TapLink replaced my entire stack of business cards. The analytics alone are worth it — I can see exactly who's viewing my profile.",
+    text: "Taparoo replaced my entire stack of business cards. The analytics alone are worth it — I can see exactly who's viewing my profile.",
     stars: 5,
     type: "Individual",
   },
@@ -212,7 +212,7 @@ const testimonials = [
     name: "Buddy's Human",
     title: "Dog owner · Austin",
     photo: PHOTO_DOG,
-    text: "Buddy got out once and a neighbor scanned his tag. They had my number instantly. TapLink for pets is genuinely brilliant.",
+    text: "Buddy got out once and a neighbor scanned his tag. They had my number instantly. Taparoo for pets is genuinely brilliant.",
     stars: 5,
     type: "Pet",
   },
@@ -338,9 +338,9 @@ export function Landing() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-10" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 20%, #4F46E5 0%, transparent 70%)" }} />
+          <div className="absolute inset-0 opacity-10" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 20%, #DC2626 0%, transparent 70%)" }} />
           <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: "linear-gradient(#4F46E5 1px, transparent 1px), linear-gradient(90deg, #4F46E5 1px, transparent 1px)",
+            backgroundImage: "linear-gradient(#DC2626 1px, transparent 1px), linear-gradient(90deg, #DC2626 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }} />
         </div>
@@ -350,7 +350,7 @@ export function Landing() {
             {/* Left */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-sm"
-                style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.1), rgba(124,58,237,0.1))", border: "1px solid rgba(79,70,229,0.2)", color: "#6366F1" }}>
+                style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.1), rgba(234,88,12,0.12))", border: "1px solid rgba(220,38,38,0.2)", color: "#EA580C" }}>
                 <Zap size={13} />
                 <span style={{ fontWeight: 600 }}>The Future of Networking is Here</span>
               </div>
@@ -359,7 +359,7 @@ export function Landing() {
                 style={{ fontSize: "clamp(2.25rem, 5vw, 3.75rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.03em" }}>
                 One Tap.
                 <br />
-                <span style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   Endless
                 </span>{" "}
                 Connections.
@@ -396,7 +396,7 @@ export function Landing() {
                 <Link
                   to="/editor"
                   className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-white transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-lg"
-                  style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600, boxShadow: "0 8px 30px rgba(79,70,229,0.4)" }}
+                  style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600, boxShadow: "0 8px 30px rgba(220,38,38,0.35)" }}
                 >
                   <Zap size={16} />
                   Activate Your Tag
@@ -479,7 +479,7 @@ export function Landing() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
-                <div className="text-4xl mb-1" style={{ fontWeight: 800, background: "linear-gradient(135deg, #4F46E5, #7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-0.02em" }}>
+                <div className="text-4xl mb-1" style={{ fontWeight: 800, background: "linear-gradient(135deg, #DC2626, #EA580C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-0.02em" }}>
                   {stat.value}
                 </div>
                 <div className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</div>
@@ -494,13 +494,13 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.15)", color: "#6366F1" }}>
+              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
               <Clock size={13} />
               <span style={{ fontWeight: 600 }}>Up and running in minutes</span>
             </div>
             <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
               style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              How TapLink Works
+              How Taparoo Works
             </h2>
             <p className={`text-lg max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
               Three simple steps — pick a template type, apply a theme, and tap to share
@@ -512,18 +512,18 @@ export function Landing() {
               const Icon = s.icon;
               return (
                 <motion.div key={s.step} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                  className={`relative p-8 rounded-2xl group transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-900 border border-slate-800 hover:border-indigo-500/40" : "bg-white border border-slate-100 hover:border-indigo-200 shadow-sm hover:shadow-lg"}`}>
+                  className={`relative p-8 rounded-2xl group transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-900 border border-slate-800 hover:border-orange-500/40" : "bg-white border border-slate-100 hover:border-orange-200 shadow-sm hover:shadow-lg"}`}>
                   <div className="flex items-start justify-between mb-6">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)" }}>
                       <Icon size={22} className="text-white" />
                     </div>
-                    <span className="text-5xl opacity-10" style={{ fontWeight: 900, color: "#4F46E5" }}>{s.step}</span>
+                    <span className="text-5xl opacity-10" style={{ fontWeight: 900, color: "#DC2626" }}>{s.step}</span>
                   </div>
                   <h3 className={`mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{s.title}</h3>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>{s.desc}</p>
                   {i < steps.length - 1 && (
                     <div className="hidden md:block absolute top-1/2 -right-4 z-10">
-                      <ChevronRight size={20} className="text-indigo-300" />
+                      <ChevronRight size={20} className="text-orange-300" />
                     </div>
                   )}
                 </motion.div>
@@ -549,7 +549,7 @@ export function Landing() {
           {/* Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.15)", color: "#6366F1" }}>
+              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
               <Layers size={13} />
               <span style={{ fontWeight: 600 }}>6 profile types, zero limits</span>
             </div>
@@ -718,8 +718,12 @@ export function Landing() {
                   }`}
                   style={{ outline: isActive ? `2px solid ${type.color}50` : "none" }}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                    style={{ background: isActive ? type.cardGradient : `${type.color}18` }}>
-                    <Icon size={15} style={{ color: isActive ? "#fff" : type.color }} />
+                    style={{
+                      background: isActive ? type.cardGradient : `${type.color}2A`,
+                      border: isActive ? "1px solid transparent" : `1px solid ${type.color}4D`,
+                      boxShadow: isActive ? "0 8px 18px rgba(28,5,0,0.22)" : "none",
+                    }}>
+                    <Icon size={15} style={{ color: isActive ? "#fff" : type.color, opacity: isActive ? 1 : 0.98 }} />
                   </div>
                   <span className={`text-xs leading-tight text-center hidden sm:block truncate w-full px-1 ${
                     isActive ? (isDark ? "text-white" : "text-slate-900") : isDark ? "text-slate-500" : "text-slate-400"
@@ -735,7 +739,7 @@ export function Landing() {
           <div className="text-center mt-10">
             <Link to="/templates"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 text-white"
-              style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600, boxShadow: "0 8px 30px rgba(79,70,229,0.3)" }}>
+              style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600, boxShadow: "0 8px 30px rgba(220,38,38,0.28)" }}>
               Explore All Templates
               <ArrowRight size={15} />
             </Link>
@@ -785,7 +789,7 @@ export function Landing() {
             {/* Right — copy */}
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-                style={{ background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.2)", color: "#EC4899" }}>
+                style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#DC2626" }}>
                 <Paintbrush size={13} />
                 <span style={{ fontWeight: 600 }}>Themes are purely visual</span>
               </div>
@@ -794,7 +798,7 @@ export function Landing() {
                 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
                 Templates define structure.
                 <br />
-                <span style={{ background: "linear-gradient(135deg, #EC4899, #8B5CF6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   Themes define style.
                 </span>
               </h2>
@@ -804,12 +808,12 @@ export function Landing() {
                   {
                     icon: Layers, title: "Template = What your profile is for",
                     desc: "Defines the fields, sections, and link types appropriate for your purpose — Individual, Pet, Business, etc.",
-                    color: "#4F46E5",
+                    color: "#DC2626",
                   },
                   {
                     icon: Paintbrush, title: "Theme = How your profile looks",
                     desc: "Colors, gradients, and visual style applied on top of any template. Swap themes anytime without losing your data.",
-                    color: "#EC4899",
+                    color: "#EA580C",
                   },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -829,7 +833,7 @@ export function Landing() {
 
               <Link to="/templates"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg, #EC4899, #8B5CF6)", fontWeight: 600 }}>
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}>
                 Browse Templates & Themes
                 <ArrowRight size={14} />
               </Link>
@@ -852,9 +856,17 @@ export function Landing() {
               const Icon = f.icon;
               return (
                 <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                  className={`p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-950 border border-slate-800 hover:border-indigo-500/30" : "bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md"}`}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.15), rgba(124,58,237,0.15))" }}>
-                    <Icon size={20} className="text-indigo-500" />
+                  className={`p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-950 border border-slate-800 hover:border-orange-500/30" : "bg-white border border-slate-100 hover:border-orange-200 hover:shadow-md"}`}>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                    style={{
+                      background: isDark
+                        ? "linear-gradient(135deg, rgba(220,38,38,0.25), rgba(234,88,12,0.22))"
+                        : "linear-gradient(135deg, rgba(220,38,38,0.16), rgba(234,88,12,0.13))",
+                      border: isDark ? "1px solid rgba(251,191,36,0.28)" : "1px solid rgba(220,38,38,0.2)",
+                    }}
+                  >
+                    <Icon size={20} className={isDark ? "text-amber-300" : "text-orange-600"} />
                   </div>
                   <h3 className={`mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{f.title}</h3>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>{f.desc}</p>
@@ -870,7 +882,7 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(79,70,229,0.08)", border: "1px solid rgba(79,70,229,0.15)", color: "#6366F1" }}>
+              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
               <Award size={13} />
               <span style={{ fontWeight: 600 }}>Loved by professionals worldwide</span>
             </div>
@@ -889,13 +901,13 @@ export function Landing() {
                       <Star key={si} size={14} className="text-amber-400 fill-amber-400" />
                     ))}
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400" style={{ fontWeight: 600 }}>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" style={{ fontWeight: 600 }}>
                     {t.type}
                   </span>
                 </div>
                 <p className={`text-sm mb-5 ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ lineHeight: 1.7 }}>"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-100">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-100">
                     <ImageWithFallback src={t.photo} alt={t.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -922,7 +934,7 @@ export function Landing() {
               const Icon = item.icon;
               return (
                 <div key={item.label} className="flex items-center gap-2">
-                  <Icon size={18} className="text-indigo-400" />
+                  <Icon size={18} className={isDark ? "text-orange-300" : "text-orange-500"} />
                   <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ fontWeight: 500 }}>{item.label}</span>
                 </div>
               );
@@ -933,7 +945,7 @@ export function Landing() {
 
       {/* ── Final CTA ───────────────────────────────────────────────────────── */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #06B6D4 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)" }} />
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
@@ -945,11 +957,11 @@ export function Landing() {
               <br />First Impression Count?
             </h2>
             <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-              Join 50,000+ professionals, businesses, pet owners, and creators who've already upgraded their networking with TapLink.
+              Join 50,000+ professionals, businesses, pet owners, and creators who've already upgraded their networking with Taparoo.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link to="/editor"
-                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-indigo-600 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-lg"
+                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-orange-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-lg"
                 style={{ fontWeight: 700 }}>
                 <Zap size={16} />
                 Start for Free

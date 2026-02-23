@@ -3,7 +3,7 @@ import { Globe } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 
 const themes: Record<string, { gradient: string; text: string }> = {
-  wave:     { gradient: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #06B6D4 100%)", text: "#fff" },
+  wave:     { gradient: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)", text: "#fff" },
   sunset:   { gradient: "linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)",  text: "#fff" },
   ocean:    { gradient: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",                text: "#fff" },
   forest:   { gradient: "linear-gradient(135deg, #065f46 0%, #059669 100%)",                text: "#fff" },

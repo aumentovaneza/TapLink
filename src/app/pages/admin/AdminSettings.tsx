@@ -129,7 +129,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
         checked ? "" : "bg-slate-200 dark:bg-slate-700"
       }`}
-      style={{ background: checked ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : undefined }}
+      style={{ background: checked ? "linear-gradient(135deg,#DC2626,#EA580C)" : undefined }}
     >
       <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-0"}`} />
     </button>
@@ -142,7 +142,7 @@ function SaveButton({ saved, saving, onSave }: { saved: boolean; saving: boolean
       onClick={onSave}
       disabled={saving}
       className={`flex items-center gap-2 h-9 px-5 rounded-xl text-sm text-white transition-all disabled:opacity-60 ${saved ? "bg-emerald-500" : "hover:opacity-90"}`}
-      style={{ background: saved ? undefined : "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}
+      style={{ background: saved ? undefined : "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}
     >
       {saving ? <><RefreshCw size={14} className="animate-spin" />Saving...</> : saved ? <><CheckCircle2 size={14} />Saved</> : <><Save size={14} />Save Changes</>}
     </button>
@@ -224,9 +224,9 @@ export function AdminSettings() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
 
-  const [platformName, setPlatformName] = useState("TapLink");
-  const [supportEmail, setSupportEmail] = useState("support@taplink.io");
-  const [platformUrl, setPlatformUrl] = useState("https://taplink.io");
+  const [platformName, setPlatformName] = useState("Taparoo");
+  const [supportEmail, setSupportEmail] = useState("support@taparoo.io");
+  const [platformUrl, setPlatformUrl] = useState("https://taparoo.io");
   const [language, setLanguage] = useState("en");
   const [visibility, setVisibility] = useState("public");
   const [maxProfiles, setMaxProfiles] = useState("10");

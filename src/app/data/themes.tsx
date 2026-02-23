@@ -256,7 +256,7 @@ export const themes: ThemeDef[] = [
   // ── 1 ── WAVE ─────────────────────────────────────────────────────────────
   {
     id: "wave", name: "Wave", badge: "Popular",
-    gradient: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #06B6D4 100%)",
+    gradient: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)",
     text: "#fff",
     Graphic: () => (
       <G>
@@ -466,7 +466,7 @@ export const themes: ThemeDef[] = [
   // ── 12 ── BONES ───────────────────────────────────────────────────────────
   {
     id: "bones", name: "Bones", badge: "New",
-    gradient: "linear-gradient(150deg, #6366F1 0%, #4F46E5 50%, #3730A3 100%)",
+    gradient: "linear-gradient(150deg, #EA580C 0%, #DC2626 50%, #3730A3 100%)",
     text: "#fff",
     suggestedFor: ["pet"],
     Graphic: () => (
@@ -741,7 +741,7 @@ export const palettes: Palette[] = [
   { id: "original",     name: "Original",     previewColors: [],              gradient: "",  text: "" },
   { id: "midnight",     name: "Midnight",     previewColors: ["#020617","#1E293B"],  gradient: "linear-gradient(150deg,#020617 0%,#1E293B 100%)",       text: "#fff" },
   { id: "deep-ocean",   name: "Deep Ocean",   previewColors: ["#0C4A6E","#0EA5E9"],  gradient: "linear-gradient(150deg,#0C4A6E 0%,#0369A1 50%,#0EA5E9 100%)",       text: "#fff" },
-  { id: "aubergine",    name: "Aubergine",    previewColors: ["#3B0764","#7C3AED"],  gradient: "linear-gradient(150deg,#3B0764 0%,#6D28D9 50%,#7C3AED 100%)",       text: "#fff" },
+  { id: "aubergine",    name: "Aubergine",    previewColors: ["#3B0764","#EA580C"],  gradient: "linear-gradient(150deg,#3B0764 0%,#6D28D9 50%,#EA580C 100%)",       text: "#fff" },
   { id: "dark-forest",  name: "Dark Forest",  previewColors: ["#022C22","#065F46"],  gradient: "linear-gradient(150deg,#022C22 0%,#064E3B 50%,#065F46 100%)",       text: "#6EE7B7" },
   { id: "crimson",      name: "Crimson",      previewColors: ["#450A0A","#B91C1C"],  gradient: "linear-gradient(150deg,#450A0A 0%,#7F1D1D 50%,#B91C1C 100%)",       text: "#fff" },
   { id: "warm-ember",   name: "Warm Ember",   previewColors: ["#431407","#EA580C"],  gradient: "linear-gradient(150deg,#431407 0%,#9A3412 50%,#EA580C 100%)",       text: "#fff" },

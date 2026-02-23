@@ -282,7 +282,7 @@ export function AdminNfcTags() {
   };
 
   const stats = [
-    { label: "Total Tags", value: counts.all, grad: "linear-gradient(135deg,#4F46E5,#7C3AED)", bg: "rgba(79,70,229,0.08)", Icon: Tag },
+    { label: "Total Tags", value: counts.all, grad: "linear-gradient(135deg,#DC2626,#EA580C)", bg: "rgba(79,70,229,0.08)", Icon: Tag },
     { label: "Active", value: counts.active, grad: "linear-gradient(135deg,#10B981,#059669)", bg: "rgba(16,185,129,0.08)", Icon: CheckCircle2 },
     { label: "Unlinked", value: counts.unlinked, grad: "linear-gradient(135deg,#F59E0B,#D97706)", bg: "rgba(245,158,11,0.08)", Icon: AlertTriangle },
     { label: "Inactive", value: counts.inactive, grad: "linear-gradient(135deg,#64748B,#475569)", bg: "rgba(100,116,139,0.08)", Icon: XCircle },
@@ -504,7 +504,7 @@ export function AdminNfcTags() {
                 <Download size={14} />
                 <span className="hidden sm:inline">Export</span>
               </button>
-              <button onClick={() => setShowGenerate((value) => !value)} className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm text-white transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}>
+              <button onClick={() => setShowGenerate((value) => !value)} className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm text-white transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}>
                 <Plus size={14} />
                 <span className="hidden sm:inline">Generate Tags</span>
               </button>
@@ -574,7 +574,7 @@ export function AdminNfcTags() {
                       </label>
                       <input type="number" value={genCount} onChange={(event) => setGenCount(event.target.value)} min="1" max="500" className={`h-9 w-24 px-3 rounded-xl border text-xs outline-none ${isDark ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-indigo-200 text-slate-800"}`} />
                     </div>
-                    <button onClick={() => void generateTags()} disabled={submitting} className="h-9 px-5 rounded-xl text-sm text-white transition-all hover:opacity-90 disabled:opacity-60" style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}>
+                    <button onClick={() => void generateTags()} disabled={submitting} className="h-9 px-5 rounded-xl text-sm text-white transition-all hover:opacity-90 disabled:opacity-60" style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}>
                       {submitting ? "Generating..." : `Generate ${genCount} Tags`}
                     </button>
                   </div>

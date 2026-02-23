@@ -128,9 +128,9 @@ const statusColors: Record<DashboardProfileRow["status"], string> = {
 };
 
 const deviceColorMap: Record<string, string> = {
-  iOS: "#4F46E5",
-  Android: "#7C3AED",
-  Other: "#06B6D4",
+  iOS: "#DC2626",
+  Android: "#EA580C",
+  Other: "#FBBF24",
 };
 
 function toTitleCase(value: string): string {
@@ -370,7 +370,7 @@ export function AdminDashboard() {
     );
   };
 
-  const chartColor = isDark ? "#6366F1" : "#4F46E5";
+  const chartColor = isDark ? "#EA580C" : "#DC2626";
   const gridColor = isDark ? "#1E293B" : "#F1F5F9";
   const axisColor = isDark ? "#475569" : "#94A3B8";
 
@@ -406,7 +406,7 @@ export function AdminDashboard() {
       change: "Current",
       trend: "neutral",
       icon: Users,
-      gradient: "linear-gradient(135deg, #4F46E5, #7C3AED)",
+      gradient: "linear-gradient(135deg, #DC2626, #EA580C)",
       bg: "rgba(79,70,229,0.08)",
     },
     {
@@ -508,7 +508,7 @@ export function AdminDashboard() {
               </button>
               <button
                 className="flex items-center gap-2 h-9 px-3 rounded-lg text-sm text-white transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
               >
                 <Download size={14} />
                 <span className="hidden sm:inline">Export</span>

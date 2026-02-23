@@ -317,7 +317,7 @@ export function AdminProfiles() {
       label: "Total Profiles",
       value: profileRows.length,
       icon: Users,
-      grad: "linear-gradient(135deg,#4F46E5,#7C3AED)",
+      grad: "linear-gradient(135deg,#DC2626,#EA580C)",
       bg: "rgba(79,70,229,0.08)",
     },
     {
@@ -431,7 +431,7 @@ export function AdminProfiles() {
               <Link
                 to="/editor"
                 className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm text-white transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}
+                style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}
               >
                 <Plus size={14} />
                 <span className="hidden sm:inline">New Profile</span>
@@ -716,7 +716,7 @@ export function AdminProfiles() {
                         : "text-slate-500 hover:bg-slate-100"
                     }`}
                     style={{
-                      background: value === safePage ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : "transparent",
+                      background: value === safePage ? "linear-gradient(135deg,#DC2626,#EA580C)" : "transparent",
                       fontWeight: value === safePage ? 600 : 400,
                     }}
                   >

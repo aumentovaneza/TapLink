@@ -58,7 +58,7 @@ interface SectionDef {
 const templateSections: Record<string, SectionDef[]> = {
   individual: [
     {
-      id: "identity", title: "Identity", icon: User, color: "#4F46E5",
+      id: "identity", title: "Identity", icon: User, color: "#DC2626",
       fields: [
         { key: "name",      label: "Full Name",          placeholder: "Alex Rivera",              required: true },
         { key: "title",     label: "Job Title",           placeholder: "Product Designer",          required: true },
@@ -67,14 +67,14 @@ const templateSections: Record<string, SectionDef[]> = {
       ],
     },
     {
-      id: "bio", title: "About", icon: Info, color: "#7C3AED",
+      id: "bio", title: "About", icon: Info, color: "#EA580C",
       fields: [
         { key: "bio", label: "Bio", type: "textarea", placeholder: "A short intro about yourself — what you do, what you love, what you're working on.", maxLength: 200 },
         { key: "pronouns", label: "Pronouns (optional)", placeholder: "he/him · she/her · they/them" },
       ],
     },
     {
-      id: "contact", title: "Contact", icon: Phone, color: "#06B6D4", collapsible: true,
+      id: "contact", title: "Contact", icon: Phone, color: "#FBBF24", collapsible: true,
       fields: [
         { key: "email",   label: "Email Address", type: "email", placeholder: "alex@example.com",  icon: Mail },
         { key: "phone",   label: "Phone Number",  type: "tel",   placeholder: "+1 (555) 000-0000",  icon: Phone },
@@ -341,7 +341,7 @@ interface TemplateTypeDef {
 
 const templateTypes: TemplateTypeDef[] = [
   {
-    id: "individual", label: "Individual", icon: User, color: "#4F46E5",
+    id: "individual", label: "Individual", icon: User, color: "#DC2626",
     defaultPhoto: DEMO_PHOTO, photoShape: "circle",
     description: "Personal profile with bio and social links",
     defaultFields: { name: "Alex Rivera", title: "Product Designer", company: "Designly Studio", location: "San Francisco, CA", bio: "Creating digital experiences that people love." },
@@ -676,8 +676,8 @@ function EditorSection({ section, fields, onChange, isDark, errors }: {
         className={`w-full flex items-center justify-between px-5 py-4 text-left ${section.collapsible ? "cursor-pointer" : "cursor-default"} ${isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50/50"} transition-colors`}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${section.color || "#4F46E5"}15` }}>
-            <Icon size={15} style={{ color: section.color || "#4F46E5" }} />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${section.color || "#DC2626"}15` }}>
+            <Icon size={15} style={{ color: section.color || "#DC2626" }} />
           </div>
           <span className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{section.title}</span>
           {section.collapsible && (
@@ -821,7 +821,7 @@ function CafeMenuEditor({
               type="button"
               onClick={addSection}
               className="h-8 px-3 rounded-lg text-xs text-white transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 700 }}
+              style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 700 }}
             >
               <span className="inline-flex items-center gap-1.5">
                 <Plus size={12} />
@@ -1427,7 +1427,7 @@ export function ProfileEditor() {
               </button>
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm text-white transition-all hover:opacity-90 disabled:opacity-70"
-                style={{ background: saved ? "linear-gradient(135deg,#10B981,#059669)" : "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}>
+                style={{ background: saved ? "linear-gradient(135deg,#10B981,#059669)" : "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}>
                 {saving ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                   : saved ? <Check size={14} /> : <Save size={14} />}
                 {saving ? "Saving…" : saved ? "Saved!" : "Save & Publish"}
@@ -1457,7 +1457,7 @@ export function ProfileEditor() {
                 return (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${isActive ? "text-white shadow-sm" : isDark ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}
-                    style={{ background: isActive ? "linear-gradient(135deg,#4F46E5,#7C3AED)" : "transparent", fontWeight: isActive ? 600 : 400 }}>
+                    style={{ background: isActive ? "linear-gradient(135deg,#DC2626,#EA580C)" : "transparent", fontWeight: isActive ? 600 : 400 }}>
                     <Icon size={14} />
                     {tab.label}
                     {tab.id === "theme" && <span className="text-xs px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-600" style={{ fontWeight: 600, lineHeight: 1 }}>Visual</span>}
@@ -1566,7 +1566,7 @@ export function ProfileEditor() {
                       </div>
                       <button onClick={() => addLink()} disabled={profile.links.length >= 10}
                         className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-white hover:opacity-90 disabled:opacity-40 transition-all"
-                        style={{ background: "linear-gradient(135deg,#4F46E5,#7C3AED)", fontWeight: 600 }}>
+                        style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 600 }}>
                         <Plus size={14} />Add Custom
                       </button>
                     </div>
@@ -1753,9 +1753,9 @@ export function ProfileEditor() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                          <rect x="1" y="1" width="12" height="12" rx="2.5" stroke={isDark ? "#a78bfa" : "#4F46E5"} strokeWidth="1.4" />
-                          <path d="M3.5 10 Q7 4 10.5 10" stroke={isDark ? "#a78bfa" : "#4F46E5"} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-                          <circle cx="7" cy="5.5" r="1.2" fill={isDark ? "#a78bfa" : "#4F46E5"} />
+                          <rect x="1" y="1" width="12" height="12" rx="2.5" stroke={isDark ? "#a78bfa" : "#DC2626"} strokeWidth="1.4" />
+                          <path d="M3.5 10 Q7 4 10.5 10" stroke={isDark ? "#a78bfa" : "#DC2626"} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                          <circle cx="7" cy="5.5" r="1.2" fill={isDark ? "#a78bfa" : "#DC2626"} />
                         </svg>
                         <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
                           Graphic Overlay
@@ -1841,7 +1841,7 @@ export function ProfileEditor() {
                       <div className={`flex items-center justify-between mt-3 pt-3 border-t ${isDark ? "border-slate-800" : "border-slate-100"}`}>
                         <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                           Palette:{" "}
-                          <span style={{ fontWeight: 600, color: isDark ? "#a78bfa" : "#4F46E5" }}>
+                          <span style={{ fontWeight: 600, color: isDark ? "#a78bfa" : "#DC2626" }}>
                             {palettes.find((p) => p.id === profile.palette)?.name}
                           </span>
                         </p>
@@ -1876,7 +1876,7 @@ export function ProfileEditor() {
               <p className={`text-xs text-center mt-3 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Updates live as you type</p>
               <Link to={previewProfilePath}
                 className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm transition-all hover:opacity-90"
-                style={{ background: isDark ? "rgba(79,70,229,0.15)" : "rgba(79,70,229,0.08)", color: "#6366F1", border: "1px solid rgba(79,70,229,0.2)", fontWeight: 600 }}>
+                style={{ background: isDark ? "rgba(79,70,229,0.15)" : "rgba(79,70,229,0.08)", color: "#EA580C", border: "1px solid rgba(79,70,229,0.2)", fontWeight: 600 }}>
                 <Zap size={14} />View Profile
               </Link>
             </div>
