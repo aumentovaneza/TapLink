@@ -24,6 +24,7 @@ export function Root() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sessionUser, setSessionUserState] = useState<SessionUser | null>(() => getSessionUser());
+  const isGuestProfileRoute = !sessionUser && /^\/profile(?:\/|$)/.test(location.pathname);
 
   useEffect(() => {
     setSessionUserState(getSessionUser());
@@ -40,184 +41,211 @@ export function Root() {
 
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? "bg-slate-950 text-white" : "bg-white text-slate-900"}`}>
-      {/* ── Navigation bar ───────────────────────────────────────────────────── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md transition-colors ${
-          isDark
-            ? "bg-slate-950/90 border-slate-800"
-            : "bg-white/90 border-slate-200"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="group"
-              onClick={() => setMobileOpen(false)}
-            >
-              <BrandLogo
-                size={32}
-                variant={isDark ? "mono" : "color"}
-                className="transition-transform group-hover:scale-[1.02]"
-                nameClassName={`text-base ${isDark ? "drop-shadow-sm" : ""}`}
-              />
-            </Link>
-
-            {/* Desktop nav links */}
-            {navItems.length > 0 && (
-              <nav className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`px-4 py-2 rounded-xl text-sm transition-all duration-150 ${
-                        isActive
-                          ? isDark
-                            ? "bg-slate-800 text-white"
-                            : "bg-slate-100 text-slate-900"
-                          : isDark
-                          ? "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                      }`}
-                      style={{ fontWeight: isActive ? 600 : 400 }}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
-
-            {/* Right controls */}
-            <div className="flex items-center gap-2">
-              {/* Theme toggle */}
-              <button
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 ${
-                  isDark
-                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
-                }`}
-              >
-                {isDark ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
-
-              {/* CTA */}
-              <Link
-                to="/editor"
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-px shadow-md"
-                style={{
-                  background: "var(--brand-gradient)",
-                  fontWeight: 600,
-                }}
-              >
-                <Zap size={13} />
-                Activate Tag
-              </Link>
-
-              {sessionUser ? (
-                <>
-                  <Link
-                    to={dashboardPath}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
-                      isDark
-                        ? "text-slate-400 hover:text-white hover:bg-slate-800"
-                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                    }`}
-                    style={{ fontWeight: 500 }}
-                  >
-                    <LayoutDashboard size={14} />
-                    <span className="hidden sm:inline">Dashboard</span>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
-                      isDark
-                        ? "text-slate-400 hover:text-rose-300 hover:bg-rose-950/20"
-                        : "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
-                    }`}
-                    style={{ fontWeight: 500 }}
-                  >
-                    <LogOut size={14} />
-                    <span className="hidden sm:inline">Log out</span>
-                  </button>
-                </>
-              ) : (
+      {!isGuestProfileRoute && (
+        <>
+          {/* ── Navigation bar ───────────────────────────────────────────────────── */}
+          <header
+            className={`fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md transition-colors ${
+              isDark
+                ? "bg-slate-950/90 border-slate-800"
+                : "bg-white/90 border-slate-200"
+            }`}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                {/* Logo */}
                 <Link
-                  to={dashboardPath}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
-                    isDark
-                      ? "text-slate-400 hover:text-white hover:bg-slate-800"
-                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                  }`}
-                  style={{ fontWeight: 500 }}
+                  to="/"
+                  className="group"
+                  onClick={() => setMobileOpen(false)}
                 >
-                  <LogIn size={14} />
-                  <span className="hidden sm:inline">Log in</span>
+                  <BrandLogo
+                    size={32}
+                    variant={isDark ? "mono" : "color"}
+                    className="transition-transform group-hover:scale-[1.02]"
+                    nameClassName={`text-base ${isDark ? "drop-shadow-sm" : ""}`}
+                  />
                 </Link>
-              )}
 
-              {/* Mobile menu button */}
-              {navItems.length > 0 && (
-                <button
-                  onClick={() => setMobileOpen((o) => !o)}
-                  aria-label="Toggle menu"
-                  className={`md:hidden w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                    isDark
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {mobileOpen ? <X size={17} /> : <Menu size={17} />}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+                {/* Desktop nav links */}
+                {navItems.length > 0 && (
+                  <nav className="hidden md:flex items-center gap-1">
+                    {navItems.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={`px-4 py-2 rounded-xl text-sm transition-all duration-150 ${
+                            isActive
+                              ? isDark
+                                ? "bg-slate-800 text-white"
+                                : "bg-slate-100 text-slate-900"
+                              : isDark
+                              ? "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                          }`}
+                          style={{ fontWeight: isActive ? 600 : 400 }}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                )}
 
-        {/* Mobile dropdown */}
-        <AnimatePresence>
-          {mobileOpen && navItems.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`md:hidden border-t overflow-hidden ${
-                isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-100"
-              }`}
-            >
-              <div className="px-4 py-3 space-y-1">
-                {navItems.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all ${
-                        isActive
-                          ? isDark
-                            ? "bg-slate-800 text-white"
-                            : "bg-slate-100 text-slate-900"
-                          : isDark
-                          ? "text-slate-400 hover:bg-slate-800/60 hover:text-white"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                      style={{ fontWeight: isActive ? 600 : 400 }}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-                <div className={`border-t mt-2 pt-3 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                {/* Right controls */}
+                <div className="flex items-center gap-2">
+                  {/* Theme toggle */}
+                  <button
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 ${
+                      isDark
+                        ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+                    }`}
+                  >
+                    {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                  </button>
+
+                  {/* CTA */}
+                  <Link
+                    to="/editor"
+                    className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-px shadow-md"
+                    style={{
+                      background: "var(--brand-gradient)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Zap size={13} />
+                    Activate Tag
+                  </Link>
+
                   {sessionUser ? (
                     <>
+                      <Link
+                        to={dashboardPath}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                          isDark
+                            ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                        }`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        <LayoutDashboard size={14} />
+                        <span className="hidden sm:inline">Dashboard</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={logout}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                          isDark
+                            ? "text-slate-400 hover:text-rose-300 hover:bg-rose-950/20"
+                            : "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                        }`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        <LogOut size={14} />
+                        <span className="hidden sm:inline">Log out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to={dashboardPath}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                        isDark
+                          ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                      style={{ fontWeight: 500 }}
+                    >
+                      <LogIn size={14} />
+                      <span className="hidden sm:inline">Log in</span>
+                    </Link>
+                  )}
+
+                  {/* Mobile menu button */}
+                  {navItems.length > 0 && (
+                    <button
+                      onClick={() => setMobileOpen((o) => !o)}
+                      aria-label="Toggle menu"
+                      className={`md:hidden w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                        isDark
+                          ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {mobileOpen ? <X size={17} /> : <Menu size={17} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Mobile dropdown */}
+          <AnimatePresence>
+            {mobileOpen && navItems.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`md:hidden border-t overflow-hidden ${
+                  isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-100"
+                }`}
+              >
+                <div className="px-4 py-3 space-y-1">
+                  {navItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all ${
+                          isActive
+                            ? isDark
+                              ? "bg-slate-800 text-white"
+                              : "bg-slate-100 text-slate-900"
+                            : isDark
+                            ? "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                        style={{ fontWeight: isActive ? 600 : 400 }}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                  <div className={`border-t mt-2 pt-3 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                    {sessionUser ? (
+                      <>
+                        <Link
+                          to={dashboardPath}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
+                            isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
+                          }`}
+                          style={{ fontWeight: 500 }}
+                        >
+                          <LayoutDashboard size={14} />
+                          Dashboard
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={logout}
+                          className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
+                            isDark ? "text-rose-300 hover:bg-rose-950/20" : "text-rose-600 hover:bg-rose-50"
+                          }`}
+                          style={{ fontWeight: 500 }}
+                        >
+                          <LogOut size={14} />
+                          Log out
+                        </button>
+                      </>
+                    ) : (
                       <Link
                         to={dashboardPath}
                         onClick={() => setMobileOpen(false)}
@@ -226,52 +254,29 @@ export function Root() {
                         }`}
                         style={{ fontWeight: 500 }}
                       >
-                        <LayoutDashboard size={14} />
-                        Dashboard
+                        <LogIn size={14} />
+                        Log in
                       </Link>
-                      <button
-                        type="button"
-                        onClick={logout}
-                        className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
-                          isDark ? "text-rose-300 hover:bg-rose-950/20" : "text-rose-600 hover:bg-rose-50"
-                        }`}
-                        style={{ fontWeight: 500 }}
-                      >
-                        <LogOut size={14} />
-                        Log out
-                      </button>
-                    </>
-                  ) : (
+                    )}
                     <Link
-                      to={dashboardPath}
+                      to="/editor"
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
-                        isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                      style={{ fontWeight: 500 }}
+                      className="flex items-center gap-2 mt-1 px-4 py-3 rounded-xl text-sm text-white"
+                      style={{
+                        background: "var(--brand-gradient)",
+                        fontWeight: 600,
+                      }}
                     >
-                      <LogIn size={14} />
-                      Log in
+                      <Zap size={14} />
+                      Activate Your Tag
                     </Link>
-                  )}
-                  <Link
-                    to="/editor"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 mt-1 px-4 py-3 rounded-xl text-sm text-white"
-                    style={{
-                      background: "var(--brand-gradient)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <Zap size={14} />
-                    Activate Your Tag
-                  </Link>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       {/* ── Page content ─────────────────────────────────────────────────────── */}
       <main className="flex-1">

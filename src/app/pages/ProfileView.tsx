@@ -31,7 +31,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getGradient, getTheme } from "../data/themes";
 import { ApiError, apiRequest } from "../lib/api";
 import { parseCafeMenuSections } from "../lib/cafeMenu";
-import { getAccessToken } from "../lib/session";
+import { getAccessToken, getSessionUser } from "../lib/session";
 
 const FALLBACK_PHOTO =
   "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -359,11 +359,7 @@ export function ProfileView() {
 
           if (scanByTag.state === "unclaimed") {
             const encodedClaimCode = scanByTag.claimCode ? encodeURIComponent(scanByTag.claimCode) : null;
-            setClaimPathForUnavailable(encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim");
-            setError("This tag has not been claimed yet. Claim it to activate a profile.");
-            setProfile(null);
-            setTapCount(null);
-            setScanGradient(null);
+            navigate(encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim", { replace: true });
             return;
           }
 
@@ -469,6 +465,7 @@ export function ProfileView() {
   const ThemeGraphic = themeDef?.Graphic;
   const cardGradient = scanGradient || gradientInfo?.gradient || themeDef?.gradient || "linear-gradient(135deg, #DC2626, #EA580C)";
   const textColor = gradientInfo?.text || themeDef?.text || "#fff";
+  const profileTopPaddingClass = getSessionUser() ? "pt-16" : "pt-0";
   const shareUrl = profile ? createShareUrl(profile.slug) : "";
   const petLost = profile?.templateType === "pet" && isPetMarkedLost(profile.fields);
   const ownerName = profile?.fields.ownerName?.trim() || "";
@@ -596,7 +593,7 @@ export function ProfileView() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+      <div className={`min-h-screen ${profileTopPaddingClass} ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
         <div className="mx-auto max-w-md px-4 pb-24">
           <div className={`mt-4 mb-6 h-12 animate-pulse rounded-xl ${isDark ? "bg-slate-900" : "bg-slate-100"}`} />
           <div className={`mb-4 h-[420px] animate-pulse rounded-3xl ${isDark ? "bg-slate-900" : "bg-slate-100"}`} />
@@ -612,7 +609,7 @@ export function ProfileView() {
 
   if (error || !profile || !display) {
     return (
-      <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+      <div className={`min-h-screen ${profileTopPaddingClass} ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
         <div className="mx-auto max-w-md px-4 py-12">
           <div className={`rounded-2xl border p-6 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
             <div className="mb-3 flex items-center gap-2 text-rose-500">
@@ -662,7 +659,7 @@ export function ProfileView() {
   const sortedLinks = [...profile.links, ...contactLinks].sort((a, b) => a.position - b.position);
 
   return (
-    <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+    <div className={`min-h-screen ${profileTopPaddingClass} ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
       <div className="mx-auto max-w-md px-4 pb-24">
         <div
           className="mt-4 mb-6 flex items-center justify-between rounded-xl px-4 py-2.5 text-sm"

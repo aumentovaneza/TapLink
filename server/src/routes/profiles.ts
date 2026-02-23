@@ -327,7 +327,8 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     }
 
     const canViewUnpublished = viewer?.role === "ADMIN" || viewer?.sub === profile.ownerId;
-    if (!profile.isPublished && !canViewUnpublished) {
+    const isClaimedTagProfile = Boolean(profile.tag && profile.tag.status !== "UNCLAIMED");
+    if (!profile.isPublished && !canViewUnpublished && !isClaimedTagProfile) {
       return reply.status(404).send({ error: "Profile not found" });
     }
 

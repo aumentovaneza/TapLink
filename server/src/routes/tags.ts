@@ -409,7 +409,12 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
 
     const tag = await prisma.tag.findFirst({
       where: {
-        OR: [{ id: tagId }, { code: tagId }],
+        OR: [
+          { id: tagId },
+          { code: tagId },
+          { profile: { is: { id: tagId } } },
+          { profile: { is: { slug: tagId } } },
+        ],
       },
       include: {
         profile: true,
@@ -428,13 +433,6 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         id: tag.code,
         state: "unclaimed",
         claimCode: tag.claimCode,
-      });
-    }
-
-    if (!tag.profile.isPublished) {
-      return reply.send({
-        id: tag.code,
-        state: "unpublished",
       });
     }
 

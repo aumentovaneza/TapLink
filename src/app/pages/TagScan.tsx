@@ -210,12 +210,12 @@ export function TagScan() {
   const claimPath = encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim";
 
   useEffect(() => {
-    if (state !== "unclaimed" || !isAuthenticated || !tagData?.claimCode) {
+    if (state !== "unclaimed") {
       return;
     }
 
     navigate(claimPath, { replace: true });
-  }, [claimPath, isAuthenticated, navigate, state, tagData?.claimCode]);
+  }, [claimPath, navigate, state]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1e1b4b 40%, #0c1445 100%)" }}>
