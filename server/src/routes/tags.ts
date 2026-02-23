@@ -428,7 +428,8 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
 
-    if (tag.status === "UNCLAIMED" || !tag.profile) {
+    const isUnlinked = tag.status === "UNCLAIMED" || !tag.ownerId || Boolean(tag.claimCode) || !tag.profile;
+    if (isUnlinked) {
       return reply.send({
         id: tag.code,
         state: "unclaimed",
@@ -436,21 +437,30 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
 
-    const fields = (tag.profile.fields ?? {}) as Record<string, string>;
+    const profile = tag.profile;
+    if (!profile) {
+      return reply.send({
+        id: tag.code,
+        state: "unclaimed",
+        claimCode: tag.claimCode,
+      });
+    }
+
+    const fields = (profile.fields ?? {}) as Record<string, string>;
 
     if (tag.status === "INACTIVE") {
       return reply.send({
         id: tag.code,
         state: "inactive",
         profile: {
-          id: tag.profile.id,
-          slug: tag.profile.slug,
-          name: fields.name ?? tag.profile.slug,
-          title: buildProfileSubtitle(tag.profile.templateType, fields),
-          photo: tag.profile.photoUrl,
-          gradient: themeGradients[tag.profile.theme] ?? themeGradients.wave,
+          id: profile.id,
+          slug: profile.slug,
+          name: fields.name ?? profile.slug,
+          title: buildProfileSubtitle(profile.templateType, fields),
+          photo: profile.photoUrl,
+          gradient: themeGradients[profile.theme] ?? themeGradients.wave,
           tapCount: tag.taps,
-          templateType: tag.profile.templateType,
+          templateType: profile.templateType,
         },
       });
     }
@@ -459,14 +469,14 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       id: tag.code,
       state: "active",
       profile: {
-        id: tag.profile.id,
-        slug: tag.profile.slug,
-        name: fields.name ?? tag.profile.slug,
-        title: buildProfileSubtitle(tag.profile.templateType, fields),
-        photo: tag.profile.photoUrl,
-        gradient: themeGradients[tag.profile.theme] ?? themeGradients.wave,
+        id: profile.id,
+        slug: profile.slug,
+        name: fields.name ?? profile.slug,
+        title: buildProfileSubtitle(profile.templateType, fields),
+        photo: profile.photoUrl,
+        gradient: themeGradients[profile.theme] ?? themeGradients.wave,
         tapCount: tag.taps,
-        templateType: tag.profile.templateType,
+        templateType: profile.templateType,
       },
     });
   });
