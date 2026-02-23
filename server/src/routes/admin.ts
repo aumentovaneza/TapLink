@@ -21,6 +21,10 @@ const tagQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const tagParamsSchema = z.object({
+  tagId: z.string().trim().min(1),
+});
+
 const generateTagsSchema = z.object({
   count: z.coerce.number().int().min(1).max(500),
   prefix: z
@@ -319,6 +323,45 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
         claimCode: row.claimCode,
       })),
     });
+  });
+
+  fastify.delete<{ Params: { tagId: string } }>("/tags/:tagId", { preHandler: [requireRole("ADMIN")] }, async (request, reply) => {
+    const parsed = tagParamsSchema.safeParse(request.params);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid tag ID", details: parsed.error.flatten() });
+    }
+
+    const tag = await prisma.tag.findUnique({
+      where: { id: parsed.data.tagId },
+    });
+
+    if (!tag) {
+      return reply.status(404).send({ error: "Tag not found" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (tag.profileId && tag.ownerId) {
+        const profile = await tx.profile.findUnique({ where: { id: tag.profileId } });
+        if (profile && profile.ownerId === tag.ownerId) {
+          await tx.profile.delete({ where: { id: profile.id } });
+        }
+      }
+
+      await tx.tag.delete({
+        where: { id: tag.id },
+      });
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: request.user.sub,
+        action: "tag.deleted",
+        entityType: "tag",
+        entityId: tag.id,
+      },
+    });
+
+    return reply.status(204).send();
   });
 
   fastify.get("/settings", { preHandler: [requireRole("ADMIN")] }, async (_request, reply) => {

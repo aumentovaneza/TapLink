@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Building2,
   Check,
-  ChevronRight,
   Coffee,
   ExternalLink,
   PawPrint,
@@ -42,11 +41,8 @@ interface ScanTagResponse {
   profile?: ScanProfile;
 }
 
-const DEMO_PHOTO =
+const FALLBACK_PHOTO =
   "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
-
-const DEMO_ACTIVE_TAG_ID = "tag-001";
-const DEMO_UNCLAIMED_TAG_ID = "TL-003";
 
 const templateTypeIcons: Record<string, typeof User> = {
   individual: User,
@@ -95,7 +91,7 @@ function ProfilePreview({ profile }: { profile: ScanProfile }) {
       <div className="relative overflow-hidden rounded-3xl shadow-2xl" style={{ background: profile.gradient }}>
         <div className="flex flex-col items-center p-6">
           <div className="mb-4 h-24 w-24 overflow-hidden rounded-full border-4 border-white/30 shadow-xl">
-            <ImageWithFallback src={profile.photo || DEMO_PHOTO} alt={profile.name} className="h-full w-full object-cover" />
+            <ImageWithFallback src={profile.photo || FALLBACK_PHOTO} alt={profile.name} className="h-full w-full object-cover" />
           </div>
           <h2 className="mb-1 text-center text-white" style={{ fontWeight: 700 }}>{profile.name}</h2>
           <p className="mb-4 text-center text-sm text-white/75">{profile.title}</p>
@@ -209,11 +205,6 @@ export function TagScan() {
     setState("scanning");
   };
 
-  const runDemo = (mode: "active" | "unclaimed") => {
-    const target = mode === "active" ? DEMO_ACTIVE_TAG_ID : DEMO_UNCLAIMED_TAG_ID;
-    setScanTarget(target);
-  };
-
   const copyCurrentUrl = async () => {
     if (typeof window === "undefined" || !navigator.clipboard) {
       return;
@@ -283,43 +274,10 @@ export function TagScan() {
               </p>
 
               {!tagId && state === "scanning" && (
-                <div className="mt-10 w-full max-w-xs space-y-3">
-                  <p className="mb-4 text-center text-xs text-white/40" style={{ fontWeight: 500, letterSpacing: "0.06em" }}>
-                    — DEMO MODE —
+                <div className="mt-10 w-full max-w-xs rounded-2xl px-5 py-4 text-center" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.16)" }}>
+                  <p className="text-sm text-white/75" style={{ lineHeight: 1.6 }}>
+                    Open this page by scanning an NFC tag or QR code to load a specific profile.
                   </p>
-                  <button
-                    onClick={() => runDemo("active")}
-                    className="flex w-full items-center justify-between rounded-2xl px-5 py-3.5 text-white transition-all hover:opacity-90"
-                    style={{ background: "rgba(79,70,229,0.3)", border: "1px solid rgba(79,70,229,0.4)" }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/30">
-                        <User size={16} className="text-indigo-300" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-sm" style={{ fontWeight: 600 }}>Active Profile Tag</p>
-                        <p className="text-xs text-white/50">Live public profile</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={16} className="text-white/40" />
-                  </button>
-
-                  <button
-                    onClick={() => runDemo("unclaimed")}
-                    className="flex w-full items-center justify-between rounded-2xl px-5 py-3.5 text-white transition-all hover:opacity-90"
-                    style={{ background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.3)" }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20">
-                        <Wifi size={16} className="text-amber-400" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-sm" style={{ fontWeight: 600 }}>Unclaimed Tag</p>
-                        <p className="text-xs text-white/50">Needs activation</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={16} className="text-white/40" />
-                  </button>
                 </div>
               )}
             </motion.div>

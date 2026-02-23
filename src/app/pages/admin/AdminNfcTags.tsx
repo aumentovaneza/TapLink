@@ -85,6 +85,18 @@ interface TagRow {
   firmware: string;
 }
 
+type DeleteDialogState =
+  | {
+      mode: "single";
+      tagId: string;
+      tagCode: string;
+    }
+  | {
+      mode: "bulk";
+      tagIds: string[];
+    }
+  | null;
+
 const STATUS_META = {
   active: { label: "Active", cls: "bg-emerald-100 text-emerald-700", Icon: CheckCircle2 },
   unlinked: { label: "Unlinked", cls: "bg-amber-100 text-amber-700", Icon: AlertTriangle },
@@ -192,6 +204,7 @@ export function AdminNfcTags() {
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>(null);
 
   const card = `rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`;
 
@@ -344,18 +357,55 @@ export function AdminNfcTags() {
     }
   };
 
-  const deleteTag = async (tagId: string) => {
+  const openDeleteDialog = (tagId: string, tagCode: string) => {
+    setError("");
+    setDeleteDialog({
+      mode: "single",
+      tagId,
+      tagCode,
+    });
+  };
+
+  const openBulkDeleteDialog = () => {
+    if (selected.length === 0) {
+      return;
+    }
+    setError("");
+    setDeleteDialog({
+      mode: "bulk",
+      tagIds: [...selected],
+    });
+  };
+
+  const closeDeleteDialog = () => {
+    if (submitting) {
+      return;
+    }
+    setDeleteDialog(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteDialog) {
+      return;
+    }
+
+    const tagIds = deleteDialog.mode === "single" ? [deleteDialog.tagId] : deleteDialog.tagIds;
     setSubmitting(true);
     setError("");
 
     try {
-      await apiRequest(`/tags/${encodeURIComponent(tagId)}`, {
-        method: "DELETE",
-        auth: true,
-      });
+      await Promise.all(
+        tagIds.map((id) =>
+          apiRequest(`/admin/tags/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            auth: true,
+          })
+        )
+      );
+      setDeleteDialog(null);
       await loadTags(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to unassign tag.");
+      setError(err instanceof Error ? err.message : tagIds.length === 1 ? "Unable to delete tag." : "Unable to delete selected tags.");
     } finally {
       setSubmitting(false);
     }
@@ -381,30 +431,6 @@ export function AdminNfcTags() {
       await loadTags(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update selected tags.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const deleteSelected = async () => {
-    if (selected.length === 0) {
-      return;
-    }
-    setSubmitting(true);
-    setError("");
-
-    try {
-      await Promise.all(
-        selected.map((id) =>
-          apiRequest(`/tags/${encodeURIComponent(id)}`, {
-            method: "DELETE",
-            auth: true,
-          })
-        )
-      );
-      await loadTags(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to delete selected tags.");
     } finally {
       setSubmitting(false);
     }
@@ -620,7 +646,7 @@ export function AdminNfcTags() {
                       <button disabled={submitting} onClick={() => void applyBulkStatus("inactive")} className={isDark ? "text-slate-400 disabled:opacity-40" : "text-slate-500 disabled:opacity-40"} style={{ fontWeight: 600 }}>
                         Deactivate
                       </button>
-                      <button disabled={submitting} onClick={() => void deleteSelected()} className="text-rose-500 disabled:opacity-40" style={{ fontWeight: 600 }}>
+                      <button disabled={submitting} onClick={openBulkDeleteDialog} className="text-rose-500 disabled:opacity-40" style={{ fontWeight: 600 }}>
                         Delete
                       </button>
                     </motion.div>
@@ -754,7 +780,7 @@ export function AdminNfcTags() {
                                 <CheckCircle2 size={13} />
                               </button>
                             )}
-                            <button disabled={submitting} onClick={() => void deleteTag(tag.id)} title="Unassign / delete" className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${isDark ? "text-slate-400 hover:bg-rose-900/40 hover:text-rose-400" : "text-slate-400 hover:bg-rose-50 hover:text-rose-500"}`}>
+                            <button disabled={submitting} onClick={() => openDeleteDialog(tag.id, tag.code)} title="Delete tag" className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 ${isDark ? "text-slate-400 hover:bg-rose-900/40 hover:text-rose-400" : "text-slate-400 hover:bg-rose-50 hover:text-rose-500"}`}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -784,6 +810,69 @@ export function AdminNfcTags() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {deleteDialog && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              aria-label="Close delete confirmation"
+              onClick={closeDeleteDialog}
+              className="absolute inset-0 bg-black/50"
+              disabled={submitting}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.16 }}
+              className={`relative w-full max-w-md rounded-2xl border p-5 shadow-xl ${isDark ? "border-slate-800 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900"}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isDark ? "bg-rose-950/40 text-rose-300" : "bg-rose-50 text-rose-600"}`}>
+                  <Trash2 size={16} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm" style={{ fontWeight: 700 }}>
+                    {deleteDialog.mode === "single" ? "Delete tag?" : `Delete ${deleteDialog.tagIds.length} tags?`}
+                  </h3>
+                  <p className={`text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    {deleteDialog.mode === "single"
+                      ? `This permanently removes ${deleteDialog.tagCode} and its linked data. This action cannot be undone.`
+                      : "This permanently removes the selected tags and their linked data. This action cannot be undone."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeDeleteDialog}
+                  disabled={submitting}
+                  className={`h-9 rounded-lg px-4 text-xs transition-colors disabled:opacity-50 ${isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                  style={{ fontWeight: 600 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmDelete()}
+                  disabled={submitting}
+                  className="h-9 rounded-lg px-4 text-xs text-white transition-all hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#DC2626,#EA580C)", fontWeight: 700 }}
+                >
+                  {submitting ? "Deleting..." : deleteDialog.mode === "single" ? "Delete tag" : `Delete ${deleteDialog.tagIds.length} tags`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

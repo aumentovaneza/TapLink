@@ -23,12 +23,12 @@ import {
 import { clearAccessToken, getAccessToken } from "../lib/session";
 
 // ── Photos ────────────────────────────────────────────────────────────────────
-const DEMO_PHOTO  = "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const DEMO_DOG    = "https://images.unsplash.com/photo-1721656363841-93e97a879979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXRlJTIwZG9nJTIwZ29sZGVuJTIwcmV0cmlldmVyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxNzU1NzEwfDA&ixlib=rb-4.1.0&q=80&w=1080";
-const DEMO_CAFE   = "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const DEMO_BIZ    = "https://images.unsplash.com/photo-1629507208649-70919ca33793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMG1hbiUyMHByb2Zlc3Npb25hbCUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3NTMwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const DEMO_MUSIC  = "https://images.unsplash.com/photo-1771191057577-e216395637a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBlcmZvcm1lciUyMHN0YWdlfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
-const DEMO_EVENT  = "https://images.unsplash.com/photo-1761223976145-a85ffe11fc57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldmVudCUyMGNvbmZlcmVuY2UlMjBzdGFnZSUyMHNldHVwfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_PHOTO  = "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_DOG    = "https://images.unsplash.com/photo-1721656363841-93e97a879979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXRlJTIwZG9nJTIwZ29sZGVuJTIwcmV0cmlldmVyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxNzU1NzEwfDA&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_CAFE   = "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_BIZ    = "https://images.unsplash.com/photo-1629507208649-70919ca33793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMG1hbiUyMHByb2Zlc3Npb25hbCUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3NTMwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_MUSIC  = "https://images.unsplash.com/photo-1771191057577-e216395637a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBlcmZvcm1lciUyMHN0YWdlfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
+const DEFAULT_EVENT  = "https://images.unsplash.com/photo-1761223976145-a85ffe11fc57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldmVudCUyMGNvbmZlcmVuY2UlMjBzdGFnZSUyMHNldHVwfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
 
 // ── Field definitions per template ────────────────────────────────────────────
 type FieldType = "text" | "email" | "tel" | "url" | "textarea" | "select" | "toggle";
@@ -342,7 +342,7 @@ interface TemplateTypeDef {
 const templateTypes: TemplateTypeDef[] = [
   {
     id: "individual", label: "Individual", icon: User, color: "#DC2626",
-    defaultPhoto: DEMO_PHOTO, photoShape: "circle",
+    defaultPhoto: DEFAULT_PHOTO, photoShape: "circle",
     description: "Personal profile with bio and social links",
     defaultFields: { name: "Alex Rivera", title: "Product Designer", company: "Designly Studio", location: "San Francisco, CA", bio: "Creating digital experiences that people love." },
     defaultLinks: [
@@ -353,7 +353,7 @@ const templateTypes: TemplateTypeDef[] = [
   },
   {
     id: "business", label: "Business", icon: Building2, color: "#0EA5E9",
-    defaultPhoto: DEMO_BIZ, photoShape: "rounded",
+    defaultPhoto: DEFAULT_BIZ, photoShape: "rounded",
     description: "Company brand, services, and contact",
     defaultFields: { name: "Designly Studio", category: "Brand & UX Agency", tagline: "We craft brands that people love.", hours: "Mon–Fri: 9am – 6pm", city: "San Francisco, CA" },
     defaultLinks: [
@@ -364,7 +364,7 @@ const templateTypes: TemplateTypeDef[] = [
   },
   {
     id: "pet", label: "Pet", icon: PawPrint, color: "#F59E0B",
-    defaultPhoto: DEMO_DOG, photoShape: "circle",
+    defaultPhoto: DEFAULT_DOG, photoShape: "circle",
     description: "Pet ID tag with emergency owner contact",
     defaultFields: { name: "Buddy", species: "Dog", breed: "Golden Retriever", age: "3 years old", gender: "Male", isLost: "false", ownerName: "Jamie Rivera", ownerPhone: "" },
     defaultLinks: [
@@ -375,7 +375,7 @@ const templateTypes: TemplateTypeDef[] = [
   },
   {
     id: "cafe", label: "Café & Restaurant", icon: Coffee, color: "#92400E",
-    defaultPhoto: DEMO_CAFE, photoShape: "banner",
+    defaultPhoto: DEFAULT_CAFE, photoShape: "banner",
     description: "Menu, orders, reservations, and hours",
     defaultFields: {
       name: "The Bean House",
@@ -393,7 +393,7 @@ const templateTypes: TemplateTypeDef[] = [
   },
   {
     id: "event", label: "Event", icon: Calendar, color: "#8B5CF6",
-    defaultPhoto: DEMO_EVENT, photoShape: "banner",
+    defaultPhoto: DEFAULT_EVENT, photoShape: "banner",
     description: "Tickets, schedule, venue details",
     defaultFields: { name: "TechConf 2026", type: "Conference", date: "March 15, 2026 · 9:00 AM", venueName: "Moscone Center", address: "747 Howard St, San Francisco, CA" },
     defaultLinks: [
@@ -404,7 +404,7 @@ const templateTypes: TemplateTypeDef[] = [
   },
   {
     id: "creator", label: "Creator", icon: Sparkles, color: "#EC4899",
-    defaultPhoto: DEMO_MUSIC, photoShape: "circle",
+    defaultPhoto: DEFAULT_MUSIC, photoShape: "circle",
     description: "Portfolio, platforms, bookings & more — for all creative types",
     defaultFields: { name: "Maya Lee", creativeType: "Illustrator / Designer", genre: "Visual Art · Podcasting", location: "Los Angeles, CA", status: "Open for commissions" },
     defaultLinks: [

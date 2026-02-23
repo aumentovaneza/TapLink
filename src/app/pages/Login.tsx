@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import {
   Mail, Lock, Eye, EyeOff, Zap, ArrowRight,
-  Check, AlertCircle, User, ChevronRight, Shield
+  Check, AlertCircle, User, Shield
 } from "lucide-react";
 import { BrandLogo } from "../components/shared/BrandLogo";
 import { ApiError, apiRequest } from "../lib/api";
@@ -36,7 +36,6 @@ export function Login() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [forgotSent, setForgotSent] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [demoLoading, setDemoLoading] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -89,28 +88,6 @@ export function Login() {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const signInDemoUser = async () => {
-    setSubmitError("");
-    setDemoLoading(true);
-    try {
-      const payload = await apiRequest<AuthResponse>("/auth/signin", {
-        method: "POST",
-        body: { email: "alex@taplink.io", password: "Password123!" },
-      });
-      setAccessToken(payload.accessToken);
-      setSessionUser(payload.user);
-      navigate(dashboardPathForRole(payload.user.role), { replace: true });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setSubmitError(error.message);
-      } else {
-        setSubmitError("Unable to sign in with demo account.");
-      }
-    } finally {
-      setDemoLoading(false);
     }
   };
 
@@ -374,30 +351,6 @@ export function Login() {
             )}
           </AnimatePresence>
 
-          {/* Demo shortcut */}
-          <div className={`mt-8 p-4 rounded-2xl ${isDark ? "bg-slate-900 border border-slate-800" : "bg-slate-50 border border-slate-100"}`}>
-            <p className={`text-xs text-center mb-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              👆 Demo: click "Sign In" with any email to explore
-            </p>
-            <button
-              onClick={signInDemoUser}
-              disabled={demoLoading}
-              className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm transition-all ${
-                isDark ? "text-orange-300 bg-slate-800 hover:bg-slate-700" : "text-orange-700 bg-orange-50 hover:bg-orange-100"
-              }`}
-              style={{ fontWeight: 600 }}
-            >
-              {demoLoading ? (
-                <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-              ) : (
-                <>
-                  <Zap size={14} />
-                  Sign In as Demo User
-                  <ChevronRight size={14} />
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </div>
     </div>

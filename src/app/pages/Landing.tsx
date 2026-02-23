@@ -409,7 +409,7 @@ export function Landing() {
                   }`}
                   style={{ fontWeight: 600 }}
                 >
-                  View Demo Profile
+                  View Profile
                   <ChevronRight size={14} />
                 </Link>
               </div>

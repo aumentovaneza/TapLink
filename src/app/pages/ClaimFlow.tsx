@@ -189,9 +189,6 @@ function StepCode({
             {error || verifyError}
           </p>
         )}
-        <p className={`mt-3 text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-          Demo code: <span className="text-indigo-400" style={{ fontWeight: 600 }}>BRDG19</span>
-        </p>
       </div>
 
       <button
