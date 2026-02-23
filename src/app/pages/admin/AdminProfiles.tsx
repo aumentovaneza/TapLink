@@ -63,6 +63,7 @@ interface AdminProfilesResponse {
 interface ProfileRow {
   id: string;
   slug: string;
+  profileUrl: string;
   name: string;
   email: string;
   title: string;
@@ -232,6 +233,7 @@ export function AdminProfiles() {
       profiles.map((profile) => ({
         id: profile.id,
         slug: profile.slug,
+        profileUrl: `/profile/${encodeURIComponent(profile.slug)}`,
         name: profile.name,
         email: profile.email,
         title: profile.title || profile.ownerName,
@@ -628,6 +630,14 @@ export function AdminProfiles() {
                                 {profile.name}
                               </p>
                               <p className={`text-xs truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>{profile.email}</p>
+                              <Link
+                                to={profile.profileUrl}
+                                className={`block truncate text-[11px] underline decoration-dotted underline-offset-2 ${
+                                  isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
+                                }`}
+                              >
+                                {profile.profileUrl}
+                              </Link>
                             </div>
                           </div>
                         </td>

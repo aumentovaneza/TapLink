@@ -77,7 +77,7 @@ interface TagRow {
   code: string;
   uid: string;
   profileId: string | null;
-  profile: { name: string; photo: string } | null;
+  profile: { name: string; photo: string; url: string } | null;
   status: "active" | "inactive" | "unlinked";
   assigned: string;
   lastTap: string;
@@ -255,6 +255,7 @@ export function AdminNfcTags() {
             ? {
                 name: profileName,
                 photo: tag.profile?.photo || fallbackPhoto(tag.code),
+                url: `/profile/${encodeURIComponent(tag.profile?.slug || tag.profile?.id || tag.code)}`,
               }
             : null,
           status: mapStatus(tag.status),
@@ -730,9 +731,19 @@ export function AdminNfcTags() {
                               <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
                                 <ImageWithFallback src={tag.profile.photo} alt={tag.profile.name} className="w-full h-full object-cover" />
                               </div>
-                              <span className={`text-xs ${isDark ? "text-slate-200" : "text-slate-700"}`} style={{ fontWeight: 500 }}>
-                                {tag.profile.name}
-                              </span>
+                              <div className="min-w-0">
+                                <div className={`text-xs truncate ${isDark ? "text-slate-200" : "text-slate-700"}`} style={{ fontWeight: 500 }}>
+                                  {tag.profile.name}
+                                </div>
+                                <Link
+                                  to={tag.profile.url}
+                                  className={`block truncate text-[11px] underline decoration-dotted underline-offset-2 ${
+                                    isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
+                                  }`}
+                                >
+                                  {tag.profile.url}
+                                </Link>
+                              </div>
                             </div>
                           ) : (
                             <span className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>— unassigned —</span>

@@ -6,6 +6,7 @@ import {
   BarChart3,
   Building2,
   Calendar,
+  Copy,
   Clock,
   Coffee,
   Edit,
@@ -165,11 +166,25 @@ function TagCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const meta = templateMeta[tag.templateType] || templateMeta.individual;
   const Icon = meta.icon;
   const status = statusConfig[tag.status];
   const gradient = themeGradients[tag.theme] || themeGradients.wave;
+  const shareUrl =
+    typeof window !== "undefined" ? new URL(tag.profileUrl, window.location.origin).toString() : tag.profileUrl;
+
+  const handleCopyLink = async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+    setMenuOpen(false);
+  };
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -225,6 +240,19 @@ function TagCard({
               {meta.label}
             </span>
             <span className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>{tag.tagCode}</span>
+          </div>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <Globe size={11} className={isDark ? "text-slate-500" : "text-slate-400"} />
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`min-w-0 truncate text-xs underline decoration-dotted underline-offset-2 ${
+                isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              {shareUrl}
+            </a>
           </div>
         </div>
 
@@ -287,10 +315,11 @@ function TagCard({
                   </button>
 
                   <button
+                    onClick={handleCopyLink}
                     className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${isDark ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-50"}`}
                   >
-                    <Share2 size={14} className="opacity-60" />
-                    Share Link
+                    <Copy size={14} className="opacity-60" />
+                    {copied ? "Copied Link" : "Copy Link"}
                   </button>
 
                   {tag.status !== "unclaimed" && (
@@ -405,6 +434,19 @@ function TagCard({
               <span className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>{meta.label}</span>
               <span className={`text-xs ${isDark ? "text-slate-600" : "text-slate-300"}`}>·</span>
               <span className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}>{tag.tagCode}</span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Globe size={11} className={isDark ? "text-slate-500" : "text-slate-400"} />
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`truncate text-xs underline decoration-dotted underline-offset-2 ${
+                  isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {shareUrl}
+              </a>
             </div>
           </div>
         </div>
