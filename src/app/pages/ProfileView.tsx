@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   Check,
   Copy,
-  Edit,
   ExternalLink,
   Github,
   Globe,
@@ -24,7 +23,6 @@ import {
   UtensilsCrossed,
   X,
   Youtube,
-  Zap,
 } from "lucide-react";
 
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -324,7 +322,6 @@ export function ProfileView() {
   const [claimPathForUnavailable, setClaimPathForUnavailable] = useState<string | null>(null);
   const [showMyTagsForUnavailable, setShowMyTagsForUnavailable] = useState(false);
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
-  const [scanGradient, setScanGradient] = useState<string | null>(null);
   const [tapCount, setTapCount] = useState<number | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -370,7 +367,6 @@ export function ProfileView() {
             setShowMyTagsForUnavailable(Boolean(getAccessToken()));
             setProfile(null);
             setTapCount(null);
-            setScanGradient(null);
             return;
           }
 
@@ -396,20 +392,16 @@ export function ProfileView() {
         try {
           const scan = await apiRequest<ScanResponse>(`/scan/${encodeURIComponent(response.profile.tagCode)}`);
           setTapCount(scan.profile?.tapCount ?? null);
-          setScanGradient(scan.profile?.gradient ?? null);
         } catch {
           setTapCount(null);
-          setScanGradient(null);
         }
       } else {
         setTapCount(null);
-        setScanGradient(null);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to load this profile.");
       setProfile(null);
       setTapCount(null);
-      setScanGradient(null);
     } finally {
       setLoading(false);
     }
@@ -465,7 +457,7 @@ export function ProfileView() {
 
   const themeDef = profile ? getTheme(profile.theme || "wave") : null;
   const ThemeGraphic = themeDef?.Graphic;
-  const cardGradient = scanGradient || gradientInfo?.gradient || themeDef?.gradient || "linear-gradient(135deg, #DC2626, #EA580C)";
+  const cardGradient = gradientInfo?.gradient || themeDef?.gradient || "linear-gradient(135deg, #DC2626, #EA580C)";
   const textColor = gradientInfo?.text || themeDef?.text || "#fff";
   const profileTopPaddingClass = getSessionUser() ? "pt-16" : "pt-0";
   const shareUrl = profile ? createShareUrl(profile.slug) : "";
@@ -664,27 +656,6 @@ export function ProfileView() {
   return (
     <div className={`min-h-screen ${profileTopPaddingClass} ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
       <div className="mx-auto max-w-md px-4 pb-24">
-        <div
-          className="mt-4 mb-6 flex items-center justify-between rounded-xl px-4 py-2.5 text-sm"
-          style={{
-            background: isDark ? "rgba(79,70,229,0.1)" : "rgba(79,70,229,0.06)",
-            border: "1px solid rgba(79,70,229,0.2)",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <Zap size={13} className="text-indigo-500" />
-            <span className={isDark ? "text-slate-300" : "text-slate-600"} style={{ fontWeight: 500 }}>
-              Public Profile — Taparoo
-            </span>
-          </div>
-          {profile.canEdit && (
-            <Link to={`/editor?profile=${encodeURIComponent(profile.id)}`} className="flex items-center gap-1 text-xs text-indigo-500 transition-colors hover:text-indigo-400" style={{ fontWeight: 600 }}>
-              <Edit size={11} />
-              Edit
-            </Link>
-          )}
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
