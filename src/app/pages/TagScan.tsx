@@ -22,7 +22,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { apiRequest } from "../lib/api";
 import { getAccessToken } from "../lib/session";
 
-type TagState = "scanning" | "detected" | "unclaimed" | "active" | "inactive" | "error";
+type TagState = "scanning" | "detected" | "unclaimed" | "unpublished" | "active" | "inactive" | "error";
 
 interface ScanProfile {
   id: string;
@@ -37,7 +37,7 @@ interface ScanProfile {
 
 interface ScanTagResponse {
   id: string;
-  state: "unclaimed" | "active" | "inactive" | "error";
+  state: "unclaimed" | "unpublished" | "active" | "inactive" | "error";
   claimCode?: string | null;
   profile?: ScanProfile;
 }
@@ -208,6 +208,14 @@ export function TagScan() {
   const isAuthenticated = Boolean(getAccessToken());
   const encodedClaimCode = tagData?.claimCode ? encodeURIComponent(tagData.claimCode) : null;
   const claimPath = encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim";
+
+  useEffect(() => {
+    if (state !== "unclaimed" || !isAuthenticated || !tagData?.claimCode) {
+      return;
+    }
+
+    navigate(claimPath, { replace: true });
+  }, [claimPath, isAuthenticated, navigate, state, tagData?.claimCode]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1e1b4b 40%, #0c1445 100%)" }}>
@@ -393,6 +401,51 @@ export function TagScan() {
                       Create Account to Claim
                     </Link>
                   </>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {state === "unpublished" && (
+            <motion.div
+              key="unpublished"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="w-full max-w-sm flex flex-col items-center text-center"
+            >
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl shadow-2xl" style={{ background: "linear-gradient(135deg, #64748B, #475569)" }}>
+                <AlertCircle size={40} className="text-white" />
+              </div>
+
+              <div className="mb-4 flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: "rgba(148,163,184,0.15)", border: "1px solid rgba(148,163,184,0.3)" }}>
+                <div className="h-2 w-2 rounded-full bg-slate-300" />
+                <span className="text-xs text-slate-200" style={{ fontWeight: 600 }}>Unpublished Profile</span>
+              </div>
+
+              <h1 className="mb-3 text-white" style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Profile Not Live Yet</h1>
+              <p className="mb-8 max-w-xs text-sm text-white/60" style={{ lineHeight: 1.65 }}>
+                This tag has been claimed, but the profile owner has not published the profile yet.
+              </p>
+
+              <div className="w-full space-y-3">
+                {isAuthenticated ? (
+                  <Link
+                    to="/my-tags"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #0EA5E9, #2563EB)", fontWeight: 700 }}
+                  >
+                    <Smartphone size={16} />
+                    Open My Tags
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90"
+                    style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 600 }}
+                  >
+                    Sign In
+                  </Link>
                 )}
               </div>
             </motion.div>

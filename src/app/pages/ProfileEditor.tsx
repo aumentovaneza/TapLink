@@ -464,6 +464,7 @@ interface ApiProfile {
   theme: string;
   palette: string;
   showGraphic: boolean;
+  isPublished: boolean;
   photoUrl: string | null;
   fields: Record<string, string>;
   links: ApiProfileLink[];
@@ -1188,7 +1189,7 @@ export function ProfileEditor() {
 
     try {
       if (requestedProfileId) {
-        const byId = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(requestedProfileId)}`);
+        const byId = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(requestedProfileId)}`, { auth: true });
         setProfile(mapApiProfileToEditor(byId.profile));
         setProfileId(byId.profile.id);
         setProfileSlug(byId.profile.slug);
@@ -1404,6 +1405,7 @@ export function ProfileEditor() {
         theme: profile.theme,
         palette: profile.palette,
         showGraphic: profile.showGraphic,
+        isPublished: true,
         photoUrl: photoUrlForSave,
         fields: profile.fields,
       };

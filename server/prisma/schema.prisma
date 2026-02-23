@@ -33,6 +33,7 @@ model User {
   updatedAt    DateTime   @updatedAt
   profiles     Profile[]
   ownedTags    Tag[]      @relation("TagOwner")
+  uploadedFiles UploadedFile[]
   apiKeys      ApiKey[]
   auditLogs    AuditLog[] @relation("AuditActor")
 }
@@ -66,17 +67,37 @@ model Profile {
   theme           String
   palette         String           @default("original")
   showGraphic     Boolean          @default(true)
+  isPublished     Boolean          @default(true)
   photoUrl        String?
   fields          Json
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   links           ProfileLink[]
   tag             Tag?
+  uploadedFiles   UploadedFile[]
   tapEvents       TapEvent[]
   linkClickEvents LinkClickEvent[]
 
   @@index([ownerId])
   @@index([templateType])
+}
+
+model UploadedFile {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  profileId String?
+  profile   Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  kind      String   @default("photo")
+  bucket    String
+  path      String   @unique
+  publicUrl String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  @@index([ownerId, createdAt])
+  @@index([profileId, createdAt])
 }
 
 model ProfileLink {

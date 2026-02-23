@@ -151,6 +151,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
         templateType: profile.templateType,
         theme: profile.theme,
         photo: profile.photoUrl,
+        isPublished: profile.isPublished,
         status: profile.tag ? clientTagStatus(profile.tag.status) : "unclaimed",
         tagCode: profile.tag?.code ?? null,
         taps: profile.tag?.taps ?? 0,
@@ -237,6 +238,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
               templateType: tag.profile.templateType,
               theme: tag.profile.theme,
               photo: tag.profile.photoUrl,
+              isPublished: tag.profile.isPublished,
             }
           : null,
         taps: tag.taps,
@@ -343,6 +345,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
                 theme: "wave",
                 palette: "original",
                 showGraphic: true,
+                isPublished: false,
                 photoUrl: null,
                 fields: {
                   ...individualDefaults.fields,

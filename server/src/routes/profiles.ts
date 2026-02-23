@@ -22,6 +22,7 @@ const createProfileSchema = z.object({
   theme: z.string().trim().min(1).max(80).optional(),
   palette: z.string().trim().min(1).max(80).optional(),
   showGraphic: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
   photoUrl: z.string().trim().url().nullable().optional(),
   fields: z.record(z.string()).optional(),
   links: z.array(linkInputSchema).max(10).optional(),
@@ -34,6 +35,7 @@ const updateProfileSchema = z.object({
   theme: z.string().trim().min(1).max(80).optional(),
   palette: z.string().trim().min(1).max(80).optional(),
   showGraphic: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
   photoUrl: z.string().trim().url().nullable().optional(),
   fields: z.record(z.string()).optional(),
 });
@@ -92,6 +94,7 @@ function serializeProfile(profile: any) {
     theme: profile.theme,
     palette: profile.palette,
     showGraphic: profile.showGraphic,
+    isPublished: profile.isPublished,
     photoUrl: profile.photoUrl,
     fields,
     links: (profile.links ?? []).map((link: any) => ({
@@ -261,12 +264,26 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       });
     }
 
-    await prisma.profile.update({
-      where: { id: access.profile.id },
-      data: {
-        photoUrl: publicUrl,
-      },
-    });
+    await prisma.$transaction([
+      prisma.profile.update({
+        where: { id: access.profile.id },
+        data: {
+          photoUrl: publicUrl,
+        },
+      }),
+      prisma.uploadedFile.create({
+        data: {
+          ownerId: access.profile.ownerId,
+          profileId: access.profile.id,
+          kind: "photo",
+          bucket,
+          path,
+          publicUrl,
+          mimeType: photoFile.mimetype,
+          sizeBytes: photoBuffer.length,
+        },
+      }),
+    ]);
 
     return reply.status(201).send({
       profileId: access.profile.id,
@@ -279,6 +296,19 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
 
   fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const id = request.params.id;
+    let viewer: { sub: string; role: Role } | null = null;
+
+    if (request.headers.authorization) {
+      try {
+        await request.jwtVerify();
+        viewer = {
+          sub: request.user.sub,
+          role: request.user.role,
+        };
+      } catch {
+        viewer = null;
+      }
+    }
 
     const profile = await prisma.profile.findFirst({
       where: {
@@ -293,6 +323,11 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     });
 
     if (!profile) {
+      return reply.status(404).send({ error: "Profile not found" });
+    }
+
+    const canViewUnpublished = viewer?.role === "ADMIN" || viewer?.sub === profile.ownerId;
+    if (!profile.isPublished && !canViewUnpublished) {
       return reply.status(404).send({ error: "Profile not found" });
     }
 
@@ -317,6 +352,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
         theme: parsed.data.theme ?? "wave",
         palette: parsed.data.palette ?? "original",
         showGraphic: parsed.data.showGraphic ?? true,
+        isPublished: parsed.data.isPublished ?? false,
         photoUrl: parsed.data.photoUrl ?? null,
         fields: {
           ...defaults.fields,
@@ -391,6 +427,9 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     }
     if (typeof parsed.data.showGraphic !== "undefined") {
       updateData.showGraphic = parsed.data.showGraphic;
+    }
+    if (typeof parsed.data.isPublished !== "undefined") {
+      updateData.isPublished = parsed.data.isPublished;
     }
     if (typeof parsed.data.photoUrl !== "undefined") {
       updateData.photoUrl = parsed.data.photoUrl;

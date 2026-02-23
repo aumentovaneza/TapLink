@@ -123,6 +123,10 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: "Profile not found" });
     }
 
+    if (!profile.isPublished) {
+      return reply.status(404).send({ error: "Profile not found" });
+    }
+
     await prisma.linkClickEvent.create({
       data: {
         profileId: parsed.data.profileId,
@@ -148,6 +152,10 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     if (!profile) {
+      return reply.status(404).send({ error: "Profile not found" });
+    }
+
+    if (!profile.isPublished) {
       return reply.status(404).send({ error: "Profile not found" });
     }
 
@@ -200,6 +208,10 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     if (!profile) {
+      return reply.status(404).send({ error: "Profile not found" });
+    }
+
+    if (!profile.isPublished) {
       return reply.status(404).send({ error: "Profile not found" });
     }
 

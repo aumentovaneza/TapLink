@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import {
@@ -83,10 +83,13 @@ interface MineResponse {
 }
 
 interface ScanResponse {
-  state: "active" | "inactive" | "unclaimed" | "error";
+  state: "active" | "inactive" | "unclaimed" | "unpublished" | "error";
+  claimCode?: string | null;
   profile?: {
-    gradient: string;
-    tapCount: number;
+    id?: string;
+    slug?: string;
+    gradient?: string;
+    tapCount?: number;
   };
 }
 
@@ -310,12 +313,15 @@ async function resolveProfileId(paramId?: string): Promise<string> {
 export function ProfileView() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const trackedVisitKeysRef = useRef<Set<string>>(new Set());
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [claimPathForUnavailable, setClaimPathForUnavailable] = useState<string | null>(null);
+  const [showMyTagsForUnavailable, setShowMyTagsForUnavailable] = useState(false);
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [scanGradient, setScanGradient] = useState<string | null>(null);
   const [tapCount, setTapCount] = useState<number | null>(null);
@@ -338,10 +344,54 @@ export function ProfileView() {
   const loadProfile = async () => {
     setLoading(true);
     setError("");
+    setClaimPathForUnavailable(null);
+    setShowMyTagsForUnavailable(false);
 
     try {
       const resolvedId = await resolveProfileId(id);
-      const response = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(resolvedId)}`);
+      let response: ProfileResponse | null = null;
+
+      try {
+        response = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(resolvedId)}`, { auth: true });
+      } catch (profileError) {
+        if (profileError instanceof ApiError && profileError.status === 404 && id) {
+          const scanByTag = await apiRequest<ScanResponse>(`/scan/${encodeURIComponent(id)}`);
+
+          if (scanByTag.state === "unclaimed") {
+            const encodedClaimCode = scanByTag.claimCode ? encodeURIComponent(scanByTag.claimCode) : null;
+            setClaimPathForUnavailable(encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim");
+            setError("This tag has not been claimed yet. Claim it to activate a profile.");
+            setProfile(null);
+            setTapCount(null);
+            setScanGradient(null);
+            return;
+          }
+
+          if (scanByTag.state === "unpublished") {
+            setError("This profile is not published yet.");
+            setShowMyTagsForUnavailable(Boolean(getAccessToken()));
+            setProfile(null);
+            setTapCount(null);
+            setScanGradient(null);
+            return;
+          }
+
+          if (scanByTag.state === "active" || scanByTag.state === "inactive") {
+            const scanProfileId = scanByTag.profile?.slug || scanByTag.profile?.id;
+            if (scanProfileId && scanProfileId !== resolvedId) {
+              navigate(`/profile/${encodeURIComponent(scanProfileId)}?source=scan`, { replace: true });
+              return;
+            }
+          }
+        }
+
+        throw profileError;
+      }
+
+      if (!response) {
+        throw new Error("Unable to load this profile.");
+      }
+
       setProfile(response.profile);
 
       if (response.profile.tagCode) {
@@ -580,6 +630,24 @@ export function ProfileView() {
               >
                 Retry
               </button>
+              {claimPathForUnavailable && (
+                <Link
+                  to={claimPathForUnavailable}
+                  className={`rounded-xl px-4 py-2.5 text-sm ${isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                  style={{ fontWeight: 600 }}
+                >
+                  Claim Tag
+                </Link>
+              )}
+              {showMyTagsForUnavailable && (
+                <Link
+                  to="/my-tags"
+                  className={`rounded-xl px-4 py-2.5 text-sm ${isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                  style={{ fontWeight: 600 }}
+                >
+                  Open My Tags
+                </Link>
+              )}
               <Link to="/" className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 Go Home
               </Link>

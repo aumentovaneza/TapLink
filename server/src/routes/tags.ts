@@ -126,6 +126,7 @@ function serializeTag(tag: any) {
           templateType,
           theme: tag.profile.theme,
           photo: tag.profile.photoUrl,
+          isPublished: tag.profile.isPublished,
         }
       : null,
   };
@@ -205,6 +206,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
               theme: "wave",
               palette: "original",
               showGraphic: true,
+              isPublished: false,
               photoUrl: null,
               fields: defaults.fields,
               links: {
@@ -232,6 +234,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
             theme: "wave",
             palette: "original",
             showGraphic: true,
+            isPublished: false,
             photoUrl: null,
             fields: defaults.fields,
             links: {
@@ -425,6 +428,13 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         id: tag.code,
         state: "unclaimed",
         claimCode: tag.claimCode,
+      });
+    }
+
+    if (!tag.profile.isPublished) {
+      return reply.send({
+        id: tag.code,
+        state: "unpublished",
       });
     }
 
