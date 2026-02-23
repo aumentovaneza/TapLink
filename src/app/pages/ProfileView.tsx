@@ -654,20 +654,21 @@ export function ProfileView() {
   const sortedLinks = [...profile.links, ...contactLinks].sort((a, b) => a.position - b.position);
 
   return (
-    <div className={`min-h-screen ${profileTopPaddingClass} ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
-      <div className="mx-auto max-w-md px-4 pb-24">
+    <div className={`relative min-h-screen overflow-hidden ${profileTopPaddingClass}`} style={{ background: cardGradient }}>
+      {ThemeGraphic && profile.showGraphic && (
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <ThemeGraphic />
+        </div>
+      )}
+      <div className="absolute inset-0 z-0" style={{ background: "rgba(2,6,23,0.08)" }} />
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col px-4 pb-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative mb-4 overflow-hidden rounded-3xl shadow-xl"
-          style={{ background: cardGradient }}
+          className="order-10 relative mt-4 mb-4 overflow-hidden rounded-3xl border border-white/25 shadow-xl backdrop-blur-sm"
+          style={{ background: "rgba(255,255,255,0.08)" }}
         >
-          {ThemeGraphic && profile.showGraphic && (
-            <div className="pointer-events-none absolute inset-0 z-0">
-              <ThemeGraphic />
-            </div>
-          )}
-
           <div className="relative z-10 px-6 pt-10 pb-8">
             <div
               className="absolute top-0 right-0 h-48 w-48 rounded-full opacity-20"
@@ -735,7 +736,7 @@ export function ProfileView() {
         </motion.div>
 
         {petLost && (
-          <div className={`mb-4 rounded-2xl border p-4 ${isDark ? "border-rose-900/40 bg-rose-950/20" : "border-rose-200 bg-rose-50"}`}>
+          <div className={`order-15 mb-4 rounded-2xl border p-4 ${isDark ? "border-rose-900/40 bg-rose-950/20" : "border-rose-200 bg-rose-50"}`}>
             <div className="flex items-start gap-3">
               <div className={`mt-0.5 ${isDark ? "text-rose-300" : "text-rose-600"}`}>
                 <AlertTriangle size={18} />
@@ -758,7 +759,7 @@ export function ProfileView() {
         )}
 
         {profile.templateType === "cafe" && visibleCafeMenuSections.length > 0 && (
-          <div className={`mb-4 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+          <div className={`order-20 mb-4 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
             <div className="mb-3 flex items-center gap-2">
               <UtensilsCrossed size={15} className={isDark ? "text-amber-300" : "text-amber-600"} />
               <h3 className={`${isDark ? "text-white" : "text-slate-900"} text-sm`} style={{ fontWeight: 700 }}>
@@ -799,9 +800,9 @@ export function ProfileView() {
           </div>
         )}
 
-        <div className="mb-4 space-y-3">
+        <div className="order-40 mt-auto mb-4 space-y-3">
           {sortedLinks.length === 0 && (
-            <div className={`rounded-2xl border p-4 text-sm ${isDark ? "border-slate-800 bg-slate-900 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
+            <div className="rounded-2xl border border-white/25 bg-white/10 p-4 text-sm backdrop-blur-sm" style={{ color: textColor }}>
               No links have been added to this profile yet.
             </div>
           )}
@@ -826,14 +827,14 @@ export function ProfileView() {
                   }
                   handleLinkClick(link);
                 }}
-                className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] ${
-                  isDark ? "border border-slate-800 bg-slate-900 hover:border-indigo-500/40" : "border border-slate-100 bg-white shadow-sm hover:border-indigo-200 hover:shadow-md"
-                } ${!href ? "cursor-default opacity-80" : ""}`}
+                className={`flex w-full items-center gap-4 rounded-2xl border border-white/25 bg-white/12 p-4 text-left shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.98] hover:bg-white/20 ${
+                  !href ? "cursor-default opacity-80" : ""
+                }`}
               >
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(99,102,241,0.15)" }}>
-                  <Icon size={20} className="text-indigo-500" />
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Icon size={20} style={{ color: textColor, opacity: 0.9 }} />
                 </div>
-                <span className={`flex-1 text-sm ${isDark ? "text-white" : "text-slate-800"}`} style={{ fontWeight: 600 }}>
+                <span className="flex-1 text-sm" style={{ color: textColor, fontWeight: 600 }}>
                   {link.label}
                 </span>
                 <AnimatePresence mode="wait">
@@ -843,7 +844,7 @@ export function ProfileView() {
                     </motion.div>
                   ) : (
                     <motion.div key="arrow">
-                      <ExternalLink size={14} className={isDark ? "text-slate-500" : "text-slate-300"} />
+                      <ExternalLink size={14} style={{ color: textColor, opacity: 0.75 }} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -852,7 +853,7 @@ export function ProfileView() {
           })}
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-3">
+        <div className="order-50 mb-6 grid grid-cols-2 gap-3">
           <button
             onClick={() => setShowShare(true)}
             className="flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white transition-all hover:opacity-90 active:scale-95"
@@ -874,7 +875,7 @@ export function ProfileView() {
         </div>
 
         {petLost && (
-          <div className={`mb-6 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+          <div className={`order-30 mb-6 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
             <div className="mb-3">
               <h3 className={`${isDark ? "text-white" : "text-slate-900"} text-sm`} style={{ fontWeight: 700 }}>
                 Report Sighting to Owner
@@ -985,8 +986,8 @@ export function ProfileView() {
           </div>
         )}
 
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-xs" style={{ color: isDark ? "#6B7280" : "#9CA3AF" }}>
+        <div className="order-60 text-center">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs" style={{ color: textColor, opacity: 0.75 }}>
             Powered by
             <span
               style={{
