@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet, Link, useLocation } from "react-router";
+import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -10,9 +10,10 @@ import {
   X,
   LogIn,
   LayoutDashboard,
+  LogOut,
 } from "lucide-react";
 import { BrandLogo } from "../components/shared/BrandLogo";
-import { dashboardPathForRole, getSessionUser, SessionUser } from "../lib/session";
+import { clearSession, dashboardPathForRole, getSessionUser, SessionUser } from "../lib/session";
 
 const navItems: { label: string; path: string }[] = [];
 
@@ -21,6 +22,7 @@ export function Root() {
   const isDark = theme === "dark";
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const [sessionUser, setSessionUserState] = useState<SessionUser | null>(() => getSessionUser());
 
   useEffect(() => {
@@ -29,6 +31,12 @@ export function Root() {
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
   const dashboardPath = sessionUser ? dashboardPathForRole(sessionUser.role) : "/login";
+  const logout = () => {
+    clearSession();
+    setSessionUserState(null);
+    setMobileOpen(false);
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? "bg-slate-950 text-white" : "bg-white text-slate-900"}`}>
@@ -111,19 +119,48 @@ export function Root() {
                 Activate Tag
               </Link>
 
-              {/* Login */}
-              <Link
-                to={dashboardPath}
-                className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
-                  isDark
-                    ? "text-slate-400 hover:text-white hover:bg-slate-800"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-                style={{ fontWeight: 500 }}
-              >
-                {sessionUser ? <LayoutDashboard size={14} /> : <LogIn size={14} />}
-                {sessionUser ? "Dashboard" : "Log in"}
-              </Link>
+              {sessionUser ? (
+                <>
+                  <Link
+                    to={dashboardPath}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                      isDark
+                        ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                    style={{ fontWeight: 500 }}
+                  >
+                    <LayoutDashboard size={14} />
+                    <span className="hidden sm:inline">Dashboard</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                      isDark
+                        ? "text-slate-400 hover:text-rose-300 hover:bg-rose-950/20"
+                        : "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                    }`}
+                    style={{ fontWeight: 500 }}
+                  >
+                    <LogOut size={14} />
+                    <span className="hidden sm:inline">Log out</span>
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to={dashboardPath}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all ${
+                    isDark
+                      ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                  style={{ fontWeight: 500 }}
+                >
+                  <LogIn size={14} />
+                  <span className="hidden sm:inline">Log in</span>
+                </Link>
+              )}
 
               {/* Mobile menu button */}
               {navItems.length > 0 && (
@@ -179,17 +216,44 @@ export function Root() {
                   );
                 })}
                 <div className={`border-t mt-2 pt-3 ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-                  <Link
-                    to={dashboardPath}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
-                      isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                    style={{ fontWeight: 500 }}
-                  >
-                    {sessionUser ? <LayoutDashboard size={14} /> : <LogIn size={14} />}
-                    {sessionUser ? "Dashboard" : "Log in"}
-                  </Link>
+                  {sessionUser ? (
+                    <>
+                      <Link
+                        to={dashboardPath}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
+                          isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        <LayoutDashboard size={14} />
+                        Dashboard
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={logout}
+                        className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
+                          isDark ? "text-rose-300 hover:bg-rose-950/20" : "text-rose-600 hover:bg-rose-50"
+                        }`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        <LogOut size={14} />
+                        Log out
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to={dashboardPath}
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm ${
+                        isDark ? "text-slate-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                      style={{ fontWeight: 500 }}
+                    >
+                      <LogIn size={14} />
+                      Log in
+                    </Link>
+                  )}
                   <Link
                     to="/editor"
                     onClick={() => setMobileOpen(false)}

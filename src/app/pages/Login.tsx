@@ -119,8 +119,8 @@ export function Login() {
       hasError
         ? "border-rose-400 bg-rose-50/50"
         : isDark
-        ? "bg-slate-800/60 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:bg-slate-800"
-        : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white"
+        ? "bg-slate-800/60 border-slate-700 text-white placeholder:text-slate-500 focus:border-orange-500 focus:bg-slate-800"
+        : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-orange-500 focus:bg-white"
     }`;
 
   return (
@@ -128,7 +128,7 @@ export function Login() {
       {/* ── Left panel — brand ─────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-10 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1e1b4b 40%, #0c1445 100%)" }}
+        style={{ background: "linear-gradient(160deg, #1C0500 0%, #3F1A0A 50%, #5B2206 100%)" }}
       >
         {/* Grid overlay */}
         <div className="absolute inset-0 opacity-[0.04]" style={{
@@ -163,8 +163,8 @@ export function Login() {
                 transition={{ delay: 0.2 + i * 0.1 }}
                 className="flex items-center gap-3"
               >
-                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(79,70,229,0.4)" }}>
-                  <Check size={11} className="text-indigo-300" />
+                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(234,88,12,0.35)" }}>
+                  <Check size={11} className="text-amber-200" />
                 </div>
                 <span className="text-white/75 text-sm">{f}</span>
               </motion.div>
@@ -206,7 +206,7 @@ export function Login() {
                   We sent a password reset link to <strong>{email}</strong>
                 </p>
                 <button onClick={() => { setMode("signin"); setForgotSent(false); }}
-                  className={`text-sm text-indigo-500 hover:text-indigo-400 transition-colors`} style={{ fontWeight: 600 }}>
+                  className={`text-sm text-orange-600 hover:text-orange-500 transition-colors`} style={{ fontWeight: 600 }}>
                   Back to Sign In
                 </button>
               </motion.div>
@@ -302,7 +302,7 @@ export function Login() {
                       <div className="flex items-center justify-between mb-1.5">
                         <label className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ fontWeight: 600 }}>Password *</label>
                         {mode === "signin" && (
-                          <button type="button" onClick={() => setMode("forgot")} className="text-xs text-indigo-500 hover:text-indigo-400 transition-colors" style={{ fontWeight: 500 }}>
+                          <button type="button" onClick={() => setMode("forgot")} className="text-xs text-orange-600 hover:text-orange-500 transition-colors" style={{ fontWeight: 500 }}>
                             Forgot password?
                           </button>
                         )}
@@ -340,8 +340,8 @@ export function Login() {
                   {mode === "signup" && (
                     <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                       By signing up, you agree to our{" "}
-                      <a href="#" className="text-indigo-500 hover:underline">Terms</a> and{" "}
-                      <a href="#" className="text-indigo-500 hover:underline">Privacy Policy</a>.
+                      <a href="#" className="text-orange-600 hover:underline">Terms</a> and{" "}
+                      <a href="#" className="text-orange-600 hover:underline">Privacy Policy</a>.
                     </p>
                   )}
 
@@ -349,7 +349,7 @@ export function Login() {
                     type="submit"
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-70 mt-2"
-                    style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 6px 20px rgba(79,70,229,0.35)" }}
+                    style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 6px 20px rgba(220,38,38,0.32)" }}
                   >
                     {loading ? (
                       <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -383,7 +383,7 @@ export function Login() {
               onClick={signInDemoUser}
               disabled={demoLoading}
               className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm transition-all ${
-                isDark ? "text-indigo-400 bg-slate-800 hover:bg-slate-700" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                isDark ? "text-orange-300 bg-slate-800 hover:bg-slate-700" : "text-orange-700 bg-orange-50 hover:bg-orange-100"
               }`}
               style={{ fontWeight: 600 }}
             >
