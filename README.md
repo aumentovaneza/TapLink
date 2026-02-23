@@ -102,6 +102,7 @@ Base URL: `http://localhost:3000`
 - `POST /profiles` (Bearer token)
 - `PATCH /profiles/:id` (Bearer token)
 - `PUT /profiles/:id/links` (Bearer token)
+- `POST /profiles/photo?profileId=:id` (Bearer token, multipart form-data with `photo`)
 - `POST /events/tap`
 - `POST /events/link-click`
 - `GET /analytics/tag/:tagId` (Bearer token)
@@ -113,6 +114,33 @@ Base URL: `http://localhost:3000`
 - `PATCH /admin/settings` (Admin token)
 - `GET /admin/api-keys` (Admin token)
 - `POST /admin/api-keys/rotate` (Admin token)
+
+## Supabase Photo Upload Setup
+
+The profile editor now uploads photos to Supabase Storage using the backend API.
+
+1. Create a Supabase project at [https://supabase.com](https://supabase.com).
+2. In Supabase, go to **Storage** and create a bucket named `profile-photos` (or your preferred bucket name).
+3. Set the bucket to **Public** so uploaded photos can be displayed by URL.
+4. In bucket settings, set a storage file size limit (recommended: `8 MB`) to match backend validation.
+5. In Supabase project settings, copy:
+   - **Project URL** (used as `SUPABASE_URL`)
+   - **Service Role Key** (used as `SUPABASE_SERVICE_ROLE_KEY`)
+6. Update backend environment variables (`server/.env` or Docker env):
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_STORAGE_BUCKET` (default: `profile-photos`)
+   - `PHOTO_UPLOAD_MAX_BYTES` (default: `8000000`, about 8MB)
+7. Restart the backend after changing env vars.
+
+Security note:
+- Keep `SUPABASE_SERVICE_ROLE_KEY` on the backend only. Do not expose it in frontend `VITE_` variables.
+
+Upload behavior:
+- The frontend accepts JPG/PNG/WebP.
+- Images are optimized client-side to keep quality while reducing size (target around 2MB) before sending to `/profiles/photo`.
+- The backend enforces a hard max upload size (`PHOTO_UPLOAD_MAX_BYTES`) before storing in Supabase.
+- Uploads are scoped to the owner + profile and stored in this path format: `<bucket>/<ownerUserId>/<profileId>/<filename>`.
 
 ## Available Scripts
 

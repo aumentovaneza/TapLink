@@ -33,6 +33,10 @@ services:
       JWT_SECRET: local-dev-secret-change-me
       JWT_EXPIRES_IN: 7d
       CORS_ORIGIN: http://localhost:5173
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-profile-photos}
+      PHOTO_UPLOAD_MAX_BYTES: ${PHOTO_UPLOAD_MAX_BYTES:-8000000}
     ports:
       - "3000:3000"
     volumes:

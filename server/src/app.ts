@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
+import multipart from "@fastify/multipart";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
@@ -69,6 +70,13 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
     },
   });
 
+  await app.register(multipart, {
+    limits: {
+      files: 1,
+      fileSize: config.PHOTO_UPLOAD_MAX_BYTES,
+    },
+  });
+
   app.get("/health", async () => {
     return {
       status: "ok",
@@ -78,7 +86,10 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
 
   await app.register(authRoutes, { prefix: "/auth" });
   await app.register(tagRoutes);
-  await app.register(profileRoutes, { prefix: "/profiles" });
+  await app.register(profileRoutes, {
+    prefix: "/profiles",
+    config,
+  });
   await app.register(eventRoutes, { prefix: "/events" });
   await app.register(analyticsRoutes, { prefix: "/analytics" });
   await app.register(adminRoutes, { prefix: "/admin" });

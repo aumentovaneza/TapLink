@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
@@ -20,6 +20,12 @@ import {
   parseCafeMenuSections,
   serializeCafeMenuSections,
 } from "../lib/cafeMenu";
+import {
+  PHOTO_MAX_SOURCE_BYTES,
+  PHOTO_TARGET_UPLOAD_BYTES,
+  PHOTO_UPLOAD_ACCEPT,
+  optimizePhotoForUpload,
+} from "../lib/photoUpload";
 import { clearAccessToken, getAccessToken } from "../lib/session";
 
 // ── Photos ────────────────────────────────────────────────────────────────────
@@ -469,6 +475,10 @@ interface ProfileResponse {
 
 interface ProfileMineResponse {
   items: ApiProfile[];
+}
+
+interface PhotoUploadResponse {
+  photoUrl: string;
 }
 
 interface ProfileLinkPayload {
@@ -1144,9 +1154,11 @@ export function ProfileEditor() {
   const [saveError,      setSaveError]      = useState("");
   const [showPreview,    setShowPreview]    = useState(false);
   const [showTypeModal,  setShowTypeModal]  = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profileId,      setProfileId]      = useState<string | null>(null);
   const [profileSlug,    setProfileSlug]    = useState<string | null>(null);
   const [photoUrlForSave, setPhotoUrlForSave] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
   const [profile, setProfile] = useState<ProfileData>(() => getDefaultProfile("individual"));
 
   const typeDef = templateTypes.find((t) => t.id === profile.templateType) || templateTypes[0];
@@ -1239,6 +1251,69 @@ export function ProfileEditor() {
     setProfile((p) => ({ ...p, [key]: val }));
     setSaved(false);
     setSaveError("");
+  };
+
+  const triggerPhotoPicker = () => {
+    if (!getAccessToken()) {
+      setSaveError("Sign in to upload a photo.");
+      navigate("/login");
+      return;
+    }
+    if (!profileId) {
+      setSaveError("Save your profile first so we can attach the photo to your profile record.");
+      return;
+    }
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!getAccessToken()) {
+      setSaveError("Sign in to upload a photo.");
+      event.target.value = "";
+      navigate("/login");
+      return;
+    }
+
+    if (!profileId) {
+      setSaveError("Save your profile first so we can attach the photo to your profile record.");
+      event.target.value = "";
+      return;
+    }
+
+    setSaveError("");
+    setSaved(false);
+    setUploadingPhoto(true);
+
+    try {
+      const optimizedFile = await optimizePhotoForUpload(selectedFile);
+      const formData = new FormData();
+      formData.append("photo", optimizedFile, optimizedFile.name);
+
+      const uploaded = await apiRequest<PhotoUploadResponse>(`/profiles/photo?profileId=${encodeURIComponent(profileId)}`, {
+        method: "POST",
+        auth: true,
+        body: formData,
+      });
+
+      updateTop("photo", uploaded.photoUrl);
+      setPhotoUrlForSave(uploaded.photoUrl);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearAccessToken();
+        setSaveError("Your session expired. Please sign in again.");
+        navigate("/login");
+      } else {
+        setSaveError(asErrorMessage(error, "Unable to upload this photo."));
+      }
+    } finally {
+      setUploadingPhoto(false);
+      event.target.value = "";
+    }
   };
 
   const switchTemplate = (id: string) => {
@@ -1486,16 +1561,36 @@ export function ProfileEditor() {
                         }`} style={{ width: typeDef.photoShape === "banner" ? 120 : 72, height: typeDef.photoShape === "banner" ? 68 : 72 }}>
                           <ImageWithFallback src={profile.photo} alt="Profile" className="w-full h-full object-cover" />
                         </div>
-                        <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center shadow-md">
+                        <button
+                          type="button"
+                          onClick={triggerPhotoPicker}
+                          disabled={uploadingPhoto || !profileId}
+                          className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center shadow-md disabled:opacity-70"
+                        >
                           <Camera size={12} className="text-white" />
                         </button>
                       </div>
                       <div>
-                        <button className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm border transition-colors ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                          style={{ fontWeight: 500 }}>
-                          <Upload size={14} />Upload Photo
+                        <input
+                          ref={photoInputRef}
+                          type="file"
+                          accept={PHOTO_UPLOAD_ACCEPT}
+                          onChange={handlePhotoFileChange}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={triggerPhotoPicker}
+                          disabled={uploadingPhoto || !profileId}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm border transition-colors disabled:opacity-70 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          style={{ fontWeight: 500 }}
+                        >
+                          <Upload size={14} />
+                          {!profileId ? "Save Profile First" : uploadingPhoto ? "Optimizing & Uploading..." : "Upload Photo"}
                         </button>
-                        <p className={`text-xs mt-1.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>JPG, PNG or GIF · max 5MB</p>
+                        <p className={`text-xs mt-1.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                          JPG, PNG, or WebP · source max {(PHOTO_MAX_SOURCE_BYTES / 1_000_000).toFixed(0)}MB · optimized to about {(PHOTO_TARGET_UPLOAD_BYTES / 1_000_000).toFixed(0)}MB
+                        </p>
                       </div>
                     </div>
                   </div>
