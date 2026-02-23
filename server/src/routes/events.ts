@@ -205,6 +205,14 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
 
     const profile = await prisma.profile.findUnique({
       where: { id: parsed.data.profileId },
+      include: {
+        tag: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
+      },
     });
 
     if (!profile) {
@@ -233,6 +241,8 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
         metadata: {
           profileId: profile.id,
           profileSlug: profile.slug,
+          tagId: profile.tag?.id ?? null,
+          tagCode: profile.tag?.code ?? null,
           petName: fields.name ?? profile.slug,
           ownerId: profile.ownerId,
           reporterName: parsed.data.reporterName,

@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BarChart3,
+  Bell,
   Building2,
   Calendar,
   Copy,
@@ -22,9 +23,7 @@ import {
   QrCode,
   RefreshCw,
   Search,
-  Share2,
   ShoppingBag,
-  Smartphone,
   Tag,
   Trash2,
   User,
@@ -90,6 +89,8 @@ interface ApiTag {
   taps: number;
   lastTap: string;
   createdAt: string;
+  responseCount?: number;
+  unreadResponses?: number;
   profile: ApiTagProfile | null;
 }
 
@@ -106,7 +107,10 @@ interface UserTag {
   photo: string;
   editorUrl: string;
   profileUrl: string;
+  responsesUrl: string;
   createdAt: string;
+  responseCount: number;
+  unreadResponses: number;
 }
 
 const statusConfig: Record<TagStatus, { label: string; dot: string; bg: string; text: string }> = {
@@ -142,7 +146,10 @@ function mapTagFromApi(tag: ApiTag): UserTag {
     photo: tag.profile?.photo || fallbackPhoto(tag.profile?.templateType || "individual"),
     editorUrl: tag.profile ? `/editor?profile=${encodeURIComponent(tag.profile.id)}` : "/editor",
     profileUrl: tag.profile ? `/profile/${tag.profile.slug || tag.profile.id}` : tag.claimCode ? `/claim/${tag.claimCode}` : "/claim",
+    responsesUrl: `/my-tags/${encodeURIComponent(tag.id)}/responses`,
     createdAt: new Date(tag.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    responseCount: tag.responseCount ?? 0,
+    unreadResponses: tag.unreadResponses ?? 0,
   };
 }
 
@@ -233,6 +240,12 @@ function TagCard({
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: status.dot }} />
               {status.label}
             </span>
+            {tag.unreadResponses > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] text-white" style={{ fontWeight: 700 }}>
+                <Bell size={10} />
+                {tag.unreadResponses} new
+              </span>
+            )}
           </div>
           <div className="mt-0.5 flex items-center gap-3">
             <span className={`flex items-center gap-1 text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
@@ -274,6 +287,14 @@ function TagCard({
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}
           >
             <BarChart3 size={14} />
+          </Link>
+
+          <Link
+            to={tag.responsesUrl}
+            className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}
+          >
+            <Bell size={14} />
+            {tag.unreadResponses > 0 && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />}
           </Link>
 
           <Link
@@ -321,6 +342,21 @@ function TagCard({
                     <Copy size={14} className="opacity-60" />
                     {copied ? "Copied Link" : "Copy Link"}
                   </button>
+
+                  <Link
+                    to={tag.responsesUrl}
+                    className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-sm transition-colors ${isDark ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <span className="inline-flex items-center gap-2.5">
+                      <Bell size={14} className="opacity-60" />
+                      Responses
+                    </span>
+                    {tag.unreadResponses > 0 && (
+                      <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] text-white" style={{ fontWeight: 700 }}>
+                        {tag.unreadResponses}
+                      </span>
+                    )}
+                  </Link>
 
                   {tag.status !== "unclaimed" && (
                     <button
@@ -394,6 +430,21 @@ function TagCard({
                     View Profile
                   </Link>
 
+                  <Link
+                    to={tag.responsesUrl}
+                    className={`flex w-full items-center justify-between gap-2.5 px-4 py-2.5 text-sm transition-colors ${isDark ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <span className="inline-flex items-center gap-2.5">
+                      <Bell size={14} className="opacity-60" />
+                      Responses
+                    </span>
+                    {tag.unreadResponses > 0 && (
+                      <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] text-white" style={{ fontWeight: 700 }}>
+                        {tag.unreadResponses}
+                      </span>
+                    )}
+                  </Link>
+
                   {tag.status !== "unclaimed" && (
                     <button
                       onClick={handleToggle}
@@ -448,6 +499,15 @@ function TagCard({
                 {shareUrl}
               </a>
             </div>
+            <div className="mt-1.5">
+              <Link
+                to={tag.responsesUrl}
+                className={`inline-flex items-center gap-1.5 text-xs ${isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <Bell size={11} />
+                {tag.unreadResponses > 0 ? `${tag.unreadResponses} new responses` : `${tag.responseCount} responses`}
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -483,12 +543,15 @@ function TagCard({
           </Link>
 
           <Link
-            to={tag.profileUrl}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs transition-colors ${isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            to={tag.responsesUrl}
+            className={`relative flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs transition-colors ${isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
             style={{ fontWeight: 500 }}
           >
-            <Share2 size={12} />
-            Share
+            <Bell size={12} />
+            Responses
+            {tag.unreadResponses > 0 && (
+              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
+            )}
           </Link>
         </div>
       </div>
@@ -584,12 +647,14 @@ export function MyTags() {
 
   const totalTaps = tags.reduce((sum, tag) => sum + tag.taps, 0);
   const activeTags = tags.filter((tag) => tag.status === "active").length;
+  const totalUnreadResponses = tags.reduce((sum, tag) => sum + tag.unreadResponses, 0);
+  const totalResponses = tags.reduce((sum, tag) => sum + tag.responseCount, 0);
 
   const statCards = [
     { label: "Total Tags", value: tags.length, icon: Tag, color: "#DC2626", sub: `${activeTags} active` },
     { label: "Total Taps", value: totalTaps.toLocaleString(), icon: Zap, color: "#EA580C", sub: "All time" },
     { label: "Active Tags", value: activeTags, icon: Wifi, color: "#10B981", sub: "Currently live" },
-    { label: "Avg Taps/Tag", value: tags.length ? Math.round(totalTaps / tags.length) : 0, icon: BarChart3, color: "#F59E0B", sub: "Per tag" },
+    { label: "New Responses", value: totalUnreadResponses, icon: Bell, color: "#F43F5E", sub: `${totalResponses} total reports` },
   ];
 
   return (
@@ -604,7 +669,7 @@ export function MyTags() {
                 </div>
                 <h1 className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 800, letterSpacing: "-0.02em" }}>My Tags</h1>
               </div>
-              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Manage your NFC tags, profiles, and analytics.</p>
+              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Manage your NFC tags, profiles, analytics, and responses.</p>
             </div>
 
             <div className="flex items-center gap-3">

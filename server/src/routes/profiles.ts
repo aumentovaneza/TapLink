@@ -83,7 +83,15 @@ function getSupabaseClient(config: AppConfig): SupabaseClient | null {
   return cachedSupabaseClient;
 }
 
-function serializeProfile(profile: any) {
+function canEditProfile(profile: any, userId: string): boolean {
+  if (profile.tag?.ownerId) {
+    return profile.tag.ownerId === userId;
+  }
+
+  return profile.ownerId === userId;
+}
+
+function serializeProfile(profile: any, options: { canEdit?: boolean } = {}) {
   const fields = (profile.fields ?? {}) as Record<string, string>;
 
   return {
@@ -106,12 +114,13 @@ function serializeProfile(profile: any) {
     })),
     tagId: profile.tag?.id ?? null,
     tagCode: profile.tag?.code ?? null,
+    canEdit: options.canEdit ?? false,
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
   };
 }
 
-async function ensureProfileAccess(profileId: string, userId: string, role: Role) {
+async function ensureProfileAccess(profileId: string, userId: string) {
   const profile = await prisma.profile.findUnique({
     where: { id: profileId },
     include: {
@@ -126,7 +135,7 @@ async function ensureProfileAccess(profileId: string, userId: string, role: Role
     return { error: "not_found" as const };
   }
 
-  if (profile.ownerId !== userId && role !== "ADMIN") {
+  if (!canEditProfile(profile, userId)) {
     return { error: "forbidden" as const };
   }
 
@@ -155,7 +164,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     });
 
     return {
-      items: profiles.map((profile) => serializeProfile(profile)),
+      items: profiles.map((profile) => serializeProfile(profile, { canEdit: true })),
     };
   });
 
@@ -175,7 +184,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       });
     }
 
-    const access = await ensureProfileAccess(parsedQuery.data.profileId, request.user.sub, request.user.role);
+    const access = await ensureProfileAccess(parsedQuery.data.profileId, request.user.sub);
     if ("error" in access) {
       if (access.error === "not_found") {
         return reply.status(404).send({ error: "Profile not found" });
@@ -241,7 +250,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       });
     }
 
-    const path = `${access.profile.ownerId}/${access.profile.id}/${Date.now().toString(36)}-${randomUppercaseCode(8).toLowerCase()}.${extension}`;
+    const path = `${request.user.sub}/${access.profile.id}/${Date.now().toString(36)}-${randomUppercaseCode(8).toLowerCase()}.${extension}`;
     const bucket = config.SUPABASE_STORAGE_BUCKET;
 
     const uploadResult = await supabase.storage.from(bucket).upload(path, photoBuffer, {
@@ -273,7 +282,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       }),
       prisma.uploadedFile.create({
         data: {
-          ownerId: access.profile.ownerId,
+          ownerId: request.user.sub,
           profileId: access.profile.id,
           kind: "photo",
           bucket,
@@ -326,13 +335,14 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       return reply.status(404).send({ error: "Profile not found" });
     }
 
-    const canViewUnpublished = viewer?.role === "ADMIN" || viewer?.sub === profile.ownerId;
+    const canEdit = viewer ? canEditProfile(profile, viewer.sub) : false;
+    const canViewUnpublished = viewer?.role === "ADMIN" || canEdit;
     const isClaimedTagProfile = Boolean(profile.tag && profile.tag.ownerId && !profile.tag.claimCode);
     if (!profile.isPublished && !canViewUnpublished && !isClaimedTagProfile) {
       return reply.status(404).send({ error: "Profile not found" });
     }
 
-    return reply.send({ profile: serializeProfile(profile) });
+    return reply.send({ profile: serializeProfile(profile, { canEdit }) });
   });
 
   fastify.post("/", { preHandler: [requireAuth] }, async (request, reply) => {
@@ -382,7 +392,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
         return reply.status(404).send({ error: "Tag not found" });
       }
 
-      if (tag.ownerId !== request.user.sub && request.user.role !== "ADMIN") {
+      if (tag.ownerId !== request.user.sub) {
         return reply.status(403).send({ error: "You do not have access to this tag" });
       }
 
@@ -395,7 +405,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       });
     }
 
-    return reply.status(201).send({ profile: serializeProfile(profile) });
+    return reply.status(201).send({ profile: serializeProfile(profile, { canEdit: true }) });
   });
 
   fastify.patch<{ Params: { id: string } }>("/:id", { preHandler: [requireAuth] }, async (request, reply) => {
@@ -404,7 +414,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
 
-    const access = await ensureProfileAccess(request.params.id, request.user.sub, request.user.role);
+    const access = await ensureProfileAccess(request.params.id, request.user.sub);
     if ("error" in access) {
       if (access.error === "not_found") {
         return reply.status(404).send({ error: "Profile not found" });
@@ -453,7 +463,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       },
     });
 
-    return reply.send({ profile: serializeProfile(updated) });
+    return reply.send({ profile: serializeProfile(updated, { canEdit: true }) });
   });
 
   fastify.put<{ Params: { id: string } }>("/:id/links", { preHandler: [requireAuth] }, async (request, reply) => {
@@ -462,7 +472,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
 
-    const access = await ensureProfileAccess(request.params.id, request.user.sub, request.user.role);
+    const access = await ensureProfileAccess(request.params.id, request.user.sub);
     if ("error" in access) {
       if (access.error === "not_found") {
         return reply.status(404).send({ error: "Profile not found" });
@@ -496,7 +506,7 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     });
 
     return reply.send({
-      profile: serializeProfile(updated),
+      profile: serializeProfile(updated, { canEdit: true }),
     });
   });
 }

@@ -468,6 +468,7 @@ interface ApiProfile {
   photoUrl: string | null;
   fields: Record<string, string>;
   links: ApiProfileLink[];
+  canEdit?: boolean;
 }
 
 interface ProfileResponse {
@@ -1190,6 +1191,14 @@ export function ProfileEditor() {
     try {
       if (requestedProfileId) {
         const byId = await apiRequest<ProfileResponse>(`/profiles/${encodeURIComponent(requestedProfileId)}`, { auth: true });
+        if (byId.profile.canEdit === false) {
+          setLoadError("Only the tag owner can edit this profile.");
+          setProfile(getDefaultProfile("individual"));
+          setProfileId(null);
+          setProfileSlug(null);
+          setPhotoUrlForSave(null);
+          return;
+        }
         setProfile(mapApiProfileToEditor(byId.profile));
         setProfileId(byId.profile.id);
         setProfileSlug(byId.profile.slug);
@@ -1301,7 +1310,8 @@ export function ProfileEditor() {
         body: formData,
       });
 
-      updateTop("photo", uploaded.photoUrl);
+      const previewPhotoUrl = `${uploaded.photoUrl}${uploaded.photoUrl.includes("?") ? "&" : "?"}v=${Date.now()}`;
+      updateTop("photo", previewPhotoUrl);
       setPhotoUrlForSave(uploaded.photoUrl);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {

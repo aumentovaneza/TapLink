@@ -24,6 +24,10 @@ const scanParamsSchema = z.object({
   tagId: z.string().trim().min(1),
 });
 
+const tagParamsSchema = z.object({
+  tagId: z.string().trim().min(1),
+});
+
 const themeGradients: Record<string, string> = {
   wave: "linear-gradient(135deg, #4F46E5, #7C3AED, #06B6D4)",
   sunset: "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)",
@@ -103,7 +107,94 @@ function buildProfileSubtitle(templateType: string, fields: Record<string, strin
   return fields.bio ?? "";
 }
 
-function serializeTag(tag: any) {
+interface TagResponseStats {
+  total: number;
+  unread: number;
+}
+
+function metadataAsRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function metadataString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+async function buildResponseStatsByProfileId(profileIds: string[], viewerId: string): Promise<Map<string, TagResponseStats>> {
+  const uniqueProfileIds = Array.from(new Set(profileIds.filter(Boolean)));
+  const statsByProfileId = new Map<string, TagResponseStats>();
+  for (const profileId of uniqueProfileIds) {
+    statsByProfileId.set(profileId, { total: 0, unread: 0 });
+  }
+
+  if (uniqueProfileIds.length === 0) {
+    return statsByProfileId;
+  }
+
+  const [reportLogs, viewedLogs] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: {
+        action: "pet.report_submitted",
+        entityType: "profile",
+        entityId: { in: uniqueProfileIds },
+      },
+      select: {
+        entityId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.auditLog.findMany({
+      where: {
+        action: "pet.responses_viewed",
+        actorId: viewerId,
+        entityType: "profile",
+        entityId: { in: uniqueProfileIds },
+      },
+      select: {
+        entityId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const latestViewedByProfileId = new Map<string, Date>();
+  for (const viewedLog of viewedLogs) {
+    if (!viewedLog.entityId || latestViewedByProfileId.has(viewedLog.entityId)) {
+      continue;
+    }
+    latestViewedByProfileId.set(viewedLog.entityId, viewedLog.createdAt);
+  }
+
+  for (const reportLog of reportLogs) {
+    if (!reportLog.entityId) {
+      continue;
+    }
+    const current = statsByProfileId.get(reportLog.entityId) ?? { total: 0, unread: 0 };
+    current.total += 1;
+
+    const viewedAt = latestViewedByProfileId.get(reportLog.entityId);
+    if (!viewedAt || reportLog.createdAt > viewedAt) {
+      current.unread += 1;
+    }
+
+    statsByProfileId.set(reportLog.entityId, current);
+  }
+
+  return statsByProfileId;
+}
+
+function serializeTag(tag: any, responseStats?: TagResponseStats) {
   const fields = (tag.profile?.fields ?? {}) as Record<string, string>;
   const templateType = tag.profile?.templateType ?? "individual";
 
@@ -117,6 +208,8 @@ function serializeTag(tag: any) {
     lastTap: relativeLastTap(tag.lastTapAt),
     createdAt: tag.createdAt,
     profileId: tag.profileId,
+    responseCount: responseStats?.total ?? 0,
+    unreadResponses: responseStats?.unread ?? 0,
     profile: tag.profile
       ? {
           id: tag.profile.id,
@@ -146,8 +239,17 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       orderBy: { createdAt: "desc" },
     });
 
+    const responseStatsByProfileId = await buildResponseStatsByProfileId(
+      tags
+        .map((tag) => tag.profileId)
+        .filter((profileId): profileId is string => Boolean(profileId)),
+      request.user.sub
+    );
+
     return {
-      items: tags.map((tag) => serializeTag(tag)),
+      items: tags.map((tag) =>
+        serializeTag(tag, tag.profileId ? responseStatsByProfileId.get(tag.profileId) : undefined)
+      ),
     };
   });
 
@@ -351,7 +453,14 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
 
-    return reply.send({ tag: serializeTag(updated) });
+    const responseStatsByProfileId = await buildResponseStatsByProfileId(
+      updated.profileId ? [updated.profileId] : [],
+      request.user.sub
+    );
+
+    return reply.send({
+      tag: serializeTag(updated, updated.profileId ? responseStatsByProfileId.get(updated.profileId) : undefined),
+    });
   });
 
   fastify.delete<{ Params: { tagId: string } }>("/tags/:tagId", { preHandler: [requireAuth] }, async (request, reply) => {
@@ -398,6 +507,140 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
 
     return reply.status(204).send();
   });
+
+  fastify.get<{ Params: { tagId: string } }>("/tags/:tagId/responses", { preHandler: [requireAuth] }, async (request, reply) => {
+    const parsedParams = tagParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({ error: "Invalid tag ID" });
+    }
+
+    const tag = await prisma.tag.findUnique({
+      where: { id: parsedParams.data.tagId },
+      include: { profile: true },
+    });
+
+    if (!tag) {
+      return reply.status(404).send({ error: "Tag not found" });
+    }
+
+    if (tag.ownerId !== request.user.sub && request.user.role !== "ADMIN") {
+      return reply.status(403).send({ error: "You do not have access to this tag" });
+    }
+
+    if (!tag.profileId) {
+      return reply.send({
+        tag: serializeTag(tag, { total: 0, unread: 0 }),
+        responses: [],
+        unreadCount: 0,
+        lastViewedAt: null,
+      });
+    }
+
+    const [reports, lastViewed] = await Promise.all([
+      prisma.auditLog.findMany({
+        where: {
+          action: "pet.report_submitted",
+          entityType: "profile",
+          entityId: tag.profileId,
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          metadata: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.auditLog.findFirst({
+        where: {
+          action: "pet.responses_viewed",
+          actorId: request.user.sub,
+          entityType: "profile",
+          entityId: tag.profileId,
+        },
+        select: {
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const lastViewedAt = lastViewed?.createdAt ?? null;
+
+    const serializedResponses = reports.map((entry) => {
+      const metadata = metadataAsRecord(entry.metadata);
+      return {
+        id: entry.id,
+        submittedAt: entry.createdAt,
+        petName: metadataString(metadata.petName),
+        reporterName: metadataString(metadata.reporterName) ?? "Anonymous",
+        reporterEmail: metadataString(metadata.reporterEmail),
+        reporterPhone: metadataString(metadata.reporterPhone),
+        location: metadataString(metadata.location),
+        message: metadataString(metadata.message) ?? "",
+        isUnread: !lastViewedAt || entry.createdAt > lastViewedAt,
+      };
+    });
+
+    const unreadCount = serializedResponses.reduce((total, response) => {
+      return total + (response.isUnread ? 1 : 0);
+    }, 0);
+
+    return reply.send({
+      tag: serializeTag(tag, { total: serializedResponses.length, unread: unreadCount }),
+      responses: serializedResponses,
+      unreadCount,
+      lastViewedAt,
+    });
+  });
+
+  fastify.post<{ Params: { tagId: string } }>(
+    "/tags/:tagId/responses/read",
+    { preHandler: [requireAuth] },
+    async (request, reply) => {
+      const parsedParams = tagParamsSchema.safeParse(request.params);
+      if (!parsedParams.success) {
+        return reply.status(400).send({ error: "Invalid tag ID" });
+      }
+
+      const tag = await prisma.tag.findUnique({
+        where: { id: parsedParams.data.tagId },
+        select: {
+          id: true,
+          ownerId: true,
+          profileId: true,
+        },
+      });
+
+      if (!tag) {
+        return reply.status(404).send({ error: "Tag not found" });
+      }
+
+      if (tag.ownerId !== request.user.sub && request.user.role !== "ADMIN") {
+        return reply.status(403).send({ error: "You do not have access to this tag" });
+      }
+
+      if (!tag.profileId) {
+        return reply.send({ ok: true, viewedAt: null });
+      }
+
+      const viewed = await prisma.auditLog.create({
+        data: {
+          actorId: request.user.sub,
+          action: "pet.responses_viewed",
+          entityType: "profile",
+          entityId: tag.profileId,
+          metadata: {
+            tagId: tag.id,
+          },
+        },
+        select: {
+          createdAt: true,
+        },
+      });
+
+      return reply.send({ ok: true, viewedAt: viewed.createdAt });
+    }
+  );
 
   fastify.get("/scan/:tagId", async (request, reply) => {
     const parsed = scanParamsSchema.safeParse(request.params);

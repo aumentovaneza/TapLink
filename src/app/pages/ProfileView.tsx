@@ -68,6 +68,7 @@ interface ProfileRecord {
   links: ProfileLink[];
   tagId: string | null;
   tagCode: string | null;
+  canEdit?: boolean;
 }
 
 interface ProfileResponse {
@@ -327,6 +328,7 @@ export function ProfileView() {
   const [tapCount, setTapCount] = useState<number | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showPhotoPreview, setShowPhotoPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [clickedLink, setClickedLink] = useState<string | null>(null);
   const [reportForm, setReportForm] = useState<PetReportForm>({
@@ -467,6 +469,7 @@ export function ProfileView() {
   const textColor = gradientInfo?.text || themeDef?.text || "#fff";
   const profileTopPaddingClass = getSessionUser() ? "pt-16" : "pt-0";
   const shareUrl = profile ? createShareUrl(profile.slug) : "";
+  const profilePhotoUrl = profile?.photoUrl || FALLBACK_PHOTO;
   const petLost = profile?.templateType === "pet" && isPetMarkedLost(profile.fields);
   const ownerName = profile?.fields.ownerName?.trim() || "";
   const ownerPhone = profile?.fields.ownerPhone?.trim() || "";
@@ -674,10 +677,12 @@ export function ProfileView() {
               Public Profile — Taparoo
             </span>
           </div>
-          <Link to={`/editor?profile=${encodeURIComponent(profile.id)}`} className="flex items-center gap-1 text-xs text-indigo-500 transition-colors hover:text-indigo-400" style={{ fontWeight: 600 }}>
-            <Edit size={11} />
-            Edit
-          </Link>
+          {profile.canEdit && (
+            <Link to={`/editor?profile=${encodeURIComponent(profile.id)}`} className="flex items-center gap-1 text-xs text-indigo-500 transition-colors hover:text-indigo-400" style={{ fontWeight: 600 }}>
+              <Edit size={11} />
+              Edit
+            </Link>
+          )}
         </div>
 
         <motion.div
@@ -700,9 +705,15 @@ export function ProfileView() {
 
             <div className="relative z-10 mb-4 flex justify-center">
               <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200 }}>
-                <div className="h-24 w-24 overflow-hidden rounded-full shadow-2xl" style={{ border: "3px solid rgba(255,255,255,0.4)" }}>
-                  <ImageWithFallback src={profile.photoUrl || FALLBACK_PHOTO} alt={display.name} className="h-full w-full object-cover" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoPreview(true)}
+                  className="h-24 w-24 overflow-hidden rounded-full shadow-2xl transition-transform hover:scale-[1.02]"
+                  style={{ border: "3px solid rgba(255,255,255,0.4)" }}
+                  aria-label={`View ${display.name} photo`}
+                >
+                  <ImageWithFallback src={profilePhotoUrl} alt={display.name} className="h-full w-full object-cover" />
+                </button>
               </motion.div>
             </div>
 
@@ -1019,6 +1030,37 @@ export function ProfileView() {
           </Link>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showPhotoPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowPhotoPreview(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(event) => event.stopPropagation()}
+              className="relative max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl"
+            >
+              <button
+                type="button"
+                onClick={() => setShowPhotoPreview(false)}
+                className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                aria-label="Close photo preview"
+              >
+                <X size={16} />
+              </button>
+              <ImageWithFallback src={profilePhotoUrl} alt={display.name} className="max-h-[90vh] w-full object-contain bg-black" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showShare && (

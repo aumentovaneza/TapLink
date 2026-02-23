@@ -14,6 +14,7 @@ import { ClaimFlow } from "./pages/ClaimFlow";
 import { Login } from "./pages/Login";
 import { MyTags } from "./pages/MyTags";
 import { TagAnalytics } from "./pages/TagAnalytics";
+import { TagResponses } from "./pages/TagResponses";
 import { NotFound } from "./pages/NotFound";
 import { RedirectAuthenticatedFromLogin, RequireAdmin, RequireAuth } from "./components/auth/RouteGuards";
 
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
         Component: RequireAuth,
         children: [
           { path: "my-tags", Component: MyTags },
+          { path: "my-tags/:tagId/responses", Component: TagResponses },
           { path: "analytics/:tagId", Component: TagAnalytics },
         ],
       },
