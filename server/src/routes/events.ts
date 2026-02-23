@@ -18,6 +18,15 @@ const linkClickSchema = z.object({
   linkLabel: z.string().trim().max(120).optional(),
 });
 
+const profileVisitSchema = z.object({
+  profileId: z.string().trim().min(1),
+  source: z.enum(["scan", "direct", "share", "qr"]).default("direct"),
+  device: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(80).optional(),
+  country: z.string().trim().max(80).optional(),
+  referrer: z.string().trim().max(200).optional(),
+});
+
 const petReportSchema = z
   .object({
     profileId: z.string().trim().min(1),
@@ -123,6 +132,61 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     return reply.status(201).send({ ok: true });
+  });
+
+  fastify.post("/profile-visit", async (request, reply) => {
+    const parsed = profileVisitSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.data.profileId },
+      include: {
+        tag: true,
+      },
+    });
+
+    if (!profile) {
+      return reply.status(404).send({ error: "Profile not found" });
+    }
+
+    if (!profile.tag) {
+      return reply.status(200).send({ ok: true, tracked: false });
+    }
+
+    if (profile.tag.status === "UNCLAIMED") {
+      return reply.status(200).send({ ok: true, tracked: false });
+    }
+
+    const occurredAt = new Date();
+    const scanMethod = parsed.data.source === "scan" ? "NFC" : "QR";
+
+    await prisma.$transaction([
+      prisma.tapEvent.create({
+        data: {
+          tagId: profile.tag.id,
+          profileId: profile.id,
+          scanMethod,
+          device: parsed.data.device,
+          city: parsed.data.city,
+          country: parsed.data.country,
+          referrer: parsed.data.referrer || parsed.data.source,
+          occurredAt,
+        },
+      }),
+      prisma.tag.update({
+        where: { id: profile.tag.id },
+        data: {
+          taps: {
+            increment: 1,
+          },
+          lastTapAt: occurredAt,
+        },
+      }),
+    ]);
+
+    return reply.status(201).send({ ok: true, tracked: true });
   });
 
   fastify.post("/pet-report", async (request, reply) => {

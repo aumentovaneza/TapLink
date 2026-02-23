@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertCircle,
@@ -20,6 +20,7 @@ import {
 import { BrandLogo } from "../components/shared/BrandLogo";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { apiRequest } from "../lib/api";
+import { getAccessToken } from "../lib/session";
 
 type TagState = "scanning" | "detected" | "unclaimed" | "active" | "inactive" | "error";
 
@@ -50,14 +51,6 @@ const templateTypeIcons: Record<string, typeof User> = {
   pet: PawPrint,
   cafe: Coffee,
 };
-
-function getDeviceName(): string {
-  if (typeof navigator === "undefined") {
-    return "web";
-  }
-
-  return navigator.userAgent.slice(0, 80);
-}
 
 function NFCPulse({ color = "#DC2626" }: { color?: string }) {
   return (
@@ -115,6 +108,7 @@ function ProfilePreview({ profile }: { profile: ScanProfile }) {
 
 export function TagScan() {
   const { tagId } = useParams();
+  const navigate = useNavigate();
   const [state, setState] = useState<TagState>("scanning");
   const [tagData, setTagData] = useState<ScanTagResponse | null>(null);
   const [scanTarget, setScanTarget] = useState<string | null>(tagId ?? null);
@@ -160,20 +154,12 @@ export function TagScan() {
           return;
         }
 
-        setState(response.state);
-
-        if (response.state === "active" || response.state === "inactive") {
-          void apiRequest<{ ok: boolean }>("/events/tap", {
-            method: "POST",
-            body: {
-              tagId: response.id,
-              scanMethod: "NFC",
-              device: getDeviceName(),
-            },
-          }).catch(() => {
-            // Keep scan UX fast even if analytics logging fails.
-          });
+        if ((response.state === "active" || response.state === "inactive") && response.profile) {
+          navigate(`/profile/${encodeURIComponent(response.profile.slug || response.profile.id)}?source=scan`, { replace: true });
+          return;
         }
+
+        setState(response.state);
       } catch (error) {
         if (isCancelled) {
           return;
@@ -219,6 +205,9 @@ export function TagScan() {
 
   const isProfileState = state === "active" || state === "inactive";
   const profilePath = tagData?.profile ? `/profile/${tagData.profile.slug || tagData.profile.id}` : "/profile";
+  const isAuthenticated = Boolean(getAccessToken());
+  const encodedClaimCode = tagData?.claimCode ? encodeURIComponent(tagData.claimCode) : null;
+  const claimPath = encodedClaimCode ? `/claim/${encodedClaimCode}` : "/claim";
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(160deg, #0f0c29 0%, #1e1b4b 40%, #0c1445 100%)" }}>
@@ -376,22 +365,35 @@ export function TagScan() {
               )}
 
               <div className="w-full space-y-3">
-                <Link
-                  to={tagData?.claimCode ? `/claim/${tagData.claimCode}` : "/claim"}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", fontWeight: 700 }}
-                >
-                  <Zap size={16} />
-                  Claim This Tag
-                  <ArrowRight size={15} />
-                </Link>
-                <Link
-                  to="/login"
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white/70 transition-all hover:text-white"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
-                >
-                  Sign in to claim
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    to={claimPath}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-white transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", fontWeight: 700 }}
+                  >
+                    <Zap size={16} />
+                    Claim This Tag
+                    <ArrowRight size={15} />
+                  </Link>
+                ) : (
+                  <>
+                    <p className="text-xs text-white/55">Sign in or sign up first to claim this tag.</p>
+                    <Link
+                      to={`${claimPath}?auth=signin`}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white transition-all hover:opacity-90"
+                      style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 600 }}
+                    >
+                      Sign In to Claim
+                    </Link>
+                    <Link
+                      to={`${claimPath}?auth=signup`}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm text-white/80 transition-all hover:text-white"
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", fontWeight: 500 }}
+                    >
+                      Create Account to Claim
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

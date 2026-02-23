@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import {
@@ -210,19 +210,26 @@ function StepCode({
 }
 
 function StepAccount({
+  initialMode,
   onAuthenticated,
   isDark,
 }: {
+  initialMode: "signin" | "signup";
   onAuthenticated: (data: { mode: "signin" | "signup"; email: string; password: string; name?: string }) => Promise<void>;
   isDark: boolean;
 }) {
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMode(initialMode);
+    setError("");
+  }, [initialMode]);
 
   const inputCls = `w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all ${
     isDark
@@ -579,6 +586,7 @@ export function ClaimFlow() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { code: urlCode } = useParams();
+  const location = useLocation();
 
   const [step, setStep] = useState(1);
   const [code, setCode] = useState((urlCode ?? "").toUpperCase());
@@ -587,6 +595,8 @@ export function ClaimFlow() {
   const [claimError, setClaimError] = useState("");
   const [verifiedTag, setVerifiedTag] = useState<VerifiedTag | null>(null);
   const [profilePath, setProfilePath] = useState<string | null>(null);
+  const accountModeFromQuery: "signin" | "signup" =
+    new URLSearchParams(location.search).get("auth") === "signin" ? "signin" : "signup";
 
   useEffect(() => {
     setCode((urlCode ?? "").toUpperCase());
@@ -743,6 +753,7 @@ export function ClaimFlow() {
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <StepAccount
+                initialMode={accountModeFromQuery}
                 onAuthenticated={async (data) => {
                   try {
                     await handleAuthenticated(data);

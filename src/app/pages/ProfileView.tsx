@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import {
@@ -282,6 +282,13 @@ function createShareUrl(slug: string): string {
   return `${window.location.origin}/profile/${slug}`;
 }
 
+function getDeviceName(): string {
+  if (typeof navigator === "undefined") {
+    return "web";
+  }
+  return navigator.userAgent.slice(0, 80);
+}
+
 async function resolveProfileId(paramId?: string): Promise<string> {
   if (paramId) {
     return paramId;
@@ -302,8 +309,10 @@ async function resolveProfileId(paramId?: string): Promise<string> {
 
 export function ProfileView() {
   const { id } = useParams();
+  const location = useLocation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const trackedVisitKeysRef = useRef<Set<string>>(new Set());
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -361,6 +370,34 @@ export function ProfileView() {
   useEffect(() => {
     void loadProfile();
   }, [id]);
+
+  useEffect(() => {
+    if (!profile?.id || !profile.tagId || import.meta.env.DEV) {
+      return;
+    }
+
+    const sourceParam = new URLSearchParams(location.search).get("source");
+    const source = sourceParam === "scan" || sourceParam === "share" || sourceParam === "qr" ? sourceParam : "direct";
+    const trackKey = `${profile.id}:${source}`;
+    if (trackedVisitKeysRef.current.has(trackKey)) {
+      return;
+    }
+    trackedVisitKeysRef.current.add(trackKey);
+
+    const referrer = typeof document === "undefined" ? undefined : document.referrer.slice(0, 200);
+
+    void apiRequest<{ ok: boolean }>("/events/profile-visit", {
+      method: "POST",
+      body: {
+        profileId: profile.id,
+        source,
+        device: getDeviceName(),
+        referrer,
+      },
+    }).catch(() => {
+      // Keep public profile interaction smooth even if analytics logging fails.
+    });
+  }, [profile?.id, profile?.tagId, location.search]);
 
   const display = useMemo(() => {
     if (!profile) {

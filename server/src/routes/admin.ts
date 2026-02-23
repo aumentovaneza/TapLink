@@ -5,6 +5,7 @@ import { z } from "zod";
 import { generateApiKey, hashValue, randomUppercaseCode } from "../lib/auth";
 import { requireRole } from "../lib/guards";
 import { prisma } from "../lib/prisma";
+import { getTemplateDefaults } from "../lib/template-defaults";
 
 const profileQuerySchema = z.object({
   search: z.string().trim().optional(),
@@ -71,6 +72,10 @@ function clientTagStatus(status: TagStatus): "active" | "inactive" | "unclaimed"
 
 function maskHash(value: string): string {
   return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function createGeneratedProfileSlug(tagCode: string): string {
+  return `tag-${tagCode.trim().toLowerCase()}`;
 }
 
 export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
@@ -298,9 +303,85 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
       };
     });
 
-    const result = await prisma.tag.createMany({
-      data: rows,
-      skipDuplicates: true,
+    const individualDefaults = getTemplateDefaults("individual");
+    const result = await prisma.$transaction(async (tx) => {
+      const createdTagsResult = await tx.tag.createMany({
+        data: rows,
+        skipDuplicates: true,
+      });
+
+      const tags = await tx.tag.findMany({
+        where: {
+          code: {
+            in: rows.map((row) => row.code),
+          },
+        },
+        select: {
+          id: true,
+          code: true,
+          profileId: true,
+        },
+      });
+
+      for (const tag of tags) {
+        if (tag.profileId) {
+          continue;
+        }
+
+        const baseSlug = createGeneratedProfileSlug(tag.code);
+        let profile: { id: string } | null = null;
+
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const slug = attempt === 0 ? baseSlug : `${baseSlug}-${randomUppercaseCode(4).toLowerCase()}`;
+
+          try {
+            profile = await tx.profile.create({
+              data: {
+                slug,
+                ownerId: request.user.sub,
+                templateType: "individual",
+                theme: "wave",
+                palette: "original",
+                showGraphic: true,
+                photoUrl: null,
+                fields: {
+                  ...individualDefaults.fields,
+                  name: `Tag ${tag.code}`,
+                },
+                links: {
+                  create: individualDefaults.links.map((link, index) => ({
+                    position: index,
+                    type: link.type,
+                    label: link.label,
+                    url: link.url,
+                  })),
+                },
+              },
+              select: {
+                id: true,
+              },
+            });
+            break;
+          } catch (error) {
+            if (attempt >= 2) {
+              throw error;
+            }
+          }
+        }
+
+        if (!profile) {
+          throw new Error(`Unable to create generated profile for tag ${tag.code}`);
+        }
+
+        await tx.tag.update({
+          where: { id: tag.id },
+          data: {
+            profileId: profile.id,
+          },
+        });
+      }
+
+      return createdTagsResult;
     });
 
     await prisma.auditLog.create({
@@ -321,6 +402,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
       tags: rows.map((row) => ({
         code: row.code,
         claimCode: row.claimCode,
+        profilePath: `/profile/${createGeneratedProfileSlug(row.code)}`,
       })),
     });
   });
@@ -340,9 +422,9 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     await prisma.$transaction(async (tx) => {
-      if (tag.profileId && tag.ownerId) {
+      if (tag.profileId) {
         const profile = await tx.profile.findUnique({ where: { id: tag.profileId } });
-        if (profile && profile.ownerId === tag.ownerId) {
+        if (profile) {
           await tx.profile.delete({ where: { id: profile.id } });
         }
       }

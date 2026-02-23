@@ -187,38 +187,81 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(409).send({ error: "This tag has already been claimed" });
     }
 
-    const profile = await prisma.profile.create({
-      data: {
-        slug: createProfileSlug(templateType),
-        ownerId: request.user.sub,
-        templateType,
-        theme: "wave",
-        palette: "original",
-        showGraphic: true,
-        photoUrl: null,
-        fields: defaults.fields,
-        links: {
-          create: defaults.links.map((link, index) => ({
-            position: index,
-            type: link.type,
-            label: link.label,
-            url: link.url,
-          })),
-        },
-      },
-    });
+    const updatedTag = await prisma.$transaction(async (tx) => {
+      let profileId = existingTag.profileId;
 
-    const updatedTag = await prisma.tag.update({
-      where: { id: existingTag.id },
-      data: {
-        ownerId: request.user.sub,
-        profileId: profile.id,
-        status: "ACTIVE",
-        claimCode: null,
-      },
-      include: {
-        profile: true,
-      },
+      if (profileId) {
+        const linkedProfile = await tx.profile.findUnique({
+          where: { id: profileId },
+          select: { id: true },
+        });
+
+        if (linkedProfile) {
+          await tx.profile.update({
+            where: { id: profileId },
+            data: {
+              ownerId: request.user.sub,
+              templateType,
+              theme: "wave",
+              palette: "original",
+              showGraphic: true,
+              photoUrl: null,
+              fields: defaults.fields,
+              links: {
+                deleteMany: {},
+                create: defaults.links.map((link, index) => ({
+                  position: index,
+                  type: link.type,
+                  label: link.label,
+                  url: link.url,
+                })),
+              },
+            },
+          });
+        } else {
+          profileId = null;
+        }
+      }
+
+      if (!profileId) {
+        const profile = await tx.profile.create({
+          data: {
+            slug: createProfileSlug(templateType),
+            ownerId: request.user.sub,
+            templateType,
+            theme: "wave",
+            palette: "original",
+            showGraphic: true,
+            photoUrl: null,
+            fields: defaults.fields,
+            links: {
+              create: defaults.links.map((link, index) => ({
+                position: index,
+                type: link.type,
+                label: link.label,
+                url: link.url,
+              })),
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+        profileId = profile.id;
+      }
+
+      return tx.tag.update({
+        where: { id: existingTag.id },
+        data: {
+          ownerId: request.user.sub,
+          profileId,
+          status: "ACTIVE",
+          claimCode: null,
+        },
+        include: {
+          profile: true,
+        },
+      });
     });
 
     await prisma.auditLog.create({
@@ -229,7 +272,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         entityId: updatedTag.id,
         metadata: {
           tagCode: updatedTag.code,
-          profileId: profile.id,
+          profileId: updatedTag.profileId,
         },
       },
     });
