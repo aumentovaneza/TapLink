@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+const REQUIRED_DELEGATES = ["user", "tag", "profile", "order"] as const;
+
 function normalizeDatabaseUrl(rawUrl: string): string {
   try {
     const url = new URL(rawUrl);
@@ -31,7 +33,20 @@ const prismaClientOptions = databaseUrl
     }
   : undefined;
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient(prismaClientOptions);
+function hasRequiredDelegates(client: PrismaClient): boolean {
+  const record = client as unknown as Record<string, unknown>;
+  return REQUIRED_DELEGATES.every((delegate) => typeof record[delegate] !== "undefined");
+}
+
+const cachedClient = globalForPrisma.prisma;
+const shouldReuseCached = cachedClient ? hasRequiredDelegates(cachedClient) : false;
+
+if (cachedClient && !shouldReuseCached) {
+  // A stale client (e.g. before a schema change) can be missing delegates like `order`.
+  void cachedClient.$disconnect().catch(() => {});
+}
+
+export const prisma = shouldReuseCached && cachedClient ? cachedClient : new PrismaClient(prismaClientOptions);
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

@@ -18,6 +18,7 @@ import {
   List,
   MoreHorizontal,
   Music,
+  Package,
   PawPrint,
   Plus,
   QrCode,
@@ -68,6 +69,9 @@ const themeGradients: Record<string, string> = {
 };
 
 type TagStatus = "active" | "inactive" | "unclaimed";
+type HardwareOrderStatus = "pending" | "processing" | "ready" | "shipped" | "completed" | "cancelled";
+type HardwareProductType = "tag" | "card";
+type OrderPaymentStatus = "awaiting_confirmation" | "confirmed" | "expired" | "cancelled";
 type ViewMode = "grid" | "list";
 type FilterStatus = "all" | TagStatus;
 
@@ -113,10 +117,97 @@ interface UserTag {
   unreadResponses: number;
 }
 
+interface ApiOrder {
+  id: string;
+  productType: HardwareProductType;
+  quantity: number;
+  useDefaultDesign: boolean;
+  design: {
+    baseColor: string;
+    textColor: string;
+    iconColor: string;
+    primaryText: string;
+    secondaryText: string;
+    iconId: string;
+  };
+  status: HardwareOrderStatus;
+  statusNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  processedAt: string | null;
+  payment: {
+    status: OrderPaymentStatus;
+    transactionId: string;
+    amountPhp: number;
+    currency: "PHP";
+    unitPricePhp: number;
+    quantity: number;
+    createdAt: string;
+    expiresAt: string;
+    confirmedAt: string | null;
+    expiredAt: string | null;
+    cancelledAt: string | null;
+    reference: string | null;
+    receipt: {
+      fileName: string;
+      storagePath: string;
+      mimeType: string;
+      sizeBytes: number;
+      uploadedAt: string;
+    } | null;
+  };
+  timeline: {
+    expectedProcessingAt: string;
+    expectedDoneAt: string;
+    expectedSentAt: string;
+  } | null;
+  profile: {
+    id: string;
+    slug: string;
+    name: string;
+  } | null;
+  processedBy: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
+interface UserHardwareOrder {
+  id: string;
+  productType: HardwareProductType;
+  quantity: number;
+  useDefaultDesign: boolean;
+  design: ApiOrder["design"];
+  status: HardwareOrderStatus;
+  statusNote: string | null;
+  createdAt: string;
+  processedAt: string | null;
+  payment: ApiOrder["payment"];
+  timeline: ApiOrder["timeline"];
+  profile: ApiOrder["profile"];
+}
+
 const statusConfig: Record<TagStatus, { label: string; dot: string; bg: string; text: string }> = {
   active: { label: "Active", dot: "#10B981", bg: "rgba(16,185,129,0.1)", text: "#10B981" },
   inactive: { label: "Inactive", dot: "#6B7280", bg: "rgba(107,114,128,0.1)", text: "#6B7280" },
   unclaimed: { label: "Unclaimed", dot: "#F59E0B", bg: "rgba(245,158,11,0.1)", text: "#F59E0B" },
+};
+
+const orderStatusConfig: Record<HardwareOrderStatus, { label: string; cls: string }> = {
+  pending: { label: "Pending", cls: "bg-amber-100 text-amber-700" },
+  processing: { label: "Processing", cls: "bg-sky-100 text-sky-700" },
+  ready: { label: "Ready", cls: "bg-indigo-100 text-indigo-700" },
+  shipped: { label: "Shipped", cls: "bg-orange-100 text-orange-700" },
+  completed: { label: "Completed", cls: "bg-emerald-100 text-emerald-700" },
+  cancelled: { label: "Cancelled", cls: "bg-slate-100 text-slate-600" },
+};
+
+const paymentStatusConfig: Record<OrderPaymentStatus, { label: string; cls: string }> = {
+  awaiting_confirmation: { label: "Awaiting Payment", cls: "bg-amber-100 text-amber-700" },
+  confirmed: { label: "Payment Confirmed", cls: "bg-emerald-100 text-emerald-700" },
+  expired: { label: "Payment Expired", cls: "bg-rose-100 text-rose-700" },
+  cancelled: { label: "Payment Cancelled", cls: "bg-slate-100 text-slate-600" },
 };
 
 function fallbackPhoto(templateType: string): string {
@@ -151,6 +242,41 @@ function mapTagFromApi(tag: ApiTag): UserTag {
     responseCount: tag.responseCount ?? 0,
     unreadResponses: tag.unreadResponses ?? 0,
   };
+}
+
+function mapOrderFromApi(order: ApiOrder): UserHardwareOrder {
+  return {
+    id: order.id,
+    productType: order.productType,
+    quantity: order.quantity,
+    useDefaultDesign: order.useDefaultDesign,
+    design: order.design,
+    status: order.status,
+    statusNote: order.statusNote,
+    createdAt: order.createdAt,
+    processedAt: order.processedAt,
+    payment: order.payment,
+    timeline: order.timeline,
+    profile: order.profile,
+  };
+}
+
+function formatDateTime(input: string | null): string {
+  if (!input) {
+    return "Not yet";
+  }
+
+  const date = new Date(input);
+  if (Number.isNaN(date.getTime())) {
+    return "Not yet";
+  }
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function toTagStatus(current: TagStatus): TagStatus {
@@ -565,6 +691,7 @@ export function MyTags() {
   const navigate = useNavigate();
 
   const [tags, setTags] = useState<UserTag[]>([]);
+  const [orders, setOrders] = useState<UserHardwareOrder[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [view, setView] = useState<ViewMode>("grid");
@@ -581,8 +708,12 @@ export function MyTags() {
     setError("");
 
     try {
-      const response = await apiRequest<{ items: ApiTag[] }>("/tags/mine", { auth: true });
-      setTags(response.items.map((item) => mapTagFromApi(item)));
+      const [tagResponse, orderResponse] = await Promise.all([
+        apiRequest<{ items: ApiTag[] }>("/tags/mine", { auth: true }),
+        apiRequest<{ items: ApiOrder[] }>("/orders/mine", { auth: true }),
+      ]);
+      setTags(tagResponse.items.map((item) => mapTagFromApi(item)));
+      setOrders(orderResponse.items.map((item) => mapOrderFromApi(item)));
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         clearAccessToken();
@@ -649,12 +780,15 @@ export function MyTags() {
   const activeTags = tags.filter((tag) => tag.status === "active").length;
   const totalUnreadResponses = tags.reduce((sum, tag) => sum + tag.unreadResponses, 0);
   const totalResponses = tags.reduce((sum, tag) => sum + tag.responseCount, 0);
+  const openOrders = orders.filter((order) => order.status !== "completed" && order.status !== "cancelled").length;
+  const latestOrders = orders.slice(0, 5);
 
   const statCards = [
     { label: "Total Tags", value: tags.length, icon: Tag, color: "#DC2626", sub: `${activeTags} active` },
     { label: "Total Taps", value: totalTaps.toLocaleString(), icon: Zap, color: "#EA580C", sub: "All time" },
     { label: "Active Tags", value: activeTags, icon: Wifi, color: "#10B981", sub: "Currently live" },
     { label: "New Responses", value: totalUnreadResponses, icon: Bell, color: "#F43F5E", sub: `${totalResponses} total reports` },
+    { label: "Open Orders", value: openOrders, icon: Package, color: "#2563EB", sub: `${orders.length} total orders` },
   ];
 
   return (
@@ -694,6 +828,15 @@ export function MyTags() {
               </Link>
 
               <Link
+                to="/hardware-setup"
+                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm border transition-colors ${isDark ? "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                style={{ fontWeight: 500 }}
+              >
+                <Package size={14} />
+                Order Hardware
+              </Link>
+
+              <Link
                 to="/claim"
                 className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white transition-all hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
@@ -713,9 +856,9 @@ export function MyTags() {
           </div>
         )}
 
-        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-5">
           {loading
-            ? [1, 2, 3, 4].map((index) => <StatCardSkeleton key={index} />)
+            ? [1, 2, 3, 4, 5].map((index) => <StatCardSkeleton key={index} />)
             : statCards.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
@@ -739,6 +882,109 @@ export function MyTags() {
                   </motion.div>
                 );
               })}
+        </div>
+
+        <div className={`mb-8 rounded-2xl border p-5 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                Hardware Orders
+              </p>
+              <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Track tag/card production and delivery status.
+              </p>
+            </div>
+            <Link
+              to="/hardware-setup"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs text-white transition-all hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}
+            >
+              <Package size={12} />
+              New Order
+            </Link>
+          </div>
+
+          {loading ? (
+            <p className={`text-sm ${isDark ? "text-slate-500" : "text-slate-500"}`}>Loading orders...</p>
+          ) : latestOrders.length === 0 ? (
+            <div className={`rounded-xl border p-4 text-sm ${isDark ? "border-slate-700 bg-slate-950 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+              You have no hardware orders yet. Create one from the configurator.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {latestOrders.map((order) => {
+                const meta = orderStatusConfig[order.status];
+                const paymentMeta = paymentStatusConfig[order.payment.status];
+                return (
+                  <div
+                    key={order.id}
+                    className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-950" : "border-slate-200 bg-slate-50"}`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                          {order.productType.toUpperCase()} x{order.quantity} · #{order.id.slice(-8)}
+                        </p>
+                        <p className={`mt-0.5 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                          Ordered: {formatDateTime(order.createdAt)}
+                        </p>
+                        <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                          Last processing update: {formatDateTime(order.processedAt)}
+                        </p>
+                        <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                          Payment amount: PHP {order.payment.amountPhp.toLocaleString("en-PH")}
+                        </p>
+                        {order.profile && (
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            Linked profile: {order.profile.name}
+                          </p>
+                        )}
+                        {order.timeline && (
+                          <div className={`mt-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <p>Expected processing: {formatDateTime(order.timeline.expectedProcessingAt)}</p>
+                            <p>Expected done: {formatDateTime(order.timeline.expectedDoneAt)}</p>
+                            <p>Expected sent: {formatDateTime(order.timeline.expectedSentAt)}</p>
+                          </div>
+                        )}
+                        {order.statusNote && (
+                          <p className={`mt-1 text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                            Note: {order.statusNote}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${meta.cls}`} style={{ fontWeight: 700 }}>
+                          {meta.label}
+                        </span>
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${paymentMeta.cls}`} style={{ fontWeight: 700 }}>
+                          {paymentMeta.label}
+                        </span>
+                        {order.payment.status === "awaiting_confirmation" && (
+                          <Link
+                            to={`/orders/${encodeURIComponent(order.id)}/payment`}
+                            className="inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] text-white transition-all hover:opacity-90"
+                            style={{ background: "linear-gradient(135deg, #2563EB, #1D4ED8)", fontWeight: 700 }}
+                          >
+                            Complete Payment
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="h-4 w-4 rounded border border-slate-300" style={{ background: order.design.baseColor }} />
+                      <span className="h-4 w-4 rounded border border-slate-300" style={{ background: order.design.textColor }} />
+                      <span className="h-4 w-4 rounded border border-slate-300" style={{ background: order.design.iconColor }} />
+                      <span className={`ml-1 truncate text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        {order.design.primaryText}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="mb-6 flex flex-col gap-3 sm:flex-row">

@@ -21,13 +21,22 @@ import {
   ChevronRight,
   Globe,
   AlertCircle,
+  Plus,
+  Upload,
 } from "lucide-react";
 
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
-import { ApiError, apiRequest } from "../../lib/api";
+import { API_BASE_URL, ApiError, apiRequest } from "../../lib/api";
+import {
+  defaultHardwareColors,
+  type HardwareColorOption,
+  type HardwareColorCatalog,
+  normalizeHardwareColorCatalog,
+  type ProductType,
+} from "../../lib/hardware-options";
 import { clearSession } from "../../lib/session";
 
-type TabKey = "general" | "notifications" | "security" | "api" | "danger";
+type TabKey = "general" | "hardware" | "notifications" | "security" | "api" | "danger";
 
 interface AdminSettingsRecord {
   id: number;
@@ -85,12 +94,28 @@ interface SecurityState {
   ipAllowlist: string;
 }
 
+interface PaymentQrAsset {
+  fileName: string;
+  storagePath: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
+interface PaymentQrMethod {
+  id: string;
+  label: string;
+  qr: PaymentQrAsset | null;
+}
+
 interface ParsedConfig {
   language: string;
   visibility: string;
   notifications: NotificationState;
   security: SecurityState;
   webhookUrl: string;
+  hardwareColors: HardwareColorCatalog;
+  paymentQRCodes: PaymentQrMethod[];
 }
 
 const DEFAULT_NOTIFICATIONS: NotificationState = {
@@ -110,10 +135,19 @@ const DEFAULT_SECURITY: SecurityState = {
   ipAllowlist: "",
 };
 
+const PAYMENT_QR_MAX_BYTES = 5 * 1024 * 1024;
+const PAYMENT_QR_ACCEPTED_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const PAYMENT_QR_METHOD_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DEFAULT_PAYMENT_QR_METHODS: PaymentQrMethod[] = [
+  { id: "gotyme", label: "GoTyme QR", qr: null },
+  { id: "gcash", label: "GCash QR", qr: null },
+];
+
 type IconComponent = React.ComponentType<{ size?: number; className?: string }>;
 
 const TABS: Array<{ key: TabKey; label: string; Icon: IconComponent }> = [
   { key: "general", label: "General", Icon: Globe },
+  { key: "hardware", label: "Hardware", Icon: Upload },
   { key: "notifications", label: "Notifications", Icon: Bell },
   { key: "security", label: "Security", Icon: Shield },
   { key: "api", label: "API Keys", Icon: Key },
@@ -188,6 +222,117 @@ function formatDate(input: string | null): string {
   });
 }
 
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+function isHexColor(value: string): boolean {
+  return HEX_COLOR_RE.test(value);
+}
+
+function normalizeHexInput(value: string): string {
+  const raw = value.trim().toUpperCase();
+  if (!raw) {
+    return "#";
+  }
+
+  const body = raw.startsWith("#") ? raw.slice(1) : raw;
+  const sanitized = body.replace(/[^0-9A-F]/g, "").slice(0, 6);
+  return `#${sanitized}`;
+}
+
+function toColorSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function toPaymentQrMethodId(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
+
+function buildColorId(productType: ProductType, name: string, existing: HardwareColorOption[]): string {
+  const base = toColorSlug(name) || "custom";
+  let candidate = `${productType}-${base}`;
+  let counter = 2;
+
+  while (existing.some((color) => color.id === candidate)) {
+    candidate = `${productType}-${base}-${counter}`;
+    counter += 1;
+  }
+
+  return candidate;
+}
+
+function parsePaymentQrAsset(value: unknown): PaymentQrAsset | null {
+  const record = toRecord(value);
+  const fileName = readString(record.fileName, "");
+  const storagePath = readString(record.storagePath, "");
+  const mimeType = readString(record.mimeType, "");
+  const uploadedAt = readString(record.uploadedAt, "");
+  const sizeValue = Number(record.sizeBytes);
+  const sizeBytes = Number.isFinite(sizeValue) && sizeValue >= 0 ? Math.floor(sizeValue) : 0;
+
+  if (!fileName || !storagePath || !mimeType || !uploadedAt) {
+    return null;
+  }
+
+  return {
+    fileName,
+    storagePath,
+    mimeType,
+    sizeBytes,
+    uploadedAt,
+  };
+}
+
+function normalizePaymentQRMethods(value: unknown): PaymentQrMethod[] {
+  const parsed: PaymentQrMethod[] = [];
+  const seenIds = new Set<string>();
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const record = toRecord(entry);
+      const id = toPaymentQrMethodId(readString(record.id, ""));
+      const label = readString(record.label, "").trim().slice(0, 80);
+      if (!id || !label || !PAYMENT_QR_METHOD_ID_RE.test(id) || seenIds.has(id)) {
+        continue;
+      }
+      seenIds.add(id);
+      parsed.push({
+        id,
+        label,
+        qr: parsePaymentQrAsset(record.qr),
+      });
+    }
+  } else {
+    const legacyRecord = toRecord(value);
+    for (const [legacyId, assetValue] of Object.entries(legacyRecord)) {
+      const id = toPaymentQrMethodId(legacyId);
+      if (!id || !PAYMENT_QR_METHOD_ID_RE.test(id) || seenIds.has(id)) {
+        continue;
+      }
+      seenIds.add(id);
+      const fallbackLabel = id === "gotyme" ? "GoTyme QR" : id === "gcash" ? "GCash QR" : id.toUpperCase();
+      parsed.push({
+        id,
+        label: fallbackLabel,
+        qr: parsePaymentQrAsset(assetValue),
+      });
+    }
+  }
+
+  if (parsed.length > 0) {
+    return parsed;
+  }
+  return DEFAULT_PAYMENT_QR_METHODS.map((method) => ({ ...method }));
+}
+
 function parseConfig(value: unknown): ParsedConfig {
   const config = toRecord(value);
 
@@ -213,6 +358,8 @@ function parseConfig(value: unknown): ParsedConfig {
       ipAllowlist: readString(securityRaw.ipAllowlist, DEFAULT_SECURITY.ipAllowlist),
     },
     webhookUrl: readString(config.webhookUrl, ""),
+    hardwareColors: normalizeHardwareColorCatalog(config.hardwareColors),
+    paymentQRCodes: normalizePaymentQRMethods(config.paymentQRCodes),
   };
 }
 
@@ -231,6 +378,8 @@ export function AdminSettings() {
   const [visibility, setVisibility] = useState("public");
   const [maxProfiles, setMaxProfiles] = useState("10");
   const [maintenance, setMaintenance] = useState(false);
+  const [hardwareColors, setHardwareColors] = useState<HardwareColorCatalog>(defaultHardwareColors);
+  const [paymentQRCodes, setPaymentQRCodes] = useState<PaymentQrMethod[]>(DEFAULT_PAYMENT_QR_METHODS);
 
   const [notifState, setNotifState] = useState<NotificationState>(DEFAULT_NOTIFICATIONS);
 
@@ -253,9 +402,12 @@ export function AdminSettings() {
   const [notice, setNotice] = useState("");
 
   const [generalSaved, setGeneralSaved] = useState(false);
+  const [hardwareSaved, setHardwareSaved] = useState(false);
   const [notifSaved, setNotifSaved] = useState(false);
   const [securitySaved, setSecuritySaved] = useState(false);
   const [apiSaved, setApiSaved] = useState(false);
+  const [uploadingPaymentQr, setUploadingPaymentQr] = useState<number | null>(null);
+  const [removingPaymentQr, setRemovingPaymentQr] = useState<number | null>(null);
 
   const [confirmInput, setConfirmInput] = useState("");
   const [activeConfirm, setActiveConfirm] = useState<string | null>(null);
@@ -265,6 +417,11 @@ export function AdminSettings() {
     isDark
       ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500"
       : "bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-indigo-400"
+  }`;
+  const compactInputCls = `h-8 rounded-lg border px-2 text-sm outline-none transition-colors ${
+    isDark
+      ? "border-slate-700 bg-slate-900 text-slate-100 focus:border-indigo-500"
+      : "border-slate-300 bg-white text-slate-700 focus:border-indigo-400"
   }`;
   const labelCls = `block text-xs mb-1.5 ${isDark ? "text-slate-400" : "text-slate-600"}`;
 
@@ -297,6 +454,8 @@ export function AdminSettings() {
 
     setLanguage(parsed.language);
     setVisibility(parsed.visibility);
+    setHardwareColors(parsed.hardwareColors);
+    setPaymentQRCodes(parsed.paymentQRCodes);
 
     setNotifState(parsed.notifications);
 
@@ -384,6 +543,91 @@ export function AdminSettings() {
         return;
       }
       setError(err instanceof Error ? err.message : "Unable to save general settings.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const saveHardwarePayments = async () => {
+    setSaving("hardware");
+    setError("");
+    setNotice("");
+
+    try {
+      const productTypes: ProductType[] = ["tag", "card"];
+      for (const productType of productTypes) {
+        const colors = hardwareColors[productType];
+        if (!colors.length) {
+          setError(`Add at least one ${productType} color before saving.`);
+          return;
+        }
+        const hasSelectableColor = colors.some((color) => color.available && color.plaStock > 0);
+        if (!hasSelectableColor) {
+          setError(`At least one ${productType} color must be enabled with PLA stock greater than 0.`);
+          return;
+        }
+        for (const color of colors) {
+          if (!color.name.trim()) {
+            setError(`Color name is required for ${productType} colors.`);
+            return;
+          }
+          if (!isHexColor(color.hex)) {
+            setError(`Use a valid 6-digit HEX value (e.g. #DC2626) for ${color.name || "new color"}.`);
+            return;
+          }
+        }
+      }
+
+      if (!paymentQRCodes.length) {
+        setError("Add at least one payment method before saving.");
+        return;
+      }
+
+      const seenMethodIds = new Set<string>();
+      const normalizedPaymentMethods: PaymentQrMethod[] = [];
+      for (const method of paymentQRCodes) {
+        const id = toPaymentQrMethodId(method.id);
+        const label = method.label.trim().slice(0, 80);
+        if (!id || !PAYMENT_QR_METHOD_ID_RE.test(id)) {
+          setError(`Use a valid payment method id (lowercase letters, numbers, and hyphens) for ${method.label || "new method"}.`);
+          return;
+        }
+        if (!label) {
+          setError("Payment method label is required.");
+          return;
+        }
+        if (seenMethodIds.has(id)) {
+          setError(`Duplicate payment method id: ${id}`);
+          return;
+        }
+        seenMethodIds.add(id);
+        normalizedPaymentMethods.push({
+          id,
+          label,
+          qr: method.qr,
+        });
+      }
+
+      setPaymentQRCodes(normalizedPaymentMethods);
+
+      const response = await apiRequest<SettingsResponse>("/admin/settings", {
+        method: "PATCH",
+        auth: true,
+        body: {
+          config: {
+            hardwareColors,
+            paymentQRCodes: normalizedPaymentMethods,
+          },
+        },
+      });
+
+      hydrateFromSettings(response.settings);
+      setSavedFlag(setHardwareSaved);
+    } catch (err) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Unable to save hardware and payment settings.");
     } finally {
       setSaving(null);
     }
@@ -521,6 +765,249 @@ export function AdminSettings() {
 
   const toggleNotif = (key: keyof NotificationState) => {
     setNotifState((current) => ({ ...current, [key]: !current[key] }));
+  };
+
+  const toggleHardwareColorAvailability = (productType: ProductType, colorId: string) => {
+    setHardwareColors((current) => {
+      const colors = current[productType];
+      const target = colors.find((color) => color.id === colorId);
+      if (!target) {
+        return current;
+      }
+
+      if (!target.available && target.plaStock <= 0) {
+        setError(`Set PLA stock for ${target.name} before enabling this color.`);
+        return current;
+      }
+
+      if (target.available && colors.filter((color) => color.available).length <= 1) {
+        setError(`At least one ${productType} color must stay available.`);
+        return current;
+      }
+
+      setError("");
+
+      return {
+        ...current,
+        [productType]: colors.map((color) =>
+          color.id === colorId ? { ...color, available: !color.available } : color
+        ),
+      };
+    });
+  };
+
+  const updateHardwareColorStock = (productType: ProductType, colorId: string, rawValue: string) => {
+    const parsed = Number.parseInt(rawValue, 10);
+    const nextStock = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+
+    setHardwareColors((current) => ({
+      ...current,
+      [productType]: current[productType].map((color) => {
+        if (color.id !== colorId) {
+          return color;
+        }
+        return {
+          ...color,
+          plaStock: nextStock,
+          available: nextStock === 0 ? false : color.available,
+        };
+      }),
+    }));
+    setError("");
+  };
+
+  const updateHardwareColorName = (productType: ProductType, colorId: string, rawValue: string) => {
+    setHardwareColors((current) => ({
+      ...current,
+      [productType]: current[productType].map((color) =>
+        color.id === colorId
+          ? {
+              ...color,
+              name: rawValue.slice(0, 36),
+            }
+          : color
+      ),
+    }));
+    setError("");
+  };
+
+  const updateHardwareColorHex = (productType: ProductType, colorId: string, rawValue: string) => {
+    const nextHex = normalizeHexInput(rawValue);
+    setHardwareColors((current) => ({
+      ...current,
+      [productType]: current[productType].map((color) =>
+        color.id === colorId
+          ? {
+              ...color,
+              hex: nextHex,
+            }
+          : color
+      ),
+    }));
+    setError("");
+  };
+
+  const addHardwareColor = (productType: ProductType) => {
+    setHardwareColors((current) => {
+      const existing = current[productType];
+      const productLabel = productType === "tag" ? "Tag" : "Card";
+      const name = `${productLabel} Color ${existing.length + 1}`;
+      const nextColor: HardwareColorOption = {
+        id: buildColorId(productType, name, existing),
+        name,
+        hex: "#9CA3AF",
+        available: false,
+        plaStock: 0,
+      };
+
+      return {
+        ...current,
+        [productType]: [...existing, nextColor],
+      };
+    });
+    setError("");
+  };
+
+  const addPaymentQrMethod = () => {
+    setPaymentQRCodes((current) => {
+      const existingIds = new Set(current.map((method) => method.id));
+      let nextNumber = current.length + 1;
+      let id = "";
+      while (!id || existingIds.has(id)) {
+        id = toPaymentQrMethodId(`bank-${nextNumber}`);
+        nextNumber += 1;
+      }
+      return [
+        ...current,
+        {
+          id,
+          label: `Bank ${current.length + 1}`,
+          qr: null,
+        },
+      ];
+    });
+    setError("");
+  };
+
+  const updatePaymentQrMethodLabel = (methodIndex: number, rawLabel: string) => {
+    setPaymentQRCodes((current) =>
+      current.map((method, index) =>
+        index === methodIndex
+          ? {
+              ...method,
+              label: rawLabel.slice(0, 80),
+            }
+          : method
+      )
+    );
+    setError("");
+  };
+
+  const updatePaymentQrMethodId = (methodIndex: number, rawId: string) => {
+    const nextId = toPaymentQrMethodId(rawId);
+    setPaymentQRCodes((current) =>
+      current.map((method, index) =>
+        index === methodIndex
+          ? {
+              ...method,
+              id: nextId,
+            }
+          : method
+      )
+    );
+    setError("");
+  };
+
+  const removePaymentQrMethod = (methodIndex: number) => {
+    setPaymentQRCodes((current) => {
+      if (current.length <= 1) {
+        setError("At least one payment method is required.");
+        return current;
+      }
+      setError("");
+      return current.filter((_method, index) => index !== methodIndex);
+    });
+  };
+
+  const uploadPaymentQr = async (method: PaymentQrMethod, methodIndex: number, file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const methodId = toPaymentQrMethodId(method.id);
+    if (!methodId || !PAYMENT_QR_METHOD_ID_RE.test(methodId)) {
+      setError(`Invalid method id for ${method.label || "payment method"}. Save a valid id first.`);
+      return;
+    }
+    const methodLabel = method.label.trim().slice(0, 80);
+    if (!methodLabel) {
+      setError("Method label is required before uploading a QR screenshot.");
+      return;
+    }
+
+    if (!PAYMENT_QR_ACCEPTED_MIME_TYPES.has(file.type)) {
+      setError("Unsupported file type. Use PNG, JPG, or WebP screenshots.");
+      return;
+    }
+    if (file.size > PAYMENT_QR_MAX_BYTES) {
+      setError("QR screenshot is too large. Max 5MB.");
+      return;
+    }
+
+    setUploadingPaymentQr(methodIndex);
+    setError("");
+    setNotice("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("label", methodLabel);
+
+      const response = await apiRequest<SettingsResponse>(`/admin/settings/payment-qrs/${methodId}`, {
+        method: "POST",
+        auth: true,
+        body: formData,
+      });
+
+      hydrateFromSettings(response.settings);
+      setNotice(`${methodLabel} screenshot uploaded.`);
+    } catch (err) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Unable to upload QR screenshot.");
+    } finally {
+      setUploadingPaymentQr(null);
+    }
+  };
+
+  const removePaymentQr = async (method: PaymentQrMethod, methodIndex: number) => {
+    const methodId = toPaymentQrMethodId(method.id);
+    if (!methodId || !PAYMENT_QR_METHOD_ID_RE.test(methodId)) {
+      setError(`Invalid method id for ${method.label || "payment method"}. Save a valid id first.`);
+      return;
+    }
+
+    setRemovingPaymentQr(methodIndex);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await apiRequest<SettingsResponse>(`/admin/settings/payment-qrs/${methodId}`, {
+        method: "DELETE",
+        auth: true,
+      });
+
+      hydrateFromSettings(response.settings);
+      setNotice(`${method.label} screenshot removed.`);
+    } catch (err) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Unable to remove QR screenshot.");
+    } finally {
+      setRemovingPaymentQr(null);
+    }
   };
 
   const Section = ({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) => (
@@ -692,6 +1179,216 @@ export function AdminSettings() {
                       </div>
                       <div className="flex justify-end pt-2">
                         <SaveButton saved={generalSaved} saving={saving === "general"} onSave={() => void saveGeneral()} />
+                      </div>
+                    </Section>
+                  </motion.div>
+                )}
+
+                {activeTab === "hardware" && (
+                  <motion.div key="hardware" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
+                    <Section title="Hardware And Payments" desc="Manage hardware color inventory and payment method QR screenshots">
+                      <div>
+                        <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                          Hardware Color Availability
+                        </p>
+                        <p className={`mt-0.5 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                          Configure, add, and edit tag/card colors available in the hardware setup page.
+                        </p>
+                        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                          {(["tag", "card"] as ProductType[]).map((productType) => (
+                            <div
+                              key={productType}
+                              className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-slate-50"}`}
+                            >
+                              <p className={`mb-2 text-xs uppercase tracking-wide ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ fontWeight: 700 }}>
+                                {productType === "tag" ? "NFC Tag Colors" : "NFC Card Colors"}
+                              </p>
+                              <div className="space-y-2">
+                                {hardwareColors[productType].map((color) => {
+                                  const swatchHex = isHexColor(color.hex) ? color.hex : "#111827";
+                                  return (
+                                    <div
+                                      key={color.id}
+                                      className={`rounded-lg border px-2 py-2 ${isDark ? "border-slate-700 bg-slate-900/20" : "border-slate-200 bg-white"}`}
+                                      title={color.id}
+                                    >
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span
+                                          className={`h-7 w-7 shrink-0 rounded-md border ${isDark ? "border-slate-600" : "border-slate-300"}`}
+                                          style={{ background: swatchHex }}
+                                        />
+                                        <input
+                                          type="text"
+                                          value={color.name}
+                                          onChange={(event) => updateHardwareColorName(productType, color.id, event.target.value)}
+                                          placeholder="Color name"
+                                          className={`${compactInputCls} min-w-[9rem] flex-1`}
+                                          aria-label={`${productType} color name`}
+                                        />
+                                        <input
+                                          type="text"
+                                          value={color.hex}
+                                          onChange={(event) => updateHardwareColorHex(productType, color.id, event.target.value)}
+                                          placeholder="#000000"
+                                          className={`${compactInputCls} w-28 font-mono uppercase`}
+                                          aria-label={`${color.name || productType} hex`}
+                                        />
+                                        <label
+                                          htmlFor={`${productType}-${color.id}-stock`}
+                                          className={`text-[11px] uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`}
+                                          style={{ fontWeight: 700 }}
+                                        >
+                                          PLA
+                                        </label>
+                                        <input
+                                          id={`${productType}-${color.id}-stock`}
+                                          type="number"
+                                          min={0}
+                                          step={1}
+                                          value={color.plaStock}
+                                          onChange={(event) => updateHardwareColorStock(productType, color.id, event.target.value)}
+                                          className={`${compactInputCls} w-20`}
+                                          aria-label={`${color.name || productType} PLA stock`}
+                                        />
+                                        <Toggle checked={color.available} onChange={() => toggleHardwareColorAvailability(productType, color.id)} />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                <button
+                                  onClick={() => addHardwareColor(productType)}
+                                  className={`mt-1 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                                    isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                                  }`}
+                                  style={{ fontWeight: 600 }}
+                                >
+                                  <Plus size={13} />
+                                  Add color
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={`pt-4 border-t ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                        <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                          Payment Methods and QR Screenshots
+                        </p>
+                        <p className={`mt-0.5 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                          Add/edit banks or e-wallets, then upload each QR screenshot shown on checkout.
+                        </p>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {paymentQRCodes.map((method, methodIndex) => {
+                            const asset = method.qr;
+                            const methodId = toPaymentQrMethodId(method.id);
+                            const previewUrl =
+                              asset && methodId
+                                ? `${API_BASE_URL}/payment-qrs/${methodId}?v=${encodeURIComponent(asset.uploadedAt)}`
+                                : null;
+                            const isUploading = uploadingPaymentQr === methodIndex;
+                            const isRemoving = removingPaymentQr === methodIndex;
+
+                            return (
+                              <div
+                                key={`payment-method-${methodIndex}`}
+                                className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-slate-50"}`}
+                              >
+                                <div className="grid grid-cols-1 gap-2">
+                                  <input
+                                    type="text"
+                                    value={method.label}
+                                    onChange={(event) => updatePaymentQrMethodLabel(methodIndex, event.target.value)}
+                                    placeholder="Method label (e.g. BPI QR)"
+                                    className={`${compactInputCls} w-full`}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={method.id}
+                                    onChange={(event) => updatePaymentQrMethodId(methodIndex, event.target.value)}
+                                    placeholder="method-id"
+                                    className={`${compactInputCls} w-full font-mono lowercase`}
+                                  />
+                                </div>
+                                <div
+                                  className={`mt-2 flex h-40 items-center justify-center overflow-hidden rounded-lg border ${
+                                    isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                                  }`}
+                                >
+                                  {previewUrl ? (
+                                    <img src={previewUrl} alt={`${method.label} screenshot`} className="h-full w-full object-contain" />
+                                  ) : (
+                                    <p className={`px-3 text-center text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>No screenshot uploaded</p>
+                                  )}
+                                </div>
+                                <p className={`mt-2 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                                  Updated: {asset ? formatDate(asset.uploadedAt) : "Not set"}
+                                </p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <label
+                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                                      isDark ? "bg-slate-700 text-slate-100 hover:bg-slate-600" : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+                                    } ${isUploading ? "opacity-70" : ""}`}
+                                    style={{ fontWeight: 600 }}
+                                  >
+                                    <input
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/webp"
+                                      className="hidden"
+                                      disabled={isUploading || isRemoving}
+                                      onChange={(event) => {
+                                        const nextFile = event.target.files?.[0] ?? null;
+                                        event.currentTarget.value = "";
+                                        void uploadPaymentQr(method, methodIndex, nextFile);
+                                      }}
+                                    />
+                                    <Upload size={13} />
+                                    {isUploading ? "Uploading..." : asset ? "Replace" : "Upload"}
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => void removePaymentQr(method, methodIndex)}
+                                    disabled={!asset || isUploading || isRemoving}
+                                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                                      isDark
+                                        ? "bg-rose-900/50 text-rose-200 hover:bg-rose-900/70 disabled:opacity-40"
+                                        : "bg-rose-100 text-rose-700 hover:bg-rose-200 disabled:opacity-40"
+                                    }`}
+                                    style={{ fontWeight: 600 }}
+                                  >
+                                    <Trash2 size={13} />
+                                    {isRemoving ? "Removing..." : "Remove"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removePaymentQrMethod(methodIndex)}
+                                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                                      isDark ? "bg-slate-700 text-slate-100 hover:bg-slate-600" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                                    }`}
+                                    style={{ fontWeight: 600 }}
+                                  >
+                                    <Trash2 size={13} />
+                                    Remove Method
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={addPaymentQrMethod}
+                          className={`mt-3 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                            isDark ? "bg-slate-800 text-slate-200 hover:bg-slate-700" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                          }`}
+                          style={{ fontWeight: 600 }}
+                        >
+                          <Plus size={13} />
+                          Add payment method
+                        </button>
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <SaveButton saved={hardwareSaved} saving={saving === "hardware"} onSave={() => void saveHardwarePayments()} />
                       </div>
                     </Section>
                   </motion.div>

@@ -23,6 +23,20 @@ enum ScanMethod {
   QR
 }
 
+enum HardwareProductType {
+  TAG
+  CARD
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -36,6 +50,8 @@ model User {
   uploadedFiles UploadedFile[]
   apiKeys      ApiKey[]
   auditLogs    AuditLog[] @relation("AuditActor")
+  orders       Order[]    @relation("UserOrders")
+  processedOrders Order[] @relation("OrderProcessor")
 }
 
 model Tag {
@@ -77,9 +93,39 @@ model Profile {
   uploadedFiles   UploadedFile[]
   tapEvents       TapEvent[]
   linkClickEvents LinkClickEvent[]
+  orders          Order[]
 
   @@index([ownerId])
   @@index([templateType])
+}
+
+model Order {
+  id               String              @id @default(cuid())
+  userId           String
+  user             User                @relation("UserOrders", fields: [userId], references: [id], onDelete: Cascade)
+  processedById    String?
+  processedBy      User?               @relation("OrderProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+  profileId        String?
+  profile          Profile?            @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  productType      HardwareProductType
+  quantity         Int                 @default(1)
+  useDefaultDesign Boolean             @default(false)
+  baseColor        String
+  textColor        String
+  iconColor        String
+  primaryText      String
+  secondaryText    String?
+  iconId           String
+  status           OrderStatus         @default(PENDING)
+  statusNote       String?
+  processedAt      DateTime?
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([profileId])
 }
 
 model UploadedFile {
