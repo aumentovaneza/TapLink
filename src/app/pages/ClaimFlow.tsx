@@ -346,30 +346,6 @@ function StepAccount({
           {error}
         </p>
       )}
-
-      <div className="relative my-5">
-        <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-          <div className={`w-full border-t ${isDark ? "border-slate-700" : "border-slate-200"}`} />
-        </div>
-        <div className="relative flex justify-center">
-          <span className={`px-3 text-xs ${isDark ? "bg-slate-950 text-slate-500" : "bg-white text-slate-400"}`}>or continue with</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {["Google", "Apple"].map((provider) => (
-          <button
-            key={provider}
-            onClick={() => setError("Social sign-in is not enabled yet. Use email/password.")}
-            className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm transition-all hover:opacity-80 ${
-              isDark ? "border-slate-700 bg-slate-800 text-white" : "border-slate-200 bg-white text-slate-700"
-            }`}
-            style={{ fontWeight: 500 }}
-          >
-            {provider}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

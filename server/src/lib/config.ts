@@ -21,6 +21,8 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.preprocess(emptyStringToUndefined, z.string().min(1).optional()),
   SUPABASE_STORAGE_BUCKET: z.preprocess(emptyStringToUndefined, z.string().min(1).default("profile-photos")),
   PHOTO_UPLOAD_MAX_BYTES: z.coerce.number().int().min(1_000_000).max(20_000_000).default(8_000_000),
+  ORDER_EMAIL_WEBHOOK_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  ORDER_EMAIL_FROM: z.preprocess(emptyStringToUndefined, z.string().min(1).default("orders@taplink.local")),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

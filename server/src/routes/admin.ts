@@ -1,9 +1,23 @@
 import type { Prisma, TagStatus } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { randomUUID } from "node:crypto";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { z } from "zod";
 
 import { generateApiKey, hashValue, randomUppercaseCode } from "../lib/auth";
 import { requireRole } from "../lib/guards";
+import { hardwareColorCatalogSchema } from "../lib/hardware-options";
+import {
+  isValidPaymentQrStoragePath,
+  PAYMENT_QR_STORAGE_PREFIX,
+  paymentQrMethodIdSchema,
+  paymentQrMethodListSchema,
+  resolvePaymentQrMethodsFromConfig,
+  withPaymentQrMethodsConfig,
+  type PaymentQrMethod,
+  type PaymentQrMethodId,
+} from "../lib/payment-qrs";
 import { prisma } from "../lib/prisma";
 import { getTemplateDefaults } from "../lib/template-defaults";
 
@@ -50,6 +64,18 @@ const rotateApiKeySchema = z.object({
   name: z.string().trim().min(1).max(120).default("Default API Key"),
 });
 
+const paymentQrParamsSchema = z.object({
+  methodId: paymentQrMethodIdSchema,
+});
+
+const PAYMENT_QR_MAX_BYTES = 5 * 1024 * 1024;
+const acceptedPaymentQrMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const paymentQrExtensionByMimeType: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 function toTagStatus(status: "active" | "inactive" | "unclaimed"): TagStatus {
   if (status === "active") {
     return "ACTIVE";
@@ -76,6 +102,24 @@ function maskHash(value: string): string {
 
 function createGeneratedProfileSlug(tagCode: string): string {
   return `tag-${tagCode.trim().toLowerCase()}`;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function buildPaymentQrStoragePath(methodId: PaymentQrMethodId, extension: string): { fileName: string; storagePath: string; absolutePath: string } {
+  const fileName = `${methodId}-${Date.now().toString(36)}-${randomUUID().slice(0, 8)}.${extension}`;
+  const storagePath = path.posix.join(PAYMENT_QR_STORAGE_PREFIX, fileName);
+  const absolutePath = path.join(process.cwd(), storagePath);
+  return {
+    fileName,
+    storagePath,
+    absolutePath,
+  };
 }
 
 export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
@@ -472,6 +516,67 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     const { config: incomingConfig, ...rest } = parsed.data;
+    let nextPaymentQrMethods: PaymentQrMethod[] | null = null;
+    let obsoleteQrPaths: string[] = [];
+
+    if (incomingConfig && typeof incomingConfig.hardwareColors !== "undefined") {
+      const colorsParsed = hardwareColorCatalogSchema.safeParse(incomingConfig.hardwareColors);
+      if (!colorsParsed.success) {
+        return reply.status(400).send({
+          error: "Invalid hardware color configuration",
+          details: colorsParsed.error.flatten(),
+        });
+      }
+      incomingConfig.hardwareColors = colorsParsed.data;
+    }
+
+    if (incomingConfig && typeof incomingConfig.paymentQRCodes !== "undefined") {
+      const paymentMethodsParsed = paymentQrMethodListSchema.safeParse(incomingConfig.paymentQRCodes);
+      if (!paymentMethodsParsed.success) {
+        return reply.status(400).send({
+          error: "Invalid payment QR method configuration",
+          details: paymentMethodsParsed.error.flatten(),
+        });
+      }
+
+      const seenIds = new Set<string>();
+      const normalizedMethods: PaymentQrMethod[] = [];
+      for (const method of paymentMethodsParsed.data) {
+        if (seenIds.has(method.id)) {
+          return reply.status(400).send({
+            error: `Duplicate payment method id: ${method.id}`,
+          });
+        }
+        seenIds.add(method.id);
+        normalizedMethods.push({
+          id: method.id,
+          label: method.label,
+          qr: method.qr ?? null,
+        });
+      }
+
+      const currentMethods = resolvePaymentQrMethodsFromConfig(current.config);
+      const nextStoragePaths = new Set(
+        normalizedMethods
+          .map((method) => method.qr?.storagePath ?? null)
+          .filter((value): value is string => Boolean(value))
+      );
+      obsoleteQrPaths = currentMethods
+        .map((method) => {
+          if (!method.qr) {
+            return null;
+          }
+          if (nextStoragePaths.has(method.qr.storagePath)) {
+            return null;
+          }
+          return method.qr.storagePath;
+        })
+        .filter((value): value is string => Boolean(value));
+
+      incomingConfig.paymentQRCodes = normalizedMethods;
+      nextPaymentQrMethods = normalizedMethods;
+    }
+
     const mergedConfig: Prisma.InputJsonValue | undefined =
       typeof incomingConfig === "undefined"
         ? ((current.config ?? undefined) as Prisma.InputJsonValue | undefined)
@@ -497,8 +602,214 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
 
+    if (nextPaymentQrMethods) {
+      for (const storagePath of obsoleteQrPaths) {
+        if (!isValidPaymentQrStoragePath(storagePath)) {
+          continue;
+        }
+        const absolutePath = path.join(process.cwd(), storagePath);
+        await unlink(absolutePath).catch(() => {});
+      }
+    }
+
     return reply.send({ settings: updated });
   });
+
+  fastify.post<{ Params: { methodId: string } }>(
+    "/settings/payment-qrs/:methodId",
+    { preHandler: [requireRole("ADMIN")] },
+    async (request, reply) => {
+      const parsedParams = paymentQrParamsSchema.safeParse(request.params);
+      if (!parsedParams.success) {
+        return reply.status(400).send({ error: "Invalid payment method id", details: parsedParams.error.flatten() });
+      }
+
+      let file;
+      try {
+        file = await request.file({
+          limits: {
+            files: 1,
+            fileSize: PAYMENT_QR_MAX_BYTES,
+          },
+        });
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        if (code === "FST_REQ_FILE_TOO_LARGE") {
+          return reply.status(413).send({ error: "QR screenshot is too large. Max 5MB." });
+        }
+        throw error;
+      }
+
+      if (!file) {
+        return reply.status(400).send({ error: "QR screenshot is required." });
+      }
+
+      if (!acceptedPaymentQrMimeTypes.has(file.mimetype)) {
+        return reply.status(400).send({ error: "Unsupported file type. Use PNG, JPG, or WebP." });
+      }
+
+      const extension = paymentQrExtensionByMimeType[file.mimetype];
+      if (!extension) {
+        return reply.status(400).send({ error: "Unsupported file type. Use PNG, JPG, or WebP." });
+      }
+
+      let fileBuffer: Buffer;
+      try {
+        fileBuffer = await file.toBuffer();
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        if (code === "FST_REQ_FILE_TOO_LARGE") {
+          return reply.status(413).send({ error: "QR screenshot is too large. Max 5MB." });
+        }
+        throw error;
+      }
+
+      if (fileBuffer.length === 0) {
+        return reply.status(400).send({ error: "QR screenshot is empty." });
+      }
+      if (fileBuffer.length > PAYMENT_QR_MAX_BYTES) {
+        return reply.status(413).send({ error: "QR screenshot is too large. Max 5MB." });
+      }
+
+      const settings = await prisma.adminSetting.upsert({
+        where: { id: 1 },
+        update: {},
+        create: { id: 1 },
+      });
+
+      const methodId = parsedParams.data.methodId;
+      const labelField = asRecord(file.fields?.label);
+      const labelValue = typeof labelField.value === "string" ? labelField.value.trim().slice(0, 80) : "";
+
+      const currentMethods = resolvePaymentQrMethodsFromConfig(settings.config);
+      let targetIndex = currentMethods.findIndex((method) => method.id === methodId);
+      if (targetIndex < 0) {
+        currentMethods.push({
+          id: methodId,
+          label: labelValue || methodId.toUpperCase(),
+          qr: null,
+        });
+        targetIndex = currentMethods.length - 1;
+      } else if (labelValue) {
+        currentMethods[targetIndex] = {
+          ...currentMethods[targetIndex],
+          label: labelValue,
+        };
+      }
+
+      const previousAsset = currentMethods[targetIndex]?.qr ?? null;
+      const { fileName, storagePath, absolutePath } = buildPaymentQrStoragePath(methodId, extension);
+
+      await mkdir(path.dirname(absolutePath), { recursive: true });
+      await writeFile(absolutePath, fileBuffer);
+
+      if (previousAsset && isValidPaymentQrStoragePath(previousAsset.storagePath)) {
+        const previousAbsolutePath = path.join(process.cwd(), previousAsset.storagePath);
+        if (previousAbsolutePath !== absolutePath) {
+          await unlink(previousAbsolutePath).catch(() => {});
+        }
+      }
+
+      currentMethods[targetIndex] = {
+        ...currentMethods[targetIndex],
+        qr: {
+          fileName,
+          storagePath,
+          mimeType: file.mimetype,
+          sizeBytes: fileBuffer.length,
+          uploadedAt: new Date().toISOString(),
+        },
+      };
+
+      const updatedConfig = withPaymentQrMethodsConfig(settings.config, currentMethods);
+
+      const updated = await prisma.adminSetting.update({
+        where: { id: 1 },
+        data: {
+          config: updatedConfig as Prisma.InputJsonValue,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          actorId: request.user.sub,
+          action: "settings.payment_qr_uploaded",
+          entityType: "admin_setting",
+          entityId: String(updated.id),
+          metadata: {
+            methodId,
+            methodLabel: currentMethods[targetIndex].label,
+            fileName,
+            sizeBytes: fileBuffer.length,
+          },
+        },
+      });
+
+      return reply.send({ settings: updated });
+    }
+  );
+
+  fastify.delete<{ Params: { methodId: string } }>(
+    "/settings/payment-qrs/:methodId",
+    { preHandler: [requireRole("ADMIN")] },
+    async (request, reply) => {
+      const parsedParams = paymentQrParamsSchema.safeParse(request.params);
+      if (!parsedParams.success) {
+        return reply.status(400).send({ error: "Invalid payment method id", details: parsedParams.error.flatten() });
+      }
+
+      const settings = await prisma.adminSetting.upsert({
+        where: { id: 1 },
+        update: {},
+        create: { id: 1 },
+      });
+
+      const methodId = parsedParams.data.methodId;
+      const currentMethods = resolvePaymentQrMethodsFromConfig(settings.config);
+      const targetIndex = currentMethods.findIndex((method) => method.id === methodId);
+      if (targetIndex < 0) {
+        return reply.status(404).send({ error: "Payment method not found." });
+      }
+
+      const currentAsset = currentMethods[targetIndex].qr;
+      if (!currentAsset) {
+        return reply.send({ settings });
+      }
+
+      if (isValidPaymentQrStoragePath(currentAsset.storagePath)) {
+        const absolutePath = path.join(process.cwd(), currentAsset.storagePath);
+        await unlink(absolutePath).catch(() => {});
+      }
+
+      currentMethods[targetIndex] = {
+        ...currentMethods[targetIndex],
+        qr: null,
+      };
+
+      const updatedConfig = withPaymentQrMethodsConfig(settings.config, currentMethods);
+      const updated = await prisma.adminSetting.update({
+        where: { id: 1 },
+        data: {
+          config: updatedConfig as Prisma.InputJsonValue,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          actorId: request.user.sub,
+          action: "settings.payment_qr_removed",
+          entityType: "admin_setting",
+          entityId: String(updated.id),
+          metadata: {
+            methodId,
+            methodLabel: currentMethods[targetIndex].label,
+          },
+        },
+      });
+
+      return reply.send({ settings: updated });
+    }
+  );
 
   fastify.get("/api-keys", { preHandler: [requireRole("ADMIN")] }, async (_request, reply) => {
     const keys = await prisma.apiKey.findMany({

@@ -120,13 +120,13 @@ const profileTypes: ProfileType[] = [
 // ─── Template showcase details ─────────────────────────────────────────────────
 const templateDetails: Record<string, { description: string; features: string[]; forWho: string; cta: string }> = {
   individual: {
-    description: "The perfect digital business card. Showcase your work, social presence, and contact details — all on one elegant, shareable profile.",
+    description: "A physical NFC card or tag for everyday networking. Share your work, socials, and contact details from one linked profile.",
     features: ["Name, photo & headline bio", "Social media & portfolio links", "One-tap contact save (vCard)", "Real-time tap analytics", "Works on any phone, no app needed"],
     forWho: "Professionals, freelancers, students, creatives",
     cta: "Create Individual Profile",
   },
   business: {
-    description: "Turn your brand into a shareable digital hub. Perfect for shops, agencies, and any business that values a great first impression.",
+    description: "Equip staff with NFC cards/tags tied to one brand profile. Ideal for teams that need a consistent first impression.",
     features: ["Brand logo & full-width cover banner", "Services, pricing & opening hours", "Location & directions map", "Team member spotlight", "Customer review & rating links"],
     forWho: "Shops, agencies, studios, clinics",
     cta: "Create Business Profile",
@@ -170,25 +170,25 @@ const themeSwatches = [
 ];
 
 const steps = [
-  { step: "01", icon: Layers, title: "Pick a Template", desc: "Choose the profile type that fits your purpose — Individual, Business, Pet, Café, and more." },
-  { step: "02", icon: Paintbrush, title: "Apply a Theme", desc: "Dress it up with a visual theme. Gradients, dark mode, minimal — mix and match freely." },
-  { step: "03", icon: Share2, title: "Tap & Share", desc: "Activate your NFC tag and share everything with a single tap — no app needed." },
+  { step: "01", icon: Layers, title: "Pick Tag or Card", desc: "Start with hardware first. Choose the NFC form factor that fits your use case." },
+  { step: "02", icon: Paintbrush, title: "Customize & Link", desc: "Choose available colors/text/icon or use the default design, then pair it with your profile." },
+  { step: "03", icon: Share2, title: "Activate & Tap", desc: "Once activated, the hardware and profile work together in one tap." },
 ];
 
 const stats = [
-  { value: "50K+", label: "Active Profiles" },
+  { value: "32K+", label: "Tags & Cards Sold" },
+  { value: "50K+", label: "Linked Profiles" },
   { value: "2.4M", label: "Total Taps" },
   { value: "98%", label: "Satisfaction Rate" },
-  { value: "4.9★", label: "App Rating" },
 ];
 
 const features = [
-  { icon: Smartphone, title: "NFC + QR Code", desc: "Share via NFC tap or QR scan — your profile works everywhere." },
-  { icon: BarChart3, title: "Tap Analytics", desc: "Track profile views, tap locations, and engagement in real-time." },
-  { icon: Globe, title: "Works Everywhere", desc: "No app download needed. Profiles open in any browser instantly." },
-  { icon: Shield, title: "Privacy First", desc: "You control what's shared. Full data ownership and GDPR compliant." },
-  { icon: Paintbrush, title: "Themes for Every Mood", desc: "Apply any visual theme to any template type — fully interchangeable." },
-  { icon: TrendingUp, title: "Business Ready", desc: "Team profiles, CRM integration, and bulk management tools." },
+  { icon: Smartphone, title: "NFC Hardware First", desc: "We sell the NFC tag/card hardware and tie it directly to your profile." },
+  { icon: Paintbrush, title: "Hardware Customization", desc: "Customize tag/card color, text, and icon/logo based on available options." },
+  { icon: BarChart3, title: "Tap Analytics", desc: "Track taps and engagement once your hardware is activated." },
+  { icon: Globe, title: "Default Design Included", desc: "Skip customization and still get a clean ready-to-use tag/card design." },
+  { icon: Shield, title: "Profile + Hardware Linked", desc: "The physical product and profile are paired and managed together." },
+  { icon: TrendingUp, title: "Business Ready", desc: "Connect multiple cards/tags to one profile for teams and campaigns." },
 ];
 
 const testimonials = [
@@ -352,21 +352,21 @@ export function Landing() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-sm"
                 style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.1), rgba(234,88,12,0.12))", border: "1px solid rgba(220,38,38,0.2)", color: "#EA580C" }}>
                 <Zap size={13} />
-                <span style={{ fontWeight: 600 }}>The Future of Networking is Here</span>
+                <span style={{ fontWeight: 600 }}>Custom NFC Hardware + Linked Profile</span>
               </div>
 
               <h1 className={`mb-6 ${isDark ? "text-white" : "text-slate-900"}`}
                 style={{ fontSize: "clamp(2.25rem, 5vw, 3.75rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.03em" }}>
-                One Tap.
+                NFC Tag or Card.
                 <br />
                 <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  Endless
+                  Profile Included.
                 </span>{" "}
-                Connections.
+                Always Linked.
               </h1>
 
               <p className={`text-lg mb-8 max-w-lg ${isDark ? "text-slate-300" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>
-                Create a digital profile for <strong>yourself, your business, your pet, or your café</strong>. Embed it in an NFC tag and share everything with a single tap.
+                Start by choosing the hardware we make: <strong>NFC tag or NFC card</strong>. Customize its look, link it to your profile, and share both together with one tap.
               </p>
 
               {/* Profile type pills */}
@@ -394,12 +394,12 @@ export function Landing() {
 
               <div className="flex flex-wrap gap-3 mb-10">
                 <Link
-                  to="/editor"
+                  to="/hardware-setup"
                   className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-white transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-lg"
                   style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600, boxShadow: "0 8px 30px rgba(220,38,38,0.35)" }}
                 >
                   <Zap size={16} />
-                  Activate Your Tag
+                  Choose Tag or Card
                   <ArrowRight size={14} />
                 </Link>
                 <Link
@@ -409,13 +409,13 @@ export function Landing() {
                   }`}
                   style={{ fontWeight: 600 }}
                 >
-                  View Profile
+                  See Linked Profile Demo
                   <ChevronRight size={14} />
                 </Link>
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
-                {["No credit card", "Free template", "Works on any phone"].map((trust) => (
+                {["Customizable hardware", "Tag/Card + profile linked", "Works on any phone"].map((trust) => (
                   <div key={trust} className="flex items-center gap-1.5 text-sm">
                     <Check size={14} className="text-emerald-500" />
                     <span className={isDark ? "text-slate-400" : "text-slate-500"}>{trust}</span>
@@ -503,7 +503,7 @@ export function Landing() {
               How Taparoo Works
             </h2>
             <p className={`text-lg max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Three simple steps — pick a template type, apply a theme, and tap to share
+              Choose hardware first, customize it, link your profile, then activate and share.
             </p>
           </div>
 
@@ -551,11 +551,11 @@ export function Landing() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
               style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
               <Layers size={13} />
-              <span style={{ fontWeight: 600 }}>6 profile types, zero limits</span>
+              <span style={{ fontWeight: 600 }}>Tag/Card hardware paired with profile templates</span>
             </div>
             <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
               style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              A Template Built for{" "}
+              A Tag or Card Setup Built for{" "}
               <AnimatePresence mode="wait">
                 <motion.span key={activeTemplate}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
@@ -567,7 +567,7 @@ export function Landing() {
               </AnimatePresence>
             </h2>
             <p className={`text-lg max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Each template comes with purpose-built fields, sections, and link types. Pick the one that fits your story.
+              Pick how your tag/card will be used, then the linked profile fields and sections are prepared for that use case.
             </p>
           </div>
 
@@ -647,12 +647,12 @@ export function Landing() {
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl mb-5 self-start text-xs"
                     style={{ background: `${profileTypes[activeTemplate].color}15`, color: profileTypes[activeTemplate].color, border: `1px solid ${profileTypes[activeTemplate].color}30` }}>
                     {(() => { const Icon = profileTypes[activeTemplate].icon; return <Icon size={13} />; })()}
-                    <span style={{ fontWeight: 600 }}>{profileTypes[activeTemplate].label} Template</span>
+                    <span style={{ fontWeight: 600 }}>{profileTypes[activeTemplate].label} Linked Profile</span>
                   </div>
 
                   <h3 className={`mb-3 ${isDark ? "text-white" : "text-slate-900"}`}
                     style={{ fontSize: "clamp(1.3rem, 2.5vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                    {templateDetails[profileTypes[activeTemplate].id]?.cta.replace("Create ", "").replace(" Profile", "")} Profile
+                    {templateDetails[profileTypes[activeTemplate].id]?.cta.replace("Create ", "").replace(" Profile", "")} Setup
                   </h3>
                   <p className={`text-sm mb-7 ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.75 }}>
                     {templateDetails[profileTypes[activeTemplate].id]?.description}
@@ -687,14 +687,14 @@ export function Landing() {
                       className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-lg"
                       style={{ background: profileTypes[activeTemplate].cardGradient, fontWeight: 600 }}>
                       <Zap size={14} />
-                      {templateDetails[profileTypes[activeTemplate].id]?.cta}
+                      Configure This Setup
                     </Link>
                     <Link to="/profile"
                       className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm transition-all hover:-translate-y-0.5 ${
                         isDark ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                       }`}
                       style={{ fontWeight: 500 }}>
-                      View Example
+                      View Linked Profile
                       <ChevronRight size={14} />
                     </Link>
                   </div>
@@ -735,15 +735,18 @@ export function Landing() {
             })}
           </div>
 
-          {/* CTA */}
           <div className="text-center mt-10">
-            <Link to="/templates"
+            <Link
+              to="/hardware-setup"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 text-white"
-              style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600, boxShadow: "0 8px 30px rgba(220,38,38,0.28)" }}>
-              Explore All Templates
+              style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 8px 30px rgba(220,38,38,0.28)" }}
+            >
+              <ShoppingBag size={14} />
+              Order Your NFC Tag
               <ArrowRight size={15} />
             </Link>
           </div>
+
         </div>
       </section>
 
@@ -791,28 +794,28 @@ export function Landing() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
                 style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#DC2626" }}>
                 <Paintbrush size={13} />
-                <span style={{ fontWeight: 600 }}>Themes are purely visual</span>
+                <span style={{ fontWeight: 600 }}>Hardware is fixed, profile style is flexible</span>
               </div>
 
               <h2 className={`mb-5 ${isDark ? "text-white" : "text-slate-900"}`}
                 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-                Templates define structure.
+                Hardware stays standard.
                 <br />
                 <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  Themes define style.
+                  Linked profiles stay customizable.
                 </span>
               </h2>
 
               <div className="space-y-5 mb-8">
                 {[
                   {
-                    icon: Layers, title: "Template = What your profile is for",
-                    desc: "Defines the fields, sections, and link types appropriate for your purpose — Individual, Pet, Business, etc.",
+                    icon: Layers, title: "Template = scan destination logic",
+                    desc: "Defines the fields and link sections shown after tap based on your use case (individual, business, pet, and more).",
                     color: "#DC2626",
                   },
                   {
-                    icon: Paintbrush, title: "Theme = How your profile looks",
-                    desc: "Colors, gradients, and visual style applied on top of any template. Swap themes anytime without losing your data.",
+                    icon: Paintbrush, title: "Theme = profile visual style",
+                    desc: "Adjust colors and look anytime without changing the linked hardware setup or profile content.",
                     color: "#EA580C",
                   },
                 ].map((item) => {
@@ -831,12 +834,16 @@ export function Landing() {
                 })}
               </div>
 
-              <Link to="/templates"
+              <Link
+                to="/hardware-setup"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}>
-                Browse Templates & Themes
+                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
+              >
+                <ShoppingBag size={13} />
+                Order a Tag Now
                 <ArrowRight size={14} />
               </Link>
+
             </motion.div>
           </div>
         </div>
@@ -848,7 +855,7 @@ export function Landing() {
           <div className="text-center mb-16">
             <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
               style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Everything You Need to Network Smarter
+              Hardware + Profile Essentials
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -884,7 +891,7 @@ export function Landing() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
               style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
               <Award size={13} />
-              <span style={{ fontWeight: 600 }}>Loved by professionals worldwide</span>
+              <span style={{ fontWeight: 600 }}>Used by owners, teams, and shops</span>
             </div>
             <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
               style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
@@ -953,27 +960,27 @@ export function Landing() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-white mb-4" style={{ fontSize: "clamp(1.75rem, 4vw, 3rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Ready to Make Your
-              <br />First Impression Count?
+              Ready to Launch Your
+              <br />NFC Tag or Card?
             </h2>
             <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-              Join 50,000+ professionals, businesses, pet owners, and creators who've already upgraded their networking with Taparoo.
+              Start with hardware, customize it, and pair it with your profile. Both are essential, and both are activated together.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link to="/editor"
+              <Link to="/hardware-setup"
                 className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-orange-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-lg"
                 style={{ fontWeight: 700 }}>
                 <Zap size={16} />
-                Start for Free
+                Choose Tag or Card
               </Link>
-              <Link to="/templates"
+              <Link to="/editor"
                 className="flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/40 text-white transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5"
                 style={{ fontWeight: 600 }}>
-                Browse Templates
+                Customize Profile
                 <ArrowRight size={14} />
               </Link>
             </div>
-            <p className="text-white/60 text-sm mt-6">No credit card required · Free forever plan available</p>
+            <p className="text-white/60 text-sm mt-6">Hardware + profile activation are tied together in one flow.</p>
           </motion.div>
         </div>
       </section>

@@ -88,3 +88,6 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# Local tooling binaries/downloads
+.tools/

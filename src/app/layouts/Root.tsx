@@ -111,7 +111,7 @@ export function Root() {
 
                   {/* CTA */}
                   <Link
-                    to="/editor"
+                    to="/claim"
                     className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-px shadow-md"
                     style={{
                       background: "var(--brand-gradient)",
@@ -259,7 +259,7 @@ export function Root() {
                       </Link>
                     )}
                     <Link
-                      to="/editor"
+                      to="/claim"
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-2 mt-1 px-4 py-3 rounded-xl text-sm text-white"
                       style={{

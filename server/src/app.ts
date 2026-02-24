@@ -8,7 +8,9 @@ import { loadConfig, type AppConfig } from "./lib/config";
 import { authRoutes } from "./routes/auth";
 import { adminRoutes } from "./routes/admin";
 import { analyticsRoutes } from "./routes/analytics";
+import { configuratorRoutes } from "./routes/configurator";
 import { eventRoutes } from "./routes/events";
+import { orderRoutes } from "./routes/orders";
 import { profileRoutes } from "./routes/profiles";
 import { tagRoutes } from "./routes/tags";
 
@@ -86,11 +88,13 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
 
   await app.register(authRoutes, { prefix: "/auth" });
   await app.register(tagRoutes);
+  await app.register(configuratorRoutes, { prefix: "/configurator" });
   await app.register(profileRoutes, {
     prefix: "/profiles",
     config,
   });
   await app.register(eventRoutes, { prefix: "/events" });
+  await app.register(orderRoutes);
   await app.register(analyticsRoutes, { prefix: "/analytics" });
   await app.register(adminRoutes, { prefix: "/admin" });
 
