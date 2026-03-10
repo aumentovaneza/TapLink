@@ -34,6 +34,17 @@ import {
   normalizeHardwareColorCatalog,
   type ProductType,
 } from "../../lib/hardware-options";
+import {
+  defaultOrderPricingConfig,
+  defaultPerTypeTagPricing,
+  defaultPerTypeCardPricing,
+  deriveAreaRatesFromFlatFee,
+  normalizeOrderPricingConfig,
+  type OrderPricingConfig,
+  type PerTypeProductPricing,
+} from "../../lib/order-pricing";
+import type { ProfileType } from "../../lib/profile-types";
+import { PROFILE_TYPES } from "../../lib/profile-types";
 import { clearSession } from "../../lib/session";
 
 type TabKey = "general" | "hardware" | "notifications" | "security" | "api" | "danger";
@@ -116,6 +127,7 @@ interface ParsedConfig {
   webhookUrl: string;
   hardwareColors: HardwareColorCatalog;
   paymentQRCodes: PaymentQrMethod[];
+  orderPricing: OrderPricingConfig;
 }
 
 const DEFAULT_NOTIFICATIONS: NotificationState = {
@@ -360,6 +372,7 @@ function parseConfig(value: unknown): ParsedConfig {
     webhookUrl: readString(config.webhookUrl, ""),
     hardwareColors: normalizeHardwareColorCatalog(config.hardwareColors),
     paymentQRCodes: normalizePaymentQRMethods(config.paymentQRCodes),
+    orderPricing: normalizeOrderPricingConfig(config.orderPricing),
   };
 }
 
@@ -380,6 +393,7 @@ export function AdminSettings() {
   const [maintenance, setMaintenance] = useState(false);
   const [hardwareColors, setHardwareColors] = useState<HardwareColorCatalog>(defaultHardwareColors);
   const [paymentQRCodes, setPaymentQRCodes] = useState<PaymentQrMethod[]>(DEFAULT_PAYMENT_QR_METHODS);
+  const [orderPricing, setOrderPricing] = useState<OrderPricingConfig>(defaultOrderPricingConfig);
 
   const [notifState, setNotifState] = useState<NotificationState>(DEFAULT_NOTIFICATIONS);
 
@@ -456,6 +470,7 @@ export function AdminSettings() {
     setVisibility(parsed.visibility);
     setHardwareColors(parsed.hardwareColors);
     setPaymentQRCodes(parsed.paymentQRCodes);
+    setOrderPricing(parsed.orderPricing);
 
     setNotifState(parsed.notifications);
 
@@ -578,6 +593,24 @@ export function AdminSettings() {
         }
       }
 
+      const tagPrices = toPerTypePricing(orderPricing.products.tag, defaultPerTypeTagPricing);
+      const cardPrices = toPerTypePricing(orderPricing.products.card, defaultPerTypeCardPricing);
+      const allProductPrices = [...Object.values(tagPrices), ...Object.values(cardPrices)];
+      if (allProductPrices.some((p) => p <= 0)) {
+        setError("All tag and card unit prices must be greater than 0.");
+        return;
+      }
+
+      if (orderPricing.shipping.flatFeePhp < 0) {
+        setError("Shipping fee cannot be negative.");
+        return;
+      }
+
+      if (!orderPricing.shipping.label.trim()) {
+        setError("Shipping label is required.");
+        return;
+      }
+
       if (!paymentQRCodes.length) {
         setError("Add at least one payment method before saving.");
         return;
@@ -617,6 +650,49 @@ export function AdminSettings() {
           config: {
             hardwareColors,
             paymentQRCodes: normalizedPaymentMethods,
+            orderPricing: {
+              currency: "PHP",
+              products: {
+                tag: orderPricing.products.tag,
+                card: orderPricing.products.card,
+              },
+              shipping: {
+                flatFeePhp: orderPricing.shipping.flatFeePhp,
+                label: orderPricing.shipping.label.trim(),
+                includedInDisplayedPrice: orderPricing.shipping.includedInDisplayedPrice,
+                weightStepGrams: orderPricing.shipping.weightStepGrams,
+                productWeightGrams: {
+                  packagingGrams: orderPricing.shipping.productWeightGrams.packagingGrams,
+                  tagGrams: orderPricing.shipping.productWeightGrams.tagGrams,
+                  cardGrams: orderPricing.shipping.productWeightGrams.cardGrams,
+                },
+                areaRates: {
+                  metro_manila: {
+                    baseFeePhp: orderPricing.shipping.areaRates.metro_manila.baseFeePhp,
+                    additionalPerWeightStepPhp:
+                      orderPricing.shipping.areaRates.metro_manila.additionalPerWeightStepPhp,
+                  },
+                  luzon: {
+                    baseFeePhp: orderPricing.shipping.areaRates.luzon.baseFeePhp,
+                    additionalPerWeightStepPhp: orderPricing.shipping.areaRates.luzon.additionalPerWeightStepPhp,
+                  },
+                  visayas: {
+                    baseFeePhp: orderPricing.shipping.areaRates.visayas.baseFeePhp,
+                    additionalPerWeightStepPhp: orderPricing.shipping.areaRates.visayas.additionalPerWeightStepPhp,
+                  },
+                  mindanao: {
+                    baseFeePhp: orderPricing.shipping.areaRates.mindanao.baseFeePhp,
+                    additionalPerWeightStepPhp:
+                      orderPricing.shipping.areaRates.mindanao.additionalPerWeightStepPhp,
+                  },
+                  international: {
+                    baseFeePhp: orderPricing.shipping.areaRates.international.baseFeePhp,
+                    additionalPerWeightStepPhp:
+                      orderPricing.shipping.areaRates.international.additionalPerWeightStepPhp,
+                  },
+                },
+              },
+            },
           },
         },
       });
@@ -927,6 +1003,63 @@ export function AdminSettings() {
       setError("");
       return current.filter((_method, index) => index !== methodIndex);
     });
+  };
+
+  const toPerTypePricing = (
+    value: number | PerTypeProductPricing,
+    fallback: PerTypeProductPricing,
+  ): PerTypeProductPricing => {
+    if (typeof value === "number") {
+      return { items: value, pets: value, business: value, creator: value, event: value };
+    }
+    return { ...fallback, ...value };
+  };
+
+  const updateOrderProductPrice = (
+    productType: ProductType,
+    profileType: ProfileType,
+    rawValue: string,
+  ) => {
+    const parsed = Number.parseInt(rawValue, 10);
+    const nextValue = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+    setOrderPricing((current) => {
+      const fallback = productType === "tag" ? defaultPerTypeTagPricing : defaultPerTypeCardPricing;
+      const currentPerType = toPerTypePricing(current.products[productType], fallback);
+      return {
+        ...current,
+        products: {
+          ...current.products,
+          [productType]: { ...currentPerType, [profileType]: nextValue },
+        },
+      };
+    });
+    setError("");
+  };
+
+  const updateShippingFee = (rawValue: string) => {
+    const parsed = Number.parseInt(rawValue, 10);
+    const nextValue = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+    const nextAreaRates = deriveAreaRatesFromFlatFee(nextValue);
+    setOrderPricing((current) => ({
+      ...current,
+      shipping: {
+        ...current.shipping,
+        flatFeePhp: nextValue,
+        areaRates: nextAreaRates,
+      },
+    }));
+    setError("");
+  };
+
+  const updateShippingLabel = (rawValue: string) => {
+    setOrderPricing((current) => ({
+      ...current,
+      shipping: {
+        ...current.shipping,
+        label: rawValue.slice(0, 120),
+      },
+    }));
+    setError("");
   };
 
   const uploadPaymentQr = async (method: PaymentQrMethod, methodIndex: number, file: File | null) => {
@@ -1268,6 +1401,78 @@ export function AdminSettings() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+
+                      <div className={`pt-4 border-t ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+                        <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
+                          Pricing and Shipping
+                        </p>
+                        <p className={`mt-0.5 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                          Controls the base pricing shown on hardware setup. Shipping is computed by area and billable weight, then covered in the all-in total.
+                        </p>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {(["tag", "card"] as const).map((productType) => {
+                            const fallback = productType === "tag" ? defaultPerTypeTagPricing : defaultPerTypeCardPricing;
+                            const perType = toPerTypePricing(orderPricing.products[productType], fallback);
+                            const label = productType === "tag" ? "Tag" : "Card";
+                            return (
+                              <div
+                                key={productType}
+                                className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-slate-50"}`}
+                              >
+                                <p className={`mb-2 text-[11px] uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`} style={{ fontWeight: 700 }}>
+                                  {label} Pricing per Profile Type (PHP)
+                                </p>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {PROFILE_TYPES.map((pt) => (
+                                    <div key={pt.id} className="flex items-center gap-2">
+                                      <label
+                                        className={`w-20 shrink-0 text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}
+                                        style={{ fontWeight: 600 }}
+                                      >
+                                        {pt.label}
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        value={perType[pt.id]}
+                                        onChange={(event) => updateOrderProductPrice(productType, pt.id, event.target.value)}
+                                        className={`${compactInputCls} w-full`}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-slate-50"}`}>
+                            <label className={`mb-1 block text-[11px] uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`} style={{ fontWeight: 700 }}>
+                              Base Shipping Fee (PHP)
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={orderPricing.shipping.flatFeePhp}
+                              onChange={(event) => updateShippingFee(event.target.value)}
+                              className={`${compactInputCls} w-full`}
+                            />
+                          </div>
+                          <div className={`rounded-xl border p-3 ${isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-slate-50"}`}>
+                            <label className={`mb-1 block text-[11px] uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`} style={{ fontWeight: 700 }}>
+                              Shipping Label
+                            </label>
+                            <input
+                              type="text"
+                              value={orderPricing.shipping.label}
+                              onChange={(event) => updateShippingLabel(event.target.value)}
+                              className={`${compactInputCls} w-full`}
+                            />
+                          </div>
                         </div>
                       </div>
 

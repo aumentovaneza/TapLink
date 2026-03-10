@@ -444,7 +444,7 @@ export const themes: ThemeDef[] = [
     id: "paws", name: "Paws", badge: "New",
     gradient: "linear-gradient(150deg, #F59E0B 0%, #D97706 55%, #92400E 100%)",
     text: "#fff",
-    suggestedFor: ["pet"],
+    suggestedFor: ["pet", "pets"],
     Graphic: () => (
       <G>
         {/* ── Main walking trail — left+right foot alternating diagonally ── */}
@@ -468,7 +468,7 @@ export const themes: ThemeDef[] = [
     id: "bones", name: "Bones", badge: "New",
     gradient: "linear-gradient(150deg, #EA580C 0%, #DC2626 50%, #3730A3 100%)",
     text: "#fff",
-    suggestedFor: ["pet"],
+    suggestedFor: ["pet", "pets"],
     Graphic: () => (
       <G>
         <DogBone x={24}  y={16}  s={22} r={-28} />
@@ -490,7 +490,7 @@ export const themes: ThemeDef[] = [
     id: "espresso", name: "Espresso", badge: "New",
     gradient: "linear-gradient(150deg, #1C0A00 0%, #2C1500 50%, #4A2200 100%)",
     text: "#E8D5B7",
-    suggestedFor: ["cafe"],
+    suggestedFor: ["cafe", "business"],
     Graphic: () => (
       <G>
         <Bean x={18}  y={16}  r={-20} /><Bean x={76}  y={10}  r={38}  />
@@ -513,7 +513,7 @@ export const themes: ThemeDef[] = [
     id: "plated", name: "Plated", badge: "New",
     gradient: "linear-gradient(150deg, #1C0509 0%, #3D1018 50%, #6B2030 100%)",
     text: "#FFD5DC",
-    suggestedFor: ["cafe"],
+    suggestedFor: ["cafe", "business"],
     Graphic: () => (
       <G>
         {/* ── Hero place-setting ── */}
@@ -540,7 +540,7 @@ export const themes: ThemeDef[] = [
     id: "vinyl", name: "Vinyl", badge: "New",
     gradient: "linear-gradient(150deg, #0A0A0A 0%, #1A1A2E 55%, #12122A 100%)",
     text: "#E5E7EB",
-    suggestedFor: ["musician"],
+    suggestedFor: ["musician", "creator"],
     Graphic: () => (
       <G>
         {/* Record disc */}
@@ -585,7 +585,7 @@ export const themes: ThemeDef[] = [
     id: "cosmos", name: "Cosmos", badge: "New",
     gradient: "linear-gradient(150deg, #020412 0%, #0B1437 50%, #18104A 100%)",
     text: "#fff",
-    suggestedFor: ["individual"],
+    suggestedFor: ["individual", "items"],
     Graphic: () => {
       const stars: [number,number,number][] = [
         [7,4,.6],[22,11,.4],[44,3,.7],[66,7,.5],[83,14,.4],[91,4,.6],
@@ -617,7 +617,7 @@ export const themes: ThemeDef[] = [
     id: "aurora", name: "Aurora", badge: "New",
     gradient: "linear-gradient(160deg, #0D1B2A 0%, #0E2318 50%, #0D2A1A 100%)",
     text: "#fff",
-    suggestedFor: ["individual", "musician"],
+    suggestedFor: ["individual", "items", "musician", "creator"],
     Graphic: () => (
       <G>
         <path d="M -10,32 Q 12,20 32,28 Q 52,36 68,22 Q 84,10 110,26" stroke="rgba(52,211,153,0.28)" strokeWidth="9" fill="none" />
@@ -637,7 +637,7 @@ export const themes: ThemeDef[] = [
     id: "sakura", name: "Sakura", badge: "New",
     gradient: "linear-gradient(150deg, #FEF2F2 0%, #FCE7F3 50%, #FBD0E6 100%)",
     text: "#831843",
-    suggestedFor: ["individual", "cafe"],
+    suggestedFor: ["individual", "items", "cafe", "business"],
     Graphic: () => (
       <G>
         {/* ── Branch structure ── */}
@@ -678,7 +678,7 @@ export const themes: ThemeDef[] = [
     id: "stage", name: "Stage", badge: "New",
     gradient: "linear-gradient(170deg, #0A0A0A 0%, #1A1A2E 55%, #0D0D1A 100%)",
     text: "#fff",
-    suggestedFor: ["event", "musician"],
+    suggestedFor: ["event", "musician", "creator"],
     Graphic: () => (
       <G>
         <path d="M 18,0 L 0,100 L 38,100 Z"  fill="rgba(255,255,255,0.04)" />
@@ -708,7 +708,7 @@ export const themes: ThemeDef[] = [
     suggestedFor: ["business"],
     Graphic: () => (
       <G>
-        {[10,20,30,40,50,60,70,80,90].map((v) => (
+        {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((v) => (
           <g key={v}>
             <line x1={v} y1="0" x2={v} y2="100" stroke="rgba(186,230,253,0.07)" strokeWidth="0.4" />
             <line x1="0" y1={v} x2="100" y2={v} stroke="rgba(186,230,253,0.07)" strokeWidth="0.4" />
@@ -734,7 +734,182 @@ export const themes: ThemeDef[] = [
       </G>
     ),
   },
+
+  // ── 21 ── COMPANION (Pets exclusive) ────────────────────────────────────
+  {
+    id: "companion", name: "Companion", badge: "New",
+    gradient: "linear-gradient(150deg, #7C2D12 0%, #B45309 50%, #F59E0B 100%)",
+    text: "#fff",
+    suggestedFor: ["pet", "pets"],
+    Graphic: () => (
+      <G>
+        <Paw x={50} y={50} s={20} r={0} />
+        <Paw x={20} y={25} s={12} r={-20} />
+        <Paw x={80} y={30} s={11} r={25} />
+        <Paw x={15} y={75} s={10} r={-15} />
+        <Paw x={85} y={80} s={10} r={18} />
+        <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
+      </G>
+    ),
+  },
+
+  // ── 22 ── GEAR (Items exclusive) ───────────────────────────────────────
+  {
+    id: "gear", name: "Gear", badge: "New",
+    gradient: "linear-gradient(150deg, #1E293B 0%, #334155 50%, #475569 100%)",
+    text: "#E2E8F0",
+    suggestedFor: ["items"],
+    Graphic: () => (
+      <G>
+        {/* Gear teeth */}
+        {Array.from({ length: 12 }, (_, i) => {
+          const angle = (i * 30 * Math.PI) / 180;
+          const x1 = 50 + Math.cos(angle) * 28;
+          const y1 = 50 + Math.sin(angle) * 28;
+          const x2 = 50 + Math.cos(angle) * 36;
+          const y2 = 50 + Math.sin(angle) * 36;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(226,232,240,0.15)" strokeWidth="4" strokeLinecap="round" />;
+        })}
+        <circle cx="50" cy="50" r="22" fill="none" stroke="rgba(226,232,240,0.12)" strokeWidth="2" />
+        <circle cx="50" cy="50" r="8" fill="none" stroke="rgba(226,232,240,0.18)" strokeWidth="2" />
+      </G>
+    ),
+  },
+
+  // ── 23 ── SHIELD (Items exclusive) ─────────────────────────────────────
+  {
+    id: "shield", name: "Shield", badge: "New",
+    gradient: "linear-gradient(150deg, #0F172A 0%, #1E3A5F 50%, #2563EB 100%)",
+    text: "#BAE6FD",
+    suggestedFor: ["items"],
+    Graphic: () => (
+      <G>
+        <path d="M 50,12 L 80,28 L 80,58 Q 80,80 50,92 Q 20,80 20,58 L 20,28 Z"
+          fill="none" stroke="rgba(186,230,253,0.15)" strokeWidth="1.5" />
+        <path d="M 50,22 L 72,34 L 72,56 Q 72,74 50,84 Q 28,74 28,56 L 28,34 Z"
+          fill="none" stroke="rgba(186,230,253,0.08)" strokeWidth="1" />
+        <path d="M 42,52 L 48,58 L 60,44" stroke="rgba(186,230,253,0.22)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </G>
+    ),
+  },
+
+  // ── 24 ── STOREFRONT (Business exclusive) ──────────────────────────────
+  {
+    id: "storefront", name: "Storefront", badge: "New",
+    gradient: "linear-gradient(150deg, #1C1917 0%, #44403C 50%, #78716C 100%)",
+    text: "#FDE68A",
+    suggestedFor: ["business"],
+    Graphic: () => (
+      <G>
+        {/* Awning stripes */}
+        {[0, 14, 28, 42, 56, 70, 84].map((x, i) => (
+          <path key={i} d={`M ${x},20 Q ${x + 7},30 ${x + 14},20`}
+            fill="none" stroke="rgba(253,230,138,0.15)" strokeWidth="1.2" />
+        ))}
+        {/* Door */}
+        <rect x="38" y="45" width="24" height="40" rx="2"
+          fill="none" stroke="rgba(253,230,138,0.12)" strokeWidth="1" />
+        <circle cx="58" cy="65" r="1.5" fill="rgba(253,230,138,0.2)" />
+        {/* Window */}
+        <rect x="14" y="48" width="16" height="14" rx="1.5"
+          fill="none" stroke="rgba(253,230,138,0.1)" strokeWidth="0.8" />
+        <rect x="70" y="48" width="16" height="14" rx="1.5"
+          fill="none" stroke="rgba(253,230,138,0.1)" strokeWidth="0.8" />
+      </G>
+    ),
+  },
+
+  // ── 25 ── CANVAS (Creator exclusive) ───────────────────────────────────
+  {
+    id: "canvas", name: "Canvas", badge: "New",
+    gradient: "linear-gradient(150deg, #FDF2F8 0%, #FCE7F3 30%, #FBCFE8 60%, #F9A8D4 100%)",
+    text: "#831843",
+    suggestedFor: ["creator"],
+    Graphic: () => (
+      <G>
+        {/* Paint splashes */}
+        <circle cx="25" cy="30" r="12" fill="rgba(131,24,67,0.08)" />
+        <circle cx="70" cy="25" r="9" fill="rgba(190,18,60,0.07)" />
+        <circle cx="80" cy="65" r="14" fill="rgba(131,24,67,0.06)" />
+        <circle cx="20" cy="70" r="8" fill="rgba(190,18,60,0.08)" />
+        <circle cx="55" cy="55" r="10" fill="rgba(131,24,67,0.05)" />
+        {/* Brush stroke */}
+        <path d="M 10,85 Q 30,75 50,80 Q 70,85 90,70" stroke="rgba(131,24,67,0.12)" strokeWidth="3" fill="none" strokeLinecap="round" />
+      </G>
+    ),
+  },
+
+  // ── 26 ── CONFETTI (Event exclusive) ───────────────────────────────────
+  {
+    id: "confetti", name: "Confetti", badge: "New",
+    gradient: "linear-gradient(150deg, #312E81 0%, #4338CA 50%, #6366F1 100%)",
+    text: "#fff",
+    suggestedFor: ["event"],
+    Graphic: () => {
+      const pieces: [number, number, number, string][] = [
+        [15, 12, -20, "rgba(251,191,36,0.35)"],
+        [35, 8, 45, "rgba(248,113,113,0.3)"],
+        [60, 15, -35, "rgba(52,211,153,0.3)"],
+        [80, 10, 25, "rgba(251,191,36,0.28)"],
+        [90, 25, -15, "rgba(167,139,250,0.35)"],
+        [10, 40, 50, "rgba(248,113,113,0.25)"],
+        [45, 35, -40, "rgba(52,211,153,0.25)"],
+        [70, 42, 30, "rgba(251,191,36,0.3)"],
+        [25, 60, -25, "rgba(167,139,250,0.28)"],
+        [55, 68, 55, "rgba(248,113,113,0.22)"],
+        [85, 55, -30, "rgba(52,211,153,0.22)"],
+        [40, 80, 20, "rgba(251,191,36,0.25)"],
+        [75, 85, -45, "rgba(167,139,250,0.22)"],
+        [18, 88, 35, "rgba(248,113,113,0.2)"],
+      ];
+      return (
+        <G>
+          {pieces.map(([x, y, r, fill], i) => (
+            <rect key={i} x={x} y={y} width="5" height="2.5" rx="0.8"
+              fill={fill} transform={`rotate(${r},${x + 2.5},${y + 1.25})`} />
+          ))}
+        </G>
+      );
+    },
+  },
+
+  // ── 27 ── TICKET (Event exclusive) ─────────────────────────────────────
+  {
+    id: "ticket", name: "Ticket", badge: "New",
+    gradient: "linear-gradient(150deg, #7F1D1D 0%, #DC2626 50%, #EF4444 100%)",
+    text: "#fff",
+    suggestedFor: ["event"],
+    Graphic: () => (
+      <G>
+        {/* Ticket outline */}
+        <rect x="15" y="30" width="70" height="40" rx="4"
+          fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.2" />
+        {/* Perforation line */}
+        {[34, 38, 42, 46, 50, 54, 58, 62, 66].map((y, i) => (
+          <circle key={i} cx="62" cy={y} r="0.8" fill="rgba(255,255,255,0.2)" />
+        ))}
+        {/* Star on ticket */}
+        <path d="M 38,50 L 40,44 L 42,50 L 48,50 L 43,54 L 45,60 L 40,56 L 35,60 L 37,54 L 32,50 Z"
+          fill="rgba(255,255,255,0.12)" />
+      </G>
+    ),
+  },
 ];
+
+// ── Theme filtering by profile type ──────────────────────────────────────────
+const SHARED_THEME_IDS = new Set([
+  "wave", "sunset", "ocean", "forest", "dark-pro", "minimal",
+]);
+
+export function getThemesForProfileType(
+  profileType: "items" | "pets" | "business" | "creator" | "event",
+): ThemeDef[] {
+  return themes.filter(
+    (t) =>
+      SHARED_THEME_IDS.has(t.id) ||
+      (t.suggestedFor && t.suggestedFor.includes(profileType)),
+  );
+}
 
 // ── Color Palettes ─────────────────────────────────────────────────────────────
 export const palettes: Palette[] = [

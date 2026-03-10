@@ -3,7 +3,7 @@ import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "motion/react";
 import {
   LayoutDashboard, Users, Activity, Wifi, Settings,
-  Package, Plus, X, LogOut,
+  Package, CreditCard, Plus, X, LogOut,
 } from "lucide-react";
 import { clearSession } from "../../lib/session";
 
@@ -13,6 +13,7 @@ const ITEMS = [
   { icon: Activity,        label: "Analytics", path: "/dashboard/analytics" },
   { icon: Wifi,            label: "NFC Tags",  path: "/dashboard/tags" },
   { icon: Package,         label: "Orders",    path: "/dashboard/orders" },
+  { icon: CreditCard,      label: "Subscriptions", path: "/dashboard/subscriptions" },
   { icon: Settings,        label: "Settings",  path: "/dashboard/settings" },
 ];
 

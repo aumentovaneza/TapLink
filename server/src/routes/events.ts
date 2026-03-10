@@ -27,7 +27,7 @@ const profileVisitSchema = z.object({
   referrer: z.string().trim().max(200).optional(),
 });
 
-const petReportSchema = z
+const foundReportSchema = z
   .object({
     profileId: z.string().trim().min(1),
     reporterName: z.string().trim().min(1).max(120),
@@ -46,7 +46,10 @@ const petReportSchema = z
     }
   });
 
-function isPetMarkedLost(fields: unknown): boolean {
+// Keep old schema as alias
+const petReportSchema = foundReportSchema;
+
+export function isMarkedLost(fields: unknown): boolean {
   if (!fields || typeof fields !== "object" || Array.isArray(fields)) {
     return false;
   }
@@ -61,6 +64,8 @@ function isPetMarkedLost(fields: unknown): boolean {
   }
   return false;
 }
+
+const LOST_ELIGIBLE_TYPES = new Set(["pet", "pets", "items"]);
 
 export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post("/tap", async (request, reply) => {
@@ -197,8 +202,8 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
     return reply.status(201).send({ ok: true, tracked: true });
   });
 
-  fastify.post("/pet-report", async (request, reply) => {
-    const parsed = petReportSchema.safeParse(request.body);
+  async function handleFoundReport(request: any, reply: any) {
+    const parsed = foundReportSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
@@ -223,12 +228,12 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: "Profile not found" });
     }
 
-    if (profile.templateType !== "pet") {
-      return reply.status(400).send({ error: "This profile is not a pet profile" });
+    if (!LOST_ELIGIBLE_TYPES.has(profile.templateType)) {
+      return reply.status(400).send({ error: "This profile type does not support lost/found reports" });
     }
 
-    if (!isPetMarkedLost(profile.fields)) {
-      return reply.status(409).send({ error: "Pet is not marked as lost" });
+    if (!isMarkedLost(profile.fields)) {
+      return reply.status(409).send({ error: "This item/pet is not marked as lost" });
     }
 
     const fields = (profile.fields ?? {}) as Record<string, string>;
@@ -244,6 +249,7 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
           tagId: profile.tag?.id ?? null,
           tagCode: profile.tag?.code ?? null,
           petName: fields.name ?? profile.slug,
+          profileType: profile.templateType,
           ownerId: profile.ownerId,
           reporterName: parsed.data.reporterName,
           reporterEmail: parsed.data.reporterEmail || null,
@@ -255,5 +261,10 @@ export async function eventRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     return reply.status(201).send({ ok: true });
-  });
+  }
+
+  // New generalized endpoint
+  fastify.post("/found-report", handleFoundReport);
+  // Keep old endpoint as alias
+  fastify.post("/pet-report", handleFoundReport);
 }

@@ -1,3 +1,5 @@
+import type { BusinessCategory } from "./profile-types";
+
 export interface TemplateDefaultLink {
   type: string;
   label: string;
@@ -44,7 +46,50 @@ const defaultCafeMenuSectionsJson = JSON.stringify([
   },
 ]);
 
+const cafeRestaurantDefaults: TemplateDefaults = {
+  fields: {
+    name: "The Bean House",
+    businessCategory: "cafe_restaurant",
+    cuisine: "Coffee & Brunch",
+    tagline: "Your neighbourhood third place.",
+    hoursWeekday: "Mon-Fri: 7am - 7pm",
+    hoursWeekend: "Sat-Sun: 8am - 5pm",
+    address: "456 Union Street, San Francisco, CA",
+    menuSections: defaultCafeMenuSectionsJson,
+  },
+  links: [
+    { type: "website", label: "View Menu", url: "" },
+    { type: "website", label: "Order Online", url: "" },
+    { type: "website", label: "Reserve Table", url: "" },
+  ],
+};
+
+const businessCategoryDefaults: Partial<Record<BusinessCategory, TemplateDefaults>> = {
+  cafe_restaurant: cafeRestaurantDefaults,
+};
+
 const templateDefaults: Record<string, TemplateDefaults> = {
+  items: {
+    fields: {
+      name: "MacBook Pro 16\"",
+      description: "Personal laptop",
+      itemType: "Electronics",
+      serialNumber: "",
+      purchaseDate: "",
+      valueEstimate: "",
+      warrantyInfo: "",
+      purchaseLink: "",
+      manualLink: "",
+      isLost: "false",
+      ownerName: "Alex Rivera",
+      ownerPhone: "",
+    },
+    links: [
+      { type: "phone", label: "Call Owner", url: "" },
+      { type: "email", label: "Email Owner", url: "" },
+    ],
+  },
+  // Keep "individual" as alias for backward compat
   individual: {
     fields: {
       name: "Alex Rivera",
@@ -62,6 +107,7 @@ const templateDefaults: Record<string, TemplateDefaults> = {
   business: {
     fields: {
       name: "Designly Studio",
+      businessCategory: "professional_services",
       category: "Brand & UX Agency",
       tagline: "We craft brands that people love.",
       city: "San Francisco, CA",
@@ -73,6 +119,23 @@ const templateDefaults: Record<string, TemplateDefaults> = {
       { type: "website", label: "Get Directions", url: "" },
     ],
   },
+  pets: {
+    fields: {
+      name: "Buddy",
+      species: "Dog",
+      breed: "Golden Retriever",
+      age: "3 years old",
+      isLost: "false",
+      ownerName: "Jamie Rivera",
+      ownerPhone: "",
+    },
+    links: [
+      { type: "phone", label: "Call Owner", url: "" },
+      { type: "phone", label: "My Vet", url: "" },
+      { type: "instagram", label: "My Instagram", url: "" },
+    ],
+  },
+  // Keep "pet" as alias for backward compat
   pet: {
     fields: {
       name: "Buddy",
@@ -89,22 +152,7 @@ const templateDefaults: Record<string, TemplateDefaults> = {
       { type: "instagram", label: "My Instagram", url: "" },
     ],
   },
-  cafe: {
-    fields: {
-      name: "The Bean House",
-      cuisine: "Coffee & Brunch",
-      tagline: "Your neighbourhood third place.",
-      hoursWeekday: "Mon-Fri: 7am - 7pm",
-      hoursWeekend: "Sat-Sun: 8am - 5pm",
-      address: "456 Union Street, San Francisco, CA",
-      menuSections: defaultCafeMenuSectionsJson,
-    },
-    links: [
-      { type: "website", label: "View Menu", url: "" },
-      { type: "website", label: "Order Online", url: "" },
-      { type: "website", label: "Reserve Table", url: "" },
-    ],
-  },
+  cafe: cafeRestaurantDefaults,
   event: {
     fields: {
       name: "TechConf 2026",
@@ -136,10 +184,18 @@ const templateDefaults: Record<string, TemplateDefaults> = {
 };
 
 export function normalizeTemplateType(templateType: string): string {
-  return (templateType || "individual").trim().toLowerCase();
+  const normalized = (templateType || "items").trim().toLowerCase();
+  // Map legacy types
+  if (normalized === "individual") return "items";
+  if (normalized === "pet") return "pets";
+  return normalized;
 }
 
 export function getTemplateDefaults(templateType: string): TemplateDefaults {
   const normalized = normalizeTemplateType(templateType);
-  return templateDefaults[normalized] ?? templateDefaults.individual;
+  return templateDefaults[normalized] ?? templateDefaults.items;
+}
+
+export function getBusinessDefaults(category: BusinessCategory): TemplateDefaults {
+  return businessCategoryDefaults[category] ?? templateDefaults.business;
 }

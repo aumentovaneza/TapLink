@@ -37,6 +37,21 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ProfileType {
+  ITEMS
+  PETS
+  BUSINESS
+  CREATOR
+  EVENT
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -52,6 +67,7 @@ model User {
   auditLogs    AuditLog[] @relation("AuditActor")
   orders       Order[]    @relation("UserOrders")
   processedOrders Order[] @relation("OrderProcessor")
+  subscriptions Subscription[]
 }
 
 model Tag {
@@ -68,7 +84,8 @@ model Tag {
   lastTapAt  DateTime?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
-  tapEvents  TapEvent[]
+  profileType ProfileType?
+  tapEvents   TapEvent[]
 
   @@index([ownerId])
   @@index([profileId])
@@ -94,6 +111,7 @@ model Profile {
   tapEvents       TapEvent[]
   linkClickEvents LinkClickEvent[]
   orders          Order[]
+  subscriptions   Subscription[]
 
   @@index([ownerId])
   @@index([templateType])
@@ -116,6 +134,7 @@ model Order {
   primaryText      String
   secondaryText    String?
   iconId           String
+  profileType      ProfileType?
   status           OrderStatus         @default(PENDING)
   statusNote       String?
   processedAt      DateTime?
@@ -225,4 +244,22 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId   String?
+  profile     Profile?           @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  tier        String             @default("free")
+  profileType ProfileType
+  status      SubscriptionStatus @default(PENDING)
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId, status])
+  @@index([profileId])
 }

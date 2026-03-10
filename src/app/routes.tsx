@@ -10,6 +10,7 @@ import { AdminAnalytics } from "./pages/admin/AdminAnalytics";
 import { AdminNfcTags } from "./pages/admin/AdminNfcTags";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminSettings } from "./pages/admin/AdminSettings";
+import { AdminSubscriptions } from "./pages/admin/AdminSubscriptions";
 import { TagScan } from "./pages/TagScan";
 import { ClaimFlow } from "./pages/ClaimFlow";
 import { Login } from "./pages/Login";
@@ -19,6 +20,8 @@ import { TagAnalytics } from "./pages/TagAnalytics";
 import { TagResponses } from "./pages/TagResponses";
 import { NotFound } from "./pages/NotFound";
 import { HardwareSetup } from "./pages/HardwareSetup";
+import { Pricing } from "./pages/Pricing";
+import { Faq } from "./pages/Faq";
 import { RedirectAuthenticatedFromLogin, RequireAdmin, RequireAuth } from "./components/auth/RouteGuards";
 
 export const router = createBrowserRouter([
@@ -28,8 +31,10 @@ export const router = createBrowserRouter([
     children: [
       // ── Existing pages (unchanged) ─────────────────────────────────────────
       { index: true,              Component: Landing },
+      { path: "pricing",          Component: Pricing },
       { path: "hardware-setup",   Component: HardwareSetup },
       { path: "templates",        Component: TemplateGallery },
+      { path: "faq",              Component: Faq },
       { path: "editor",           Component: ProfileEditor },
       { path: "profile/:id",      Component: ProfileView },
       { path: "profile",          Component: ProfileView },
@@ -60,6 +65,7 @@ export const router = createBrowserRouter([
           { path: "dashboard/analytics", Component: AdminAnalytics },
           { path: "dashboard/tags", Component: AdminNfcTags },
           { path: "dashboard/orders", Component: AdminOrders },
+          { path: "dashboard/subscriptions", Component: AdminSubscriptions },
           { path: "dashboard/settings", Component: AdminSettings },
         ],
       },

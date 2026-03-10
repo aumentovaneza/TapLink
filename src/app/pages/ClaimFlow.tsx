@@ -7,31 +7,31 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
-  Calendar,
+  CalendarDays,
   Check,
   ChevronRight,
-  Coffee,
   Eye,
   EyeOff,
   Lock,
   Mail,
-  Music,
+  Package,
   PawPrint,
   Sparkles,
   Tag,
-  User,
 } from "lucide-react";
 
 import { ApiError, apiRequest } from "../lib/api";
 import { clearAccessToken, getAccessToken, SessionUser, setAccessToken, setSessionUser } from "../lib/session";
+import { BUSINESS_CATEGORIES, type BusinessCategory } from "../lib/profile-types";
 
-type TemplateType = "individual" | "business" | "pet" | "cafe" | "event" | "musician";
+type TemplateType = "items" | "pets" | "business" | "creator" | "event";
 
 interface VerifiedTag {
   id: string;
   tagCode: string;
   claimCode: string;
   status: "active" | "inactive" | "unclaimed";
+  profileType?: string | null;
 }
 
 interface ClaimedTagProfile {
@@ -50,13 +50,12 @@ interface AuthResponse {
   accessToken: string;
 }
 
-const templateTypes: Array<{ id: TemplateType; icon: typeof User; label: string; desc: string; color: string }> = [
-  { id: "individual", icon: User, label: "Individual", desc: "Personal bio & social links", color: "#DC2626" },
-  { id: "business", icon: Building2, label: "Business", desc: "Company brand & services", color: "#0EA5E9" },
-  { id: "pet", icon: PawPrint, label: "Pet", desc: "Pet ID with owner contact", color: "#F59E0B" },
-  { id: "cafe", icon: Coffee, label: "Café & Restaurant", desc: "Menu, orders & reservations", color: "#92400E" },
-  { id: "event", icon: Calendar, label: "Event", desc: "Tickets, schedule & venue", color: "#8B5CF6" },
-  { id: "musician", icon: Music, label: "Musician", desc: "Streaming links & tour dates", color: "#10B981" },
+const templateTypes: Array<{ id: TemplateType; icon: typeof Package; label: string; desc: string; color: string }> = [
+  { id: "items", icon: Package, label: "Items", desc: "Track & protect belongings", color: "#DC2626" },
+  { id: "pets", icon: PawPrint, label: "Pets", desc: "Pet ID with owner notifications", color: "#F59E0B" },
+  { id: "business", icon: Building2, label: "Business", desc: "Cafes, shops & services", color: "#0EA5E9" },
+  { id: "creator", icon: Sparkles, label: "Creator", desc: "Portfolio, links & booking", color: "#10B981" },
+  { id: "event", icon: CalendarDays, label: "Event", desc: "Schedules, tickets & venue", color: "#8B5CF6" },
 ];
 
 const steps = [
@@ -356,17 +355,27 @@ function StepTemplate({
   onNext,
   isDark,
   claimError,
+  lockedType,
+  businessCategory,
+  onBusinessCategoryChange,
 }: {
   selected: TemplateType;
   onSelect: (id: TemplateType) => void;
   onNext: () => Promise<void>;
   isDark: boolean;
   claimError: string;
+  lockedType?: TemplateType | null;
+  businessCategory: BusinessCategory | null;
+  onBusinessCategoryChange: (cat: BusinessCategory | null) => void;
 }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleNext = async () => {
+    if (selected === "business" && !businessCategory) {
+      setError("Please select a business category.");
+      return;
+    }
     setError("");
     setSubmitting(true);
 
@@ -380,26 +389,46 @@ function StepTemplate({
     }
   };
 
+  const lockedTypeInfo = lockedType ? templateTypes.find((t) => t.id === lockedType) : null;
+
   return (
     <div className="mx-auto w-full max-w-sm">
       <h2 className={`mb-1 text-center ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontSize: "1.4rem", fontWeight: 800 }}>
         Choose Profile Type
       </h2>
       <p className={`mb-6 text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-        What is this tag for? You can change this later.
+        {lockedType ? "This tag has a pre-configured profile type." : "What is this tag for? You can change this later."}
       </p>
+
+      {lockedType && lockedTypeInfo && (
+        <div
+          className={`mb-4 flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${isDark ? "bg-slate-800 text-slate-300" : "bg-slate-50 text-slate-600"}`}
+          style={{ border: `1px solid ${lockedTypeInfo.color}40` }}
+        >
+          <Lock size={14} style={{ color: lockedTypeInfo.color }} />
+          <span>This tag is configured for <strong style={{ color: lockedTypeInfo.color }}>{lockedTypeInfo.label}</strong> profiles</span>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-2.5">
         {templateTypes.map((type) => {
           const Icon = type.icon;
           const isSelected = selected === type.id;
+          const isDisabled = !!lockedType && type.id !== lockedType;
 
           return (
             <button
               key={type.id}
-              onClick={() => onSelect(type.id)}
+              onClick={() => !isDisabled && onSelect(type.id)}
+              disabled={isDisabled}
               className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center transition-all ${
-                isSelected ? "shadow-md" : isDark ? "border-slate-800 hover:border-slate-600" : "border-slate-100 hover:border-slate-200"
+                isDisabled
+                  ? "cursor-not-allowed opacity-35"
+                  : isSelected
+                  ? "shadow-md"
+                  : isDark
+                  ? "border-slate-800 hover:border-slate-600"
+                  : "border-slate-100 hover:border-slate-200"
               }`}
               style={{ borderColor: isSelected ? type.color : undefined, background: isSelected ? `${type.color}10` : isDark ? "#0F172A" : "#fff" }}
             >
@@ -419,6 +448,35 @@ function StepTemplate({
           );
         })}
       </div>
+
+      {selected === "business" && (
+        <div className="mb-6">
+          <p className={`mb-3 text-center text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`} style={{ fontWeight: 600 }}>
+            Select a business category
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {BUSINESS_CATEGORIES.map((cat) => {
+              const isCatSelected = businessCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => onBusinessCategoryChange(cat.id)}
+                  className={`rounded-xl border-2 px-3 py-2.5 text-xs transition-all ${
+                    isCatSelected
+                      ? "border-sky-500 bg-sky-50 text-sky-700 shadow-sm dark:bg-sky-950/30 dark:text-sky-300"
+                      : isDark
+                      ? "border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  }`}
+                  style={{ fontWeight: isCatSelected ? 600 : 400 }}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {(error || claimError) && (
         <p className="mb-3 flex items-center justify-center gap-1.5 text-xs text-rose-500">
@@ -566,7 +624,8 @@ export function ClaimFlow() {
 
   const [step, setStep] = useState(1);
   const [code, setCode] = useState((urlCode ?? "").toUpperCase());
-  const [templateId, setTemplateId] = useState<TemplateType>("individual");
+  const [templateId, setTemplateId] = useState<TemplateType>("items");
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | null>(null);
   const [verifyError, setVerifyError] = useState("");
   const [claimError, setClaimError] = useState("");
   const [verifiedTag, setVerifiedTag] = useState<VerifiedTag | null>(null);
@@ -592,6 +651,13 @@ export function ClaimFlow() {
     });
 
     setVerifiedTag(response.tag);
+
+    if (response.tag.profileType) {
+      const validTypes: TemplateType[] = ["items", "pets", "business", "creator", "event"];
+      if (validTypes.includes(response.tag.profileType as TemplateType)) {
+        setTemplateId(response.tag.profileType as TemplateType);
+      }
+    }
 
     if (getAccessToken()) {
       try {
@@ -637,6 +703,7 @@ export function ClaimFlow() {
       body: {
         claimCode: verifiedTag.claimCode,
         templateType: templateId,
+        businessCategory: templateId === "business" ? businessCategory : undefined,
       },
     });
 
@@ -762,6 +829,9 @@ export function ClaimFlow() {
                 }}
                 isDark={isDark}
                 claimError={claimError}
+                lockedType={verifiedTag?.profileType as TemplateType | undefined}
+                businessCategory={businessCategory}
+                onBusinessCategoryChange={setBusinessCategory}
               />
             </motion.div>
           )}

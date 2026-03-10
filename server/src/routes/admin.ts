@@ -8,6 +8,7 @@ import { z } from "zod";
 import { generateApiKey, hashValue, randomUppercaseCode } from "../lib/auth";
 import { requireRole } from "../lib/guards";
 import { hardwareColorCatalogSchema } from "../lib/hardware-options";
+import { isValidProfileType, profileTypeToPrismaEnum, type ProfileType } from "../lib/profile-types";
 import {
   isValidPaymentQrStoragePath,
   PAYMENT_QR_STORAGE_PREFIX,
@@ -18,6 +19,7 @@ import {
   type PaymentQrMethod,
   type PaymentQrMethodId,
 } from "../lib/payment-qrs";
+import { orderPricingConfigSchema, resolveOrderPricingFromConfig } from "../lib/order-pricing";
 import { prisma } from "../lib/prisma";
 import { getTemplateDefaults } from "../lib/template-defaults";
 
@@ -49,6 +51,7 @@ const generateTagsSchema = z.object({
     .max(10)
     .regex(/^[A-Za-z0-9-]+$/)
     .transform((value) => value.toUpperCase()),
+  profileType: z.string().trim().min(1).optional(),
 });
 
 const updateSettingsSchema = z.object({
@@ -309,7 +312,8 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
 
-    const { count, prefix } = parsed.data;
+    const { count, prefix, profileType: rawProfileType } = parsed.data;
+    const tagProfileType = rawProfileType && isValidProfileType(rawProfileType) ? rawProfileType : null;
 
     const existing = await prisma.tag.findMany({
       where: {
@@ -346,10 +350,12 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
         uid: randomUppercaseCode(12),
         claimCode,
         status: "UNCLAIMED" as const,
+        ...(tagProfileType ? { profileType: profileTypeToPrismaEnum(tagProfileType) } : {}),
       };
     });
 
-    const individualDefaults = getTemplateDefaults("individual");
+    const defaultTemplateType = tagProfileType ?? "items";
+    const individualDefaults = getTemplateDefaults(defaultTemplateType);
     const result = await prisma.$transaction(async (tx) => {
       const createdTagsResult = await tx.tag.createMany({
         data: rows,
@@ -385,7 +391,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
               data: {
                 slug,
                 ownerId: request.user.sub,
-                templateType: "individual",
+                templateType: defaultTemplateType,
                 theme: "wave",
                 palette: "original",
                 showGraphic: true,
@@ -440,6 +446,7 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
           prefix,
           requested: count,
           created: result.count,
+          profileType: tagProfileType ?? null,
         },
       },
     });
@@ -575,6 +582,20 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
 
       incomingConfig.paymentQRCodes = normalizedMethods;
       nextPaymentQrMethods = normalizedMethods;
+    }
+
+    if (incomingConfig && typeof incomingConfig.orderPricing !== "undefined") {
+      const normalizedPricing = resolveOrderPricingFromConfig({
+        orderPricing: incomingConfig.orderPricing,
+      });
+      const pricingParsed = orderPricingConfigSchema.safeParse(normalizedPricing);
+      if (!pricingParsed.success) {
+        return reply.status(400).send({
+          error: "Invalid order pricing configuration",
+          details: pricingParsed.error.flatten(),
+        });
+      }
+      incomingConfig.orderPricing = pricingParsed.data;
     }
 
     const mergedConfig: Prisma.InputJsonValue | undefined =
@@ -869,5 +890,167 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
       id: created.id,
       createdAt: created.createdAt,
     });
+  });
+
+  // ── Subscription Management ────────────────────────────────────────────────
+
+  const subscriptionQuerySchema = z.object({
+    status: z.enum(["all", "PENDING", "ACTIVE", "EXPIRED", "CANCELLED"]).default("all"),
+    profileType: z.string().trim().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  });
+
+  const createSubscriptionSchema = z.object({
+    userId: z.string().trim().min(1),
+    profileId: z.string().trim().optional(),
+    tier: z.enum(["free", "basic", "premium"]).default("free"),
+    profileType: z.string().trim().min(1),
+    status: z.enum(["PENDING", "ACTIVE"]).default("ACTIVE"),
+  });
+
+  const updateSubscriptionSchema = z.object({
+    status: z.enum(["PENDING", "ACTIVE", "EXPIRED", "CANCELLED"]),
+    tier: z.enum(["free", "basic", "premium"]).optional(),
+  });
+
+  fastify.get("/subscriptions", { preHandler: [requireRole("ADMIN")] }, async (request, reply) => {
+    const parsed = subscriptionQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid query", details: parsed.error.flatten() });
+    }
+
+    const query = parsed.data;
+    const where: any = {};
+
+    if (query.status !== "all") {
+      where.status = query.status;
+    }
+
+    if (query.profileType && isValidProfileType(query.profileType)) {
+      where.profileType = profileTypeToPrismaEnum(query.profileType as ProfileType);
+    }
+
+    const skip = (query.page - 1) * query.pageSize;
+
+    const [items, total] = await prisma.$transaction([
+      prisma.subscription.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          profile: { select: { id: true, slug: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: query.pageSize,
+      }),
+      prisma.subscription.count({ where }),
+    ]);
+
+    return reply.send({
+      items: items.map((sub) => ({
+        id: sub.id,
+        userId: sub.userId,
+        userName: sub.user.name,
+        userEmail: sub.user.email,
+        profileId: sub.profileId,
+        profileSlug: sub.profile?.slug ?? null,
+        tier: sub.tier,
+        profileType: sub.profileType.toLowerCase(),
+        status: sub.status,
+        activatedAt: sub.activatedAt,
+        expiresAt: sub.expiresAt,
+        createdAt: sub.createdAt,
+      })),
+      pagination: {
+        page: query.page,
+        pageSize: query.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
+      },
+    });
+  });
+
+  fastify.post("/subscriptions", { preHandler: [requireRole("ADMIN")] }, async (request, reply) => {
+    const parsed = createSubscriptionSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
+    }
+
+    if (!isValidProfileType(parsed.data.profileType)) {
+      return reply.status(400).send({ error: "Invalid profile type" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: parsed.data.userId } });
+    if (!user) {
+      return reply.status(404).send({ error: "User not found" });
+    }
+
+    const subscription = await prisma.subscription.create({
+      data: {
+        userId: parsed.data.userId,
+        profileId: parsed.data.profileId ?? null,
+        tier: parsed.data.tier,
+        profileType: profileTypeToPrismaEnum(parsed.data.profileType as ProfileType),
+        status: parsed.data.status,
+        activatedAt: parsed.data.status === "ACTIVE" ? new Date() : null,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: request.user.sub,
+        action: "subscription.created",
+        entityType: "subscription",
+        entityId: subscription.id,
+        metadata: {
+          userId: parsed.data.userId,
+          tier: parsed.data.tier,
+          profileType: parsed.data.profileType,
+        },
+      },
+    });
+
+    return reply.status(201).send({ subscription });
+  });
+
+  fastify.patch<{ Params: { id: string } }>("/subscriptions/:id", { preHandler: [requireRole("ADMIN")] }, async (request, reply) => {
+    const parsed = updateSubscriptionSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
+    }
+
+    const existing = await prisma.subscription.findUnique({ where: { id: request.params.id } });
+    if (!existing) {
+      return reply.status(404).send({ error: "Subscription not found" });
+    }
+
+    const updateData: any = { status: parsed.data.status };
+    if (parsed.data.tier) {
+      updateData.tier = parsed.data.tier;
+    }
+    if (parsed.data.status === "ACTIVE" && !existing.activatedAt) {
+      updateData.activatedAt = new Date();
+    }
+
+    const updated = await prisma.subscription.update({
+      where: { id: request.params.id },
+      data: updateData,
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: request.user.sub,
+        action: "subscription.updated",
+        entityType: "subscription",
+        entityId: updated.id,
+        metadata: {
+          status: parsed.data.status,
+          tier: parsed.data.tier ?? existing.tier,
+        },
+      },
+    });
+
+    return reply.send({ subscription: updated });
   });
 }

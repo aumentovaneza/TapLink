@@ -9,6 +9,8 @@ import { buildBambuSvgExport } from "../lib/bambu-export";
 import { loadConfig } from "../lib/config";
 import { requireAuth, requireRole } from "../lib/guards";
 import { resolveHardwareColorsFromConfig } from "../lib/hardware-options";
+import { computeOrderPriceBreakdown, resolveOrderPricingFromConfig } from "../lib/order-pricing";
+import { isValidProfileType, profileTypeToPrismaEnum, type ProfileType } from "../lib/profile-types";
 import { sendOrderEmail } from "../lib/order-email";
 import {
   createInitialPaymentMetadata,
@@ -36,6 +38,7 @@ const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
 const PAYMENT_EXPIRY_STATUS_NOTE = `Payment not confirmed within ${PAYMENT_WINDOW_MINUTES} minutes.`;
 const PAYMENT_CHECK_INTERVAL_MS = 60 * 1000;
+const ORDER_RECEIPT_STORAGE_PREFIX = path.posix.join("uploads", "order-receipts");
 
 const acceptedReceiptMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const receiptExtensionByMimeType: Record<string, string> = {
@@ -57,6 +60,7 @@ const productTypeSchema = z.enum(["tag", "card"]);
 
 const createOrderSchema = z.object({
   productType: productTypeSchema,
+  profileType: z.string().trim().optional(),
   quantity: z.coerce.number().int().min(1).max(100).default(1),
   useDefaultDesign: z.boolean().default(false),
   profileId: z.string().trim().min(1).optional(),
@@ -67,6 +71,21 @@ const createOrderSchema = z.object({
     primaryText: z.string().trim().min(1).max(72),
     secondaryText: z.string().trim().max(72).optional(),
     iconId: z.string().trim().min(1).max(64),
+  }),
+  shipping: z.object({
+    fullName: z.string().trim().min(2).max(120),
+    phone: z.string().trim().min(7).max(32),
+    email: z.string().trim().max(160).optional(),
+    line1: z.string().trim().min(3).max(160),
+    line2: z.string().trim().max(160).optional(),
+    city: z.string().trim().min(2).max(120),
+    province: z.string().trim().min(2).max(120),
+    postalCode: z.string().trim().min(3).max(20),
+    country: z.string().trim().min(2).max(120).default("Philippines"),
+    notes: z.string().trim().max(240).optional(),
+    confirm: z.boolean().refine((value) => value, {
+      message: "You must confirm shipping information before placing the order.",
+    }),
   }),
   metadata: z.record(z.any()).optional(),
 });
@@ -89,6 +108,11 @@ const listOrdersQuerySchema = z.object({
 
 const updateOrderStatusSchema = z.object({
   status: orderStatusSchema,
+  statusNote: z.string().trim().max(240).optional(),
+});
+
+const adminPaymentActionSchema = z.object({
+  action: z.enum(["confirm", "cancel"]),
   statusNote: z.string().trim().max(240).optional(),
 });
 
@@ -158,6 +182,104 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     return null;
   }
   return value as Record<string, unknown>;
+}
+
+function normalizeOptionalText(value: string | undefined, maxLength: number): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  return trimmed.slice(0, maxLength);
+}
+
+function normalizeShippingMetadata(
+  shipping: z.infer<typeof createOrderSchema>["shipping"],
+  confirmedAt: string
+): Record<string, unknown> {
+  return {
+    fullName: shipping.fullName.trim(),
+    phone: shipping.phone.trim(),
+    email: normalizeOptionalText(shipping.email, 160) ?? null,
+    line1: shipping.line1.trim(),
+    line2: normalizeOptionalText(shipping.line2, 160) ?? null,
+    city: shipping.city.trim(),
+    province: shipping.province.trim(),
+    postalCode: shipping.postalCode.trim(),
+    country: shipping.country.trim() || "Philippines",
+    notes: normalizeOptionalText(shipping.notes, 240) ?? null,
+    confirmedAt,
+  };
+}
+
+function readStringField(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function readShippingView(metadata: Prisma.JsonValue | null | undefined):
+  | {
+      fullName: string;
+      phone: string;
+      email: string | null;
+      line1: string;
+      line2: string | null;
+      city: string;
+      province: string;
+      postalCode: string;
+      country: string;
+      notes: string | null;
+      confirmedAt: string | null;
+    }
+  | null {
+  const root = normalizeOrderMetadata(metadata);
+  const shipping = asRecord(root.shipping);
+  if (!shipping) {
+    return null;
+  }
+
+  const fullName = readStringField(shipping, "fullName");
+  const phone = readStringField(shipping, "phone");
+  const line1 = readStringField(shipping, "line1");
+  const city = readStringField(shipping, "city");
+  const province = readStringField(shipping, "province");
+  const postalCode = readStringField(shipping, "postalCode");
+  const country = readStringField(shipping, "country") ?? "Philippines";
+
+  if (!fullName || !phone || !line1 || !city || !province || !postalCode) {
+    return null;
+  }
+
+  return {
+    fullName,
+    phone,
+    email: readStringField(shipping, "email"),
+    line1,
+    line2: readStringField(shipping, "line2"),
+    city,
+    province,
+    postalCode,
+    country,
+    notes: readStringField(shipping, "notes"),
+    confirmedAt: readStringField(shipping, "confirmedAt"),
+  };
+}
+
+function withShippingMetadata(
+  metadata: Prisma.JsonValue | null | undefined,
+  shipping: Record<string, unknown>
+): Record<string, unknown> {
+  const root = normalizeOrderMetadata(metadata);
+  return {
+    ...root,
+    shipping,
+  };
 }
 
 function buildPaymentConfirmedEmailText(input: {
@@ -240,6 +362,7 @@ function serializeOrder(
     createdAt: order.createdAt,
   });
   const timeline = readTimelineView(order.metadata ?? null);
+  const shipping = readShippingView(order.metadata ?? null);
 
   return {
     id: order.id,
@@ -260,6 +383,20 @@ function serializeOrder(
     updatedAt: order.updatedAt,
     processedAt: order.processedAt,
     payment,
+    pricing: {
+      currency: payment.currency,
+      unitPricePhp: payment.unitPricePhp,
+      quantity: payment.quantity,
+      itemSubtotalPhp: payment.itemSubtotalPhp,
+      shippingFeePhp: payment.shippingFeePhp,
+      shippingAreaCode: payment.shippingAreaCode,
+      shippingAreaLabel: payment.shippingAreaLabel,
+      totalWeightGrams: payment.totalWeightGrams,
+      billableWeightGrams: payment.billableWeightGrams,
+      shippingIncludedInDisplayedPrice: payment.shippingIncludedInDisplayedPrice,
+      totalPhp: payment.amountPhp,
+    },
+    shipping,
     timeline,
     profile: order.profile
       ? {
@@ -656,6 +793,13 @@ function toPaymentMetadata(value: OrderPaymentView): OrderPaymentMetadata {
     amountPhp: value.amountPhp,
     currency: value.currency,
     unitPricePhp: value.unitPricePhp,
+    itemSubtotalPhp: value.itemSubtotalPhp,
+    shippingFeePhp: value.shippingFeePhp,
+    shippingAreaCode: value.shippingAreaCode ?? undefined,
+    shippingAreaLabel: value.shippingAreaLabel ?? undefined,
+    totalWeightGrams: value.totalWeightGrams ?? undefined,
+    billableWeightGrams: value.billableWeightGrams ?? undefined,
+    shippingIncludedInDisplayedPrice: value.shippingIncludedInDisplayedPrice,
     quantity: value.quantity,
     createdAt: value.createdAt,
     expiresAt: value.expiresAt,
@@ -758,9 +902,23 @@ async function updateOrderForPaymentFlow(
 
 function resolveReceiptStoragePath(orderId: string, extension: string): { absolutePath: string; relativePath: string; fileName: string } {
   const fileName = `${orderId}-${Date.now().toString(36)}.${extension}`;
-  const relativePath = path.posix.join("uploads", "order-receipts", fileName);
+  const relativePath = path.posix.join(ORDER_RECEIPT_STORAGE_PREFIX, fileName);
   const absolutePath = path.join(process.cwd(), relativePath);
   return { absolutePath, relativePath, fileName };
+}
+
+function isValidReceiptStoragePath(storagePath: string): boolean {
+  const normalized = path.posix.normalize(storagePath).replace(/^\/+/, "");
+  if (!normalized.startsWith(`${ORDER_RECEIPT_STORAGE_PREFIX}/`)) {
+    return false;
+  }
+
+  const relative = path.posix.relative(ORDER_RECEIPT_STORAGE_PREFIX, normalized);
+  if (!relative || relative.startsWith("..") || path.posix.isAbsolute(relative)) {
+    return false;
+  }
+
+  return true;
 }
 
 async function sendPaymentExpiredEmail(
@@ -995,6 +1153,21 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
       select: { config: true },
     });
     const availableHardwareColors = resolveHardwareColorsFromConfig(settings?.config)[parsed.data.productType];
+    const pricingConfig = resolveOrderPricingFromConfig(settings?.config);
+    const orderProfileType = parsed.data.profileType && isValidProfileType(parsed.data.profileType)
+      ? parsed.data.profileType as ProfileType
+      : null;
+    const priceBreakdown = computeOrderPriceBreakdown({
+      productType: parsed.data.productType,
+      quantity: parsed.data.quantity,
+      pricing: pricingConfig,
+      profileType: orderProfileType,
+      shippingDestination: {
+        country: parsed.data.shipping.country,
+        province: parsed.data.shipping.province,
+        city: parsed.data.shipping.city,
+      },
+    });
     const selectableColorHexes = new Set(
       availableHardwareColors
         .filter((color) => color.available && color.plaStock > 0)
@@ -1012,7 +1185,10 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
 
-    const initialMetadata = normalizeOrderMetadata((parsed.data.metadata ?? null) as Prisma.JsonValue);
+    const shippingConfirmedAt = new Date().toISOString();
+    const shippingMetadata = normalizeShippingMetadata(parsed.data.shipping, shippingConfirmedAt);
+    const baseMetadata = normalizeOrderMetadata((parsed.data.metadata ?? null) as Prisma.JsonValue);
+    const initialMetadata = withShippingMetadata(baseMetadata as Prisma.JsonValue, shippingMetadata);
 
     const created = orderDelegate.ok
       ? await orderDelegate.delegate.create({
@@ -1020,6 +1196,7 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
             userId: request.user.sub,
             profileId,
             productType: toDbProductType(parsed.data.productType),
+            ...(orderProfileType ? { profileType: profileTypeToPrismaEnum(orderProfileType) } : {}),
             quantity: parsed.data.quantity,
             useDefaultDesign: parsed.data.useDefaultDesign,
             baseColor: parsed.data.design.baseColor.toUpperCase(),
@@ -1073,6 +1250,13 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
       orderId: created.id,
       productType: created.productType,
       quantity: created.quantity,
+      unitPricePhp: priceBreakdown.unitPricePhp,
+      shippingFeePhp: priceBreakdown.shippingFeePhp,
+      shippingAreaCode: priceBreakdown.shippingAreaCode,
+      shippingAreaLabel: priceBreakdown.shippingAreaLabel,
+      totalWeightGrams: priceBreakdown.totalWeightGrams,
+      billableWeightGrams: priceBreakdown.billableWeightGrams,
+      shippingIncludedInDisplayedPrice: priceBreakdown.shippingIncludedInDisplayedPrice,
       now: created.createdAt,
     });
 
@@ -1101,7 +1285,17 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
           quantity: parsed.data.quantity,
           profileId: profileId ?? null,
           paymentWindowMinutes: PAYMENT_WINDOW_MINUTES,
+          itemSubtotalPhp: initialPayment.itemSubtotalPhp,
+          shippingFeePhp: initialPayment.shippingFeePhp,
+          shippingAreaCode: initialPayment.shippingAreaCode,
+          shippingAreaLabel: initialPayment.shippingAreaLabel,
+          totalWeightGrams: initialPayment.totalWeightGrams,
+          billableWeightGrams: initialPayment.billableWeightGrams,
+          shippingIncludedInDisplayedPrice: initialPayment.shippingIncludedInDisplayedPrice,
           amountPhp: initialPayment.amountPhp,
+          shippingCity: parsed.data.shipping.city.trim(),
+          shippingProvince: parsed.data.shipping.province.trim(),
+          shippingCountry: (parsed.data.shipping.country.trim() || "Philippines"),
         },
       },
     });
@@ -1179,6 +1373,40 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
     if (order.user?.id !== userId) {
       return null;
     }
+    return order;
+  }
+
+  async function findOrderForAdmin(orderId: string): Promise<SerializedOrderInput | null> {
+    const orderDelegate = resolveOrderDelegate();
+    const order = orderDelegate.ok
+      ? ((await orderDelegate.delegate.findUnique({
+          where: { id: orderId },
+          include: {
+            profile: {
+              select: {
+                id: true,
+                slug: true,
+                fields: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            processedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        })) as SerializedOrderInput | null)
+      : await rawFindOrderById(orderId);
+
     return order;
   }
 
@@ -1582,6 +1810,189 @@ export async function orderRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
   });
+
+  fastify.get<{ Params: { orderId: string } }>(
+    "/admin/orders/:orderId/payment-receipt",
+    { preHandler: [requireRole("ADMIN")] },
+    async (request, reply) => {
+      const parsedParams = orderParamsSchema.safeParse(request.params);
+      if (!parsedParams.success) {
+        return reply.status(400).send({ error: "Invalid order ID", details: parsedParams.error.flatten() });
+      }
+
+      const order = await findOrderForAdmin(parsedParams.data.orderId);
+      if (!order) {
+        return reply.status(404).send({ error: "Order not found" });
+      }
+
+      const payment = readPaymentView({
+        metadata: order.metadata,
+        orderId: order.id,
+        productType: order.productType,
+        quantity: order.quantity,
+        createdAt: order.createdAt,
+      });
+
+      if (!payment.receipt) {
+        return reply.status(404).send({ error: "Receipt not found for this order." });
+      }
+
+      if (!isValidReceiptStoragePath(payment.receipt.storagePath)) {
+        return reply.status(400).send({ error: "Receipt path is invalid." });
+      }
+
+      const absolutePath = path.join(process.cwd(), payment.receipt.storagePath);
+      let fileBuffer: Buffer;
+      try {
+        fileBuffer = await readFile(absolutePath);
+      } catch {
+        return reply.status(404).send({ error: "Receipt file is unavailable." });
+      }
+
+      reply.header("cache-control", "no-store");
+      reply.header("content-disposition", `inline; filename="${payment.receipt.fileName}"`);
+      return reply.type(payment.receipt.mimeType).send(fileBuffer);
+    }
+  );
+
+  fastify.post<{ Params: { orderId: string } }>(
+    "/admin/orders/:orderId/payment",
+    { preHandler: [requireRole("ADMIN")] },
+    async (request, reply) => {
+      const parsedParams = orderParamsSchema.safeParse(request.params);
+      if (!parsedParams.success) {
+        return reply.status(400).send({ error: "Invalid order ID", details: parsedParams.error.flatten() });
+      }
+
+      const parsedBody = adminPaymentActionSchema.safeParse(request.body ?? {});
+      if (!parsedBody.success) {
+        return reply.status(400).send({ error: "Invalid request body", details: parsedBody.error.flatten() });
+      }
+
+      const orderDelegate = resolveOrderDelegate();
+      const order = await findOrderForAdmin(parsedParams.data.orderId);
+      if (!order) {
+        return reply.status(404).send({ error: "Order not found" });
+      }
+
+      const payment = readPaymentView({
+        metadata: order.metadata,
+        orderId: order.id,
+        productType: order.productType,
+        quantity: order.quantity,
+        createdAt: order.createdAt,
+      });
+
+      if (payment.status !== "awaiting_confirmation" || order.status !== "PENDING") {
+        return reply.status(409).send({
+          error: "Payment can only be managed while the order is pending and awaiting confirmation.",
+        });
+      }
+
+      const now = new Date();
+      const customStatusNote = parsedBody.data.statusNote?.trim() || null;
+
+      if (parsedBody.data.action === "confirm") {
+        const timeline = createTimelineFromConfirmation(now);
+        const nextPayment: OrderPaymentMetadata = {
+          ...toPaymentMetadata(payment),
+          status: "confirmed",
+          confirmedAt: now.toISOString(),
+        };
+
+        const metadataWithPayment = withPaymentMetadata(order.metadata, nextPayment);
+        const metadataWithTimeline = withTimelineMetadata(metadataWithPayment as Prisma.JsonValue, timeline);
+        const updated = await updateOrderForPaymentFlow(orderDelegate, {
+          orderId: order.id,
+          status: "PROCESSING",
+          statusNote: customStatusNote || "Payment confirmed by admin. Order queued for production.",
+          processedAt: now,
+          processedById: request.user.sub,
+          metadata: metadataWithTimeline,
+        });
+
+        if (!updated) {
+          return reply.status(500).send({ error: "Unable to confirm payment from admin." });
+        }
+
+        await prisma.auditLog.create({
+          data: {
+            actorId: request.user.sub,
+            action: "order.payment_confirmed_by_admin",
+            entityType: "order",
+            entityId: updated.id,
+            metadata: {
+              expectedProcessingAt: timeline.expectedProcessingAt,
+              expectedDoneAt: timeline.expectedDoneAt,
+              expectedSentAt: timeline.expectedSentAt,
+              statusNote: customStatusNote,
+            },
+          },
+        });
+
+        try {
+          await sendPaymentConfirmedEmail(config, fastify, updated, timeline);
+        } catch (error) {
+          fastify.log.error({ err: error, orderId: updated.id }, "Failed to send admin payment confirmation email");
+        }
+
+        return reply.send({
+          order: serializeOrder(updated, true),
+        });
+      }
+
+      const nextPayment: OrderPaymentMetadata = {
+        ...toPaymentMetadata(payment),
+        status: "cancelled",
+        cancelledAt: now.toISOString(),
+      };
+      const nextMetadata = withPaymentMetadata(order.metadata, nextPayment);
+      const updated = await updateOrderForPaymentFlow(orderDelegate, {
+        orderId: order.id,
+        status: "CANCELLED",
+        statusNote: customStatusNote || "Cancelled by admin before payment confirmation.",
+        processedAt: now,
+        processedById: request.user.sub,
+        metadata: nextMetadata,
+      });
+
+      if (!updated) {
+        return reply.status(500).send({ error: "Unable to cancel payment from admin." });
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          actorId: request.user.sub,
+          action: "order.payment_cancelled_by_admin",
+          entityType: "order",
+          entityId: updated.id,
+          metadata: {
+            statusNote: customStatusNote,
+          },
+        },
+      });
+
+      try {
+        await sendOrderEmail(config, fastify.log, {
+          to: updated.user?.email ?? request.user.email,
+          type: "payment_cancelled",
+          orderId: updated.id,
+          subject: `Order ${updated.id.slice(-8)} cancelled`,
+          text: buildPaymentExpiredEmailText({
+            name: updated.user?.name || "there",
+            orderId: updated.id,
+            productType: toClientProductType(updated.productType),
+          }),
+        });
+      } catch (error) {
+        fastify.log.error({ err: error, orderId: updated.id }, "Failed to send admin payment cancellation email");
+      }
+
+      return reply.send({
+        order: serializeOrder(updated, true),
+      });
+    }
+  );
 
   fastify.patch<{ Params: { orderId: string } }>(
     "/admin/orders/:orderId/status",

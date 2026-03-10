@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { resolveHardwareColorsFromConfig } from "../lib/hardware-options";
+import { resolveOrderPricingFromConfig } from "../lib/order-pricing";
 import { getPhysicalSpec, physicalSpecsV1, productTypeSchema } from "../lib/physical-specs";
 import { prisma } from "../lib/prisma";
 
@@ -17,11 +18,14 @@ export async function configuratorRoutes(fastify: FastifyInstance): Promise<void
     });
 
     const hardwareColors = resolveHardwareColorsFromConfig(settings?.config);
+    const orderPricing = resolveOrderPricingFromConfig(settings?.config);
 
     return {
       specs: physicalSpecsV1,
       options: {
         colors: hardwareColors,
+        pricing: orderPricing,
+        perTypePricing: true,
       },
     };
   });
@@ -41,6 +45,7 @@ export async function configuratorRoutes(fastify: FastifyInstance): Promise<void
     });
 
     const hardwareColors = resolveHardwareColorsFromConfig(settings?.config);
+    const orderPricing = resolveOrderPricingFromConfig(settings?.config);
 
     return {
       specs: {
@@ -51,6 +56,7 @@ export async function configuratorRoutes(fastify: FastifyInstance): Promise<void
       },
       options: {
         colors: hardwareColors[parsed.data.productType],
+        pricing: orderPricing,
       },
     };
   });

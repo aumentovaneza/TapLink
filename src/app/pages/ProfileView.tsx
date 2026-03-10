@@ -462,11 +462,13 @@ export function ProfileView() {
   const profileTopPaddingClass = getSessionUser() ? "pt-16" : "pt-0";
   const shareUrl = profile ? createShareUrl(profile.slug) : "";
   const profilePhotoUrl = profile?.photoUrl || FALLBACK_PHOTO;
-  const petLost = profile?.templateType === "pet" && isPetMarkedLost(profile.fields);
+  const isLostEligible = profile?.templateType === "pet" || profile?.templateType === "pets" || profile?.templateType === "items";
+  const isLost = isLostEligible && isPetMarkedLost(profile.fields);
   const ownerName = profile?.fields.ownerName?.trim() || "";
   const ownerPhone = profile?.fields.ownerPhone?.trim() || "";
-  const visibleCafeMenuSections =
-    profile?.templateType === "cafe"
+  const isCafeType = profile?.templateType === "cafe" ||
+    (profile?.templateType === "business" && profile?.fields.businessCategory === "cafe_restaurant");
+  const visibleCafeMenuSections = isCafeType
       ? parseCafeMenuSections(profile.fields.menuSections, { fallbackToDefault: false })
           .map((section) => ({
             ...section,
@@ -534,7 +536,7 @@ export function ProfileView() {
       next.reporterName = "Your name is required";
     }
     if (!reportForm.message.trim()) {
-      next.message = "Please add details about where you saw the pet";
+      next.message = "Please add details about where you found this";
     }
     if (!reportForm.reporterEmail.trim() && !reportForm.reporterPhone.trim()) {
       next.reporterEmail = "Add email or phone so the owner can contact you";
@@ -559,7 +561,7 @@ export function ProfileView() {
     setReportErrors({});
 
     try {
-      await apiRequest<{ ok: boolean }>("/events/pet-report", {
+      await apiRequest<{ ok: boolean }>("/events/found-report", {
         method: "POST",
         body: {
           profileId: profile.id,
@@ -735,7 +737,7 @@ export function ProfileView() {
           </div>
         </motion.div>
 
-        {petLost && (
+        {isLost && (
           <div className={`order-15 mb-4 rounded-2xl border p-4 ${isDark ? "border-rose-900/40 bg-rose-950/20" : "border-rose-200 bg-rose-50"}`}>
             <div className="flex items-start gap-3">
               <div className={`mt-0.5 ${isDark ? "text-rose-300" : "text-rose-600"}`}>
@@ -743,14 +745,16 @@ export function ProfileView() {
               </div>
               <div>
                 <p className={`${isDark ? "text-rose-200" : "text-rose-700"} text-sm`} style={{ fontWeight: 700 }}>
-                  LOST PET ALERT
+                  {profile.templateType === "items" ? "LOST ITEM ALERT" : "LOST PET ALERT"}
                 </p>
                 <p className={`${isDark ? "text-rose-300" : "text-rose-700"} text-xs mt-1`}>
-                  This pet is currently marked as lost. If you have seen them, please submit a report below.
+                  {profile.templateType === "items"
+                    ? "This item is currently marked as lost. If you have found it, please submit a report below."
+                    : "This pet is currently marked as lost. If you have seen them, please submit a report below."}
                 </p>
                 {(ownerName || ownerPhone) && (
                   <p className={`${isDark ? "text-rose-200" : "text-rose-800"} text-xs mt-2`} style={{ fontWeight: 600 }}>
-                    {ownerName ? `Owner: ${ownerName}` : "Owner"}{ownerPhone ? ` · ${ownerPhone}` : ""}
+                    {ownerName ? `${profile.templateType === "items" ? "Owner" : "Owner"}: ${ownerName}` : "Owner"}{ownerPhone ? ` · ${ownerPhone}` : ""}
                   </p>
                 )}
               </div>
@@ -758,7 +762,7 @@ export function ProfileView() {
           </div>
         )}
 
-        {profile.templateType === "cafe" && visibleCafeMenuSections.length > 0 && (
+        {isCafeType && visibleCafeMenuSections.length > 0 && (
           <div className={`order-20 mb-4 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
             <div className="mb-3 flex items-center gap-2">
               <UtensilsCrossed size={15} className={isDark ? "text-amber-300" : "text-amber-600"} />
@@ -874,14 +878,16 @@ export function ProfileView() {
           </button>
         </div>
 
-        {petLost && (
+        {isLost && (
           <div className={`order-30 mb-6 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
             <div className="mb-3">
               <h3 className={`${isDark ? "text-white" : "text-slate-900"} text-sm`} style={{ fontWeight: 700 }}>
-                Report Sighting to Owner
+                {profile.templateType === "items" ? "Report Found Item" : "Report Sighting to Owner"}
               </h3>
               <p className={`${isDark ? "text-slate-400" : "text-slate-500"} text-xs mt-1`}>
-                Share where/when you saw this pet and the owner will receive your report.
+                {profile.templateType === "items"
+                  ? "Share where/when you found this item and the owner will receive your report."
+                  : "Share where/when you saw this pet and the owner will receive your report."}
               </p>
             </div>
 
@@ -942,7 +948,7 @@ export function ProfileView() {
               <input
                 value={reportForm.location}
                 onChange={(event) => updateReportField("location", event.target.value)}
-                placeholder="Where did you see the pet? (optional)"
+                placeholder={profile.templateType === "items" ? "Where did you find it? (optional)" : "Where did you see them? (optional)"}
                 className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${
                   isDark
                     ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
@@ -954,7 +960,7 @@ export function ProfileView() {
                   rows={4}
                   value={reportForm.message}
                   onChange={(event) => updateReportField("message", event.target.value)}
-                  placeholder="Details about sighting (time, direction, condition, etc.)"
+                  placeholder={profile.templateType === "items" ? "Details about finding (time, location, condition, etc.)" : "Details about sighting (time, direction, condition, etc.)"}
                   className={`w-full px-3 py-2.5 rounded-xl text-sm border outline-none resize-none ${
                     reportErrors.message
                       ? isDark
@@ -979,7 +985,7 @@ export function ProfileView() {
               >
                 <span className="inline-flex items-center gap-1.5">
                   <Send size={13} />
-                  {reportSubmitting ? "Sending..." : "Send Report to Owner"}
+                  {reportSubmitting ? "Sending..." : (profile.templateType === "items" ? "Send Found Report" : "Send Report to Owner")}
                 </span>
               </button>
             </div>

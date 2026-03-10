@@ -3,26 +3,24 @@ import { Link } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Zap, ArrowRight, Check, Shield, Globe, Smartphone,
-  BarChart3, Share2, Star, ChevronRight, Wifi,
-  Users, TrendingUp, Clock, Award, PawPrint, Coffee,
-  Building2, User, Calendar, Layers, Paintbrush, Sparkles,
-  Phone, Mail, MapPin, ShoppingBag, Instagram, Ticket
+  Zap, ArrowRight, Check, Shield, ChevronRight, Wifi,
+  Users, PawPrint, Package,
+  Building2, CalendarDays, Layers, Sparkles,
+  Tag, Lock, Activity
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { TaparooIconColor } from "../components/shared/TaparooLogo";
+import { type ProfileType } from "../lib/profile-types";
 
-const PHOTO_PERSON  = "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_PERSON2 = "https://images.unsplash.com/photo-1626784579980-db39c1a13aa9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMGRlc2lnbmVyJTIwd29tYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE2NjI0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_BIZ     = "https://images.unsplash.com/photo-1629507208649-70919ca33793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMG1hbiUyMHByb2Zlc3Npb25hbCUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3NTMwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const PHOTO_ITEMS   = "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWNrcGFjayUyMGtleXMlMjBiZWxvbmdpbmdzJTIwdHJhdmVsfGVufDF8fHx8MTc3MTc1MzA4OHww&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_DOG     = "https://images.unsplash.com/photo-1721656363841-93e97a879979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXRlJTIwZG9nJTIwZ29sZGVuJTIwcmV0cmlldmVyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxNzU1NzEwfDA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_CAFE    = "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_MUSIC   = "https://images.unsplash.com/photo-1771191057577-e216395637a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBlcmZvcm1lciUyMHN0YWdlfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
+const PHOTO_BIZ     = "https://images.unsplash.com/photo-1629507208649-70919ca33793?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMG1hbiUyMHByb2Zlc3Npb25hbCUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE3NTMwOTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_CREATOR = "https://images.unsplash.com/photo-1617190071136-3ed95a229659?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMGFydGlzdCUyMHN0dWRpbyUyMHBvcnRyYWl0JTIwY29sb3JmdWx8ZW58MXx8fHwxNzcxNzY1MDg3fDA&ixlib=rb-4.1.0&q=80&w=1080";
+const PHOTO_EVENT   = "https://images.unsplash.com/photo-1771191057577-e216395637a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBlcmZvcm1lciUyMHN0YWdlfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
 
-// ─── Profile Types (not themes — these define PURPOSE) ────────────────────────
-interface ProfileType {
-  id: string;
-  icon: typeof User;
+interface LandingProfileType {
+  id: ProfileType;
+  icon: typeof Package;
   label: string;
   color: string;
   cardGradient: string;
@@ -33,279 +31,141 @@ interface ProfileType {
   sub: string;
   badge?: string;
   links: { label: string }[];
+  features: string[];
+  description: string;
+  forWho: string;
 }
 
-const profileTypes: ProfileType[] = [
+const profileTypes: LandingProfileType[] = [
   {
-    id: "individual",
-    icon: User,
-    label: "Individual",
+    id: "items", icon: Package, label: "Items",
     color: "#DC2626",
     cardGradient: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)",
-    textColor: "#fff",
-    photo: PHOTO_PERSON,
-    photoShape: "circle",
-    name: "Alex Rivera",
-    sub: "Product Designer · Designly",
-    links: [{ label: "LinkedIn" }, { label: "Portfolio" }, { label: "Email Me" }],
+    textColor: "#fff", photo: PHOTO_ITEMS, photoShape: "rounded",
+    name: "My Backpack", sub: "Lost & Found · NFC Protected",
+    badge: "Scan if found",
+    links: [{ label: "Contact Owner" }, { label: "Return Instructions" }, { label: "Reward Info" }],
+    features: ["Attach to any personal belonging", "Instant owner notification on scan", "Lost & found alert mode", "Return instructions & reward info", "Works on any phone, no app needed"],
+    description: "Track and protect your belongings with NFC-powered lost & found. Attach a tag to anything you own and get notified the moment someone scans it.",
+    forWho: "Travellers, students, commuters, anyone with valuables",
   },
   {
-    id: "business",
-    icon: Building2,
-    label: "Business",
-    color: "#0369A1",
-    cardGradient: "linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)",
-    textColor: "#fff",
-    photo: PHOTO_BIZ,
-    photoShape: "rounded",
-    name: "Designly Studio",
-    sub: "Brand & UX Agency · ⭐ 4.9",
-    links: [{ label: "Our Website" }, { label: "Services" }, { label: "Get Directions" }],
-  },
-  {
-    id: "pet",
-    icon: PawPrint,
-    label: "Pet",
+    id: "pets", icon: PawPrint, label: "Pets",
     color: "#F59E0B",
     cardGradient: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
-    textColor: "#fff",
-    photo: PHOTO_DOG,
-    photoShape: "circle",
-    name: "🐾 Buddy",
-    sub: "Golden Retriever · 3 years old",
+    textColor: "#fff", photo: PHOTO_DOG, photoShape: "circle",
+    name: "Buddy", sub: "Golden Retriever · 3 years old",
     badge: "Scan if lost",
-    links: [{ label: "🚨 Call Owner" }, { label: "My Vet" }, { label: "Instagram" }],
-  },
-  {
-    id: "cafe",
-    icon: Coffee,
-    label: "Café & Restaurant",
-    color: "#92400E",
-    cardGradient: "linear-gradient(135deg, #92400E 0%, #D97706 100%)",
-    textColor: "#fff",
-    photo: PHOTO_CAFE,
-    photoShape: "banner",
-    name: "The Bean House",
-    sub: "Coffee & Brunch · Open until 6PM",
-    links: [{ label: "📋 View Menu" }, { label: "📦 Order Online" }, { label: "📅 Reserve Table" }],
-  },
-  {
-    id: "creator",
-    icon: Sparkles,
-    label: "Creator",
-    color: "#EA580C",
-    cardGradient: "linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #FBBF24 100%)",
-    textColor: "#fff",
-    photo: PHOTO_CREATOR,
-    photoShape: "circle",
-    name: "Maya Lee",
-    sub: "Illustrator · Podcaster · 45K Fans",
-    links: [{ label: "🎨 Portfolio" }, { label: "🎙️ Listen Now" }, { label: "💬 Hire Me" }],
-  },
-  {
-    id: "event",
-    icon: Calendar,
-    label: "Event",
-    color: "#B45309",
-    cardGradient: "linear-gradient(135deg, #7C2D12 0%, #C2410C 55%, #F59E0B 100%)",
-    textColor: "#fff",
-    photo: PHOTO_MUSIC, // stage/event photo
-    photoShape: "banner",
-    name: "TechSummit 2026",
-    sub: "Feb 28 · San Francisco",
-    links: [{ label: "🎟 Get Tickets" }, { label: "📋 Schedule" }, { label: "📍 Venue Map" }],
-  },
-];
-
-// ─── Template showcase details ─────────────────────────────────────────────────
-const templateDetails: Record<string, { description: string; features: string[]; forWho: string; cta: string }> = {
-  individual: {
-    description: "A physical NFC card or tag for everyday networking. Share your work, socials, and contact details from one linked profile.",
-    features: ["Name, photo & headline bio", "Social media & portfolio links", "One-tap contact save (vCard)", "Real-time tap analytics", "Works on any phone, no app needed"],
-    forWho: "Professionals, freelancers, students, creatives",
-    cta: "Create Individual Profile",
-  },
-  business: {
-    description: "Equip staff with NFC cards/tags tied to one brand profile. Ideal for teams that need a consistent first impression.",
-    features: ["Brand logo & full-width cover banner", "Services, pricing & opening hours", "Location & directions map", "Team member spotlight", "Customer review & rating links"],
-    forWho: "Shops, agencies, studios, clinics",
-    cta: "Create Business Profile",
-  },
-  pet: {
-    description: "Keep your pet safe with a scannable NFC tag. If they ever get lost, anyone who scans can reach you instantly.",
-    features: ["Pet name, breed & age details", "Emergency contact button", "Vet info & medical notes", "Owner location & address", "Lost & found alert mode"],
+    links: [{ label: "Call Owner" }, { label: "My Vet" }, { label: "Medical Notes" }],
+    features: ["Pet name, breed & age details", "Instant owner notification on scan", "Vet info & medical notes", "Emergency contact button", "Lost & found alert mode"],
+    description: "Keep your pet safe with a scannable NFC tag. If they ever get lost, anyone who scans can reach you instantly with owner notifications.",
     forWho: "Pet owners, breeders, animal shelters",
-    cta: "Create Pet Profile",
   },
-  cafe: {
-    description: "Replace printed menus and table cards. Customers tap to browse your menu, order online, and make reservations in seconds.",
-    features: ["Digital menu & daily specials", "Online ordering integration", "Table reservation link", "Opening hours & map", "Social media & Google reviews"],
-    forWho: "Cafés, restaurants, food trucks, bakeries",
-    cta: "Create Café Profile",
+  {
+    id: "business", icon: Building2, label: "Business",
+    color: "#0EA5E9",
+    cardGradient: "linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)",
+    textColor: "#fff", photo: PHOTO_BIZ, photoShape: "rounded",
+    name: "The Bean House", sub: "Cafe & Brunch · Open until 6PM",
+    links: [{ label: "View Menu" }, { label: "Order Online" }, { label: "Get Directions" }],
+    features: ["Brand logo & full-width cover banner", "Services, pricing & opening hours", "Location, menu & booking links", "Customer review & rating links", "Digital menu & daily specials"],
+    description: "Turn your cafe, shop, or salon into a shareable digital hub. Customers tap to browse your menu, book services, and find directions in seconds.",
+    forWho: "Cafes, shops, salons, restaurants, food trucks",
   },
-  creator: {
-    description: "Built for every kind of creative — musicians, painters, podcasters, DJs, photographers, illustrators, and more. One profile that shows the world what you do and how to work with you.",
+  {
+    id: "creator", icon: Sparkles, label: "Creator",
+    color: "#EC4899",
+    cardGradient: "linear-gradient(135deg, #9333EA 0%, #EC4899 55%, #F97316 100%)",
+    textColor: "#fff", photo: PHOTO_CREATOR, photoShape: "circle",
+    name: "Maya Lee", sub: "Illustrator · Podcaster · 45K Fans",
+    links: [{ label: "Portfolio" }, { label: "Listen Now" }, { label: "Hire Me" }],
     features: ["Name, photo & creative bio", "Portfolio, streaming & platform links", "Booking / commission contact", "Merch, shop & fan support links", "Upcoming shows, events & tour dates"],
-    forWho: "Musicians, painters, podcasters, DJs, photographers, illustrators, designers & all creative professionals",
-    cta: "Create Creator Profile",
+    description: "Built for every kind of creative. One profile to showcase your portfolio, links, and booking details, and show the world what you do.",
+    forWho: "Musicians, painters, podcasters, DJs, photographers, illustrators",
   },
-  event: {
-    description: "The modern event badge. Share your agenda, speakers, and logistics with every attendee — via a single tap on their badge or table card.",
+  {
+    id: "event", icon: CalendarDays, label: "Event",
+    color: "#8B5CF6",
+    cardGradient: "linear-gradient(135deg, #4C1D95 0%, #7C3AED 60%, #8B5CF6 100%)",
+    textColor: "#fff", photo: PHOTO_EVENT, photoShape: "banner",
+    name: "TechSummit 2026", sub: "Feb 28 · San Francisco",
+    links: [{ label: "Get Tickets" }, { label: "Schedule" }, { label: "Venue Map" }],
     features: ["Event name, date & venue details", "Full schedule & speaker lineup", "Ticket & registration links", "Live updates & announcements", "Post-event recordings & slides"],
+    description: "Share event details, schedules, and tickets with a single tap. The modern event badge for conferences, parties, meetups, and concerts.",
     forWho: "Conferences, parties, meetups, concerts",
-    cta: "Create Event Profile",
   },
-};
-
-// ─── Themes preview (visual styling only) ─────────────────────────────────────
-const themeSwatches = [
-  { name: "Wave", gradient: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)" },
-  { name: "Sunset", gradient: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)" },
-  { name: "Dark Pro", gradient: "linear-gradient(135deg, #1C0500, #3F1A0A)" },
-  { name: "Ocean", gradient: "linear-gradient(135deg, #0ea5e9, #2563eb)" },
-  { name: "Rose", gradient: "linear-gradient(135deg, #fda4af, #e11d48)" },
-  { name: "Forest", gradient: "linear-gradient(135deg, #065f46, #059669)" },
-  { name: "Noir", gradient: "linear-gradient(135deg, #111827, #1f2937)" },
-  { name: "Minimal", gradient: "linear-gradient(135deg, #f8fafc, #e2e8f0)" },
-];
-
-const steps = [
-  { step: "01", icon: Layers, title: "Pick Tag or Card", desc: "Start with hardware first. Choose the NFC form factor that fits your use case." },
-  { step: "02", icon: Paintbrush, title: "Customize & Link", desc: "Choose available colors/text/icon or use the default design, then pair it with your profile." },
-  { step: "03", icon: Share2, title: "Activate & Tap", desc: "Once activated, the hardware and profile work together in one tap." },
 ];
 
 const stats = [
-  { value: "32K+", label: "Tags & Cards Sold" },
-  { value: "50K+", label: "Linked Profiles" },
+  { value: "32K+", label: "NFC Tags Shipped" },
+  { value: "50K+", label: "Active Profiles" },
   { value: "2.4M", label: "Total Taps" },
   { value: "98%", label: "Satisfaction Rate" },
 ];
 
-const features = [
-  { icon: Smartphone, title: "NFC Hardware First", desc: "We sell the NFC tag/card hardware and tie it directly to your profile." },
-  { icon: Paintbrush, title: "Hardware Customization", desc: "Customize tag/card color, text, and icon/logo based on available options." },
-  { icon: BarChart3, title: "Tap Analytics", desc: "Track taps and engagement once your hardware is activated." },
-  { icon: Globe, title: "Default Design Included", desc: "Skip customization and still get a clean ready-to-use tag/card design." },
-  { icon: Shield, title: "Profile + Hardware Linked", desc: "The physical product and profile are paired and managed together." },
-  { icon: TrendingUp, title: "Business Ready", desc: "Connect multiple cards/tags to one profile for teams and campaigns." },
-];
-
-const testimonials = [
+const steps = [
   {
-    name: "Sarah Mitchell",
-    title: "Marketing Director",
-    photo: PHOTO_PERSON2,
-    text: "Taparoo replaced my entire stack of business cards. The analytics alone are worth it — I can see exactly who's viewing my profile.",
-    stars: 5,
-    type: "Individual",
+    step: "01", icon: Tag, title: "Choose Your Tag Type",
+    desc: "Select a profile type — Items, Pets, Business, Creator, or Event — then pick an NFC tag or card. Each tag is locked to its type at creation.",
   },
   {
-    name: "The Bean House",
-    title: "Café Owner · Portland",
-    photo: PHOTO_CAFE,
-    text: "We put NFC tags on every table. Customers tap to see our menu, order online, and follow us. Engagement went up 40% in a month.",
-    stars: 5,
-    type: "Café",
+    step: "02", icon: Layers, title: "Claim & Set Up",
+    desc: "Scan or enter your claim code. Your tag's profile type is already assigned — just fill in your details, choose a theme, and go live.",
   },
   {
-    name: "Buddy's Human",
-    title: "Dog owner · Austin",
-    photo: PHOTO_DOG,
-    text: "Buddy got out once and a neighbor scanned his tag. They had my number instantly. Taparoo for pets is genuinely brilliant.",
-    stars: 5,
-    type: "Pet",
+    step: "03", icon: Activity, title: "Tap, Track & Protect",
+    desc: "Share with a tap. Track engagement with real-time analytics. For Items and Pets, lost & found alerts notify you instantly when someone scans a lost tag.",
   },
 ];
-
-// ─── Large Phone Mockup (template showcase) ───────────────────────────────────
-function BigPhoneCard({ type }: { type: ProfileType }) {
-  return (
-    <div className="relative drop-shadow-2xl" style={{ width: 210, height: 440 }}>
-      <div className="absolute inset-0 rounded-[2.8rem]"
-        style={{ background: "#0a0a0f", boxShadow: "0 40px 80px rgba(0,0,0,0.55), inset 0 0 0 1.5px rgba(255,255,255,0.1)" }} />
-      <div className="absolute inset-[4px] rounded-[2.5rem] overflow-hidden flex flex-col"
-        style={{ background: type.cardGradient }}>
-        {/* Status bar */}
-        <div className="flex items-center justify-between px-5 pt-3 pb-1 shrink-0">
-          <span className="text-white/50" style={{ fontSize: 8, fontWeight: 600 }}>9:41</span>
-          <div className="w-14 h-3.5 bg-black/50 rounded-full" />
-          <span className="text-white/50" style={{ fontSize: 8 }}>●●●</span>
-        </div>
-        <div className="flex-1 px-4 pb-4 flex flex-col items-center overflow-hidden">
-          {type.photoShape === "banner" ? (
-            <div className="w-full h-[88px] rounded-xl overflow-hidden mb-3 shrink-0">
-              <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div className={`overflow-hidden border-2 border-white/30 mb-3 shadow-xl shrink-0 mt-1 ${type.photoShape === "circle" ? "w-[72px] h-[72px] rounded-full" : "w-[72px] h-[72px] rounded-2xl"}`}>
-              <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <p className="text-center mb-0.5" style={{ color: type.textColor, fontWeight: 800, fontSize: "0.78rem" }}>{type.name}</p>
-          <p className="text-center opacity-65 mb-2" style={{ color: type.textColor, fontSize: "0.6rem" }}>{type.sub}</p>
-          {type.badge && (
-            <div className="mb-2.5 px-2.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <p style={{ color: type.textColor, fontWeight: 600, fontSize: "0.58rem" }}>{type.badge}</p>
-            </div>
-          )}
-          <div className="w-full mt-auto space-y-2">
-            {type.links.map((link) => (
-              <div key={link.label} className="py-2 px-3 rounded-xl text-center"
-                style={{ background: "rgba(255,255,255,0.18)", color: type.textColor, backdropFilter: "blur(10px)", fontWeight: 500, fontSize: "0.67rem" }}>
-                {link.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Phone Mockup ─────────────────────────────────────────────────────────────
-function PhoneCard({ type }: { type: ProfileType }) {
+function PhoneCard({ type, size = "md" }: { type: LandingProfileType; size?: "sm" | "md" | "lg" }) {
+  const dim = size === "lg" ? { w: 220, h: 460, r: "2.8rem", inner: "2.5rem", pad: 4, pt: 10, px: 4 }
+    : size === "sm" ? { w: 160, h: 320, r: "2.2rem", inner: "2rem", pad: 3, pt: 8, px: 3 }
+    : { w: 200, h: 410, r: "2.5rem", inner: "2.3rem", pad: 3, pt: 9, px: 4 };
+
   return (
-    <div className="relative" style={{ width: 200, height: 400 }}>
-      <div className="absolute inset-0 rounded-[2.5rem] bg-slate-900 shadow-2xl" />
-      <div
-        className="absolute inset-[3px] rounded-[2.3rem] overflow-hidden flex flex-col"
-        style={{ background: type.cardGradient }}
-      >
+    <div className="relative drop-shadow-2xl flex-shrink-0" style={{ width: dim.w, height: dim.h }}>
+      <div className="absolute inset-0" style={{
+        borderRadius: dim.r, background: "#111",
+        boxShadow: "0 40px 80px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.12)"
+      }} />
+      <div className="absolute flex flex-col overflow-hidden" style={{
+        inset: dim.pad, borderRadius: dim.inner, background: type.cardGradient,
+      }}>
         {/* Notch */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-full z-10" />
-
-        <div className="flex-1 pt-10 px-4 pb-4 flex flex-col items-center">
-          {/* Photo */}
-          {type.photoShape === "banner" ? (
-            <div className="w-full h-24 rounded-xl overflow-hidden mb-3 flex-shrink-0">
-              <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div className={`overflow-hidden border-2 border-white/30 mb-3 shadow-lg flex-shrink-0 ${type.photoShape === "circle" ? "w-20 h-20 rounded-full" : "w-20 h-20 rounded-2xl"}`}>
-              <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
-            </div>
-          )}
-
-          <p className="text-sm text-center mb-0.5" style={{ color: type.textColor, fontWeight: 700 }}>{type.name}</p>
-          <p className="text-xs text-center opacity-75 mb-1" style={{ color: type.textColor }}>{type.sub}</p>
-
-          {type.badge && (
-            <div className="mb-2 px-2.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <p className="text-xs" style={{ color: type.textColor, fontWeight: 600 }}>{type.badge}</p>
-            </div>
-          )}
-
-          <div className="w-full mt-auto space-y-2">
-            {type.links.map((link) => (
-              <div
-                key={link.label}
-                className="py-2 px-3 rounded-xl text-xs text-center"
-                style={{ background: "rgba(255,255,255,0.18)", color: type.textColor, backdropFilter: "blur(8px)", fontWeight: 500 }}
-              >
-                {link.label}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-black/60 rounded-full z-10" />
+        {/* Shine overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)"
+        }} />
+        <div className="flex-1 overflow-hidden" style={{ paddingTop: `${dim.pt * 4}px`, paddingLeft: `${dim.px * 4}px`, paddingRight: `${dim.px * 4}px`, paddingBottom: `${dim.px * 4}px` }}>
+          <div className="flex flex-col items-center h-full">
+            {type.photoShape === "banner" ? (
+              <div className="w-full rounded-xl overflow-hidden mb-3 flex-shrink-0" style={{ height: size === "lg" ? 88 : 72 }}>
+                <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
               </div>
-            ))}
+            ) : (
+              <div className={`overflow-hidden border-2 border-white/30 mb-2.5 shadow-xl flex-shrink-0 ${type.photoShape === "circle" ? "rounded-full" : "rounded-2xl"}`}
+                style={{ width: size === "lg" ? 72 : 60, height: size === "lg" ? 72 : 60 }}>
+                <ImageWithFallback src={type.photo} alt={type.name} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <p className="text-center mb-0.5" style={{ color: type.textColor, fontWeight: 800, fontSize: size === "lg" ? "0.75rem" : "0.65rem", lineHeight: 1.2 }}>{type.name}</p>
+            <p className="text-center opacity-65 mb-2" style={{ color: type.textColor, fontSize: size === "lg" ? "0.6rem" : "0.52rem" }}>{type.sub}</p>
+            {type.badge && (
+              <div className="mb-2 px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.22)" }}>
+                <p style={{ color: type.textColor, fontWeight: 600, fontSize: "0.5rem" }}>{type.badge}</p>
+              </div>
+            )}
+            <div className="w-full mt-auto space-y-1.5">
+              {type.links.map((link) => (
+                <div key={link.label} className="py-1.5 px-3 rounded-xl text-center"
+                  style={{ background: "rgba(255,255,255,0.18)", color: type.textColor, backdropFilter: "blur(10px)", fontWeight: 500, fontSize: size === "lg" ? "0.6rem" : "0.52rem" }}>
+                  {link.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -317,213 +177,269 @@ export function Landing() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [activeType, setActiveType] = useState(0);
-  const [activeTemplate, setActiveTemplate] = useState(0);
   const [tapCount, setTapCount] = useState(2401337);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTapCount((c) => c + Math.floor(Math.random() * 3));
-    }, 2500);
+    const interval = setInterval(() => setTapCount((c) => c + Math.floor(Math.random() * 3)), 2500);
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-rotate profile types in hero
   useEffect(() => {
-    const t = setInterval(() => setActiveType((i) => (i + 1) % profileTypes.length), 3500);
+    const t = setInterval(() => setActiveType((i) => (i + 1) % profileTypes.length), 3800);
     return () => clearInterval(t);
   }, []);
 
+  const bg = isDark ? "bg-slate-950 text-white" : "bg-[#FAFAFA] text-[#1C0500]";
+  const card = isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100";
+  const muted = isDark ? "text-slate-400" : "text-slate-500";
+  const heading = isDark ? "text-white" : "text-[#1C0500]";
+
   return (
-    <div className={isDark ? "bg-slate-950 text-white" : "bg-white text-slate-900"}>
-      {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 opacity-10" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 20%, #DC2626 0%, transparent 70%)" }} />
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: "linear-gradient(#DC2626 1px, transparent 1px), linear-gradient(90deg, #DC2626 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
+    <div className={bg}>
+
+      {/* ══════════════════════════════════════════════════════ HERO */}
+      <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+        {/* Background texture */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0" style={{ background: isDark ? "radial-gradient(ellipse 90% 60% at 65% 40%, rgba(220,38,38,0.12) 0%, transparent 70%)" : "radial-gradient(ellipse 90% 70% at 65% 40%, rgba(251,191,36,0.18) 0%, transparent 70%)" }} />
+          <div className="absolute inset-0 opacity-[0.025]" style={{
+            backgroundImage: "linear-gradient(#1C0500 1px, transparent 1px), linear-gradient(90deg, #1C0500 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
           }} />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left */}
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* ── Left copy ── */}
+            <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+              {/* Brand badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-sm"
-                style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.1), rgba(234,88,12,0.12))", border: "1px solid rgba(220,38,38,0.2)", color: "#EA580C" }}>
-                <Zap size={13} />
-                <span style={{ fontWeight: 600 }}>Custom NFC Hardware + Linked Profile</span>
+                style={{ background: "linear-gradient(135deg, rgba(220,38,38,0.1), rgba(234,88,12,0.1))", border: "1px solid rgba(220,38,38,0.25)", color: "#DC2626" }}>
+                <TaparooIconColor size={13} />
+                <span style={{ fontWeight: 600 }}>Programmable Digital Identity</span>
               </div>
 
-              <h1 className={`mb-6 ${isDark ? "text-white" : "text-slate-900"}`}
-                style={{ fontSize: "clamp(2.25rem, 5vw, 3.75rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.03em" }}>
-                NFC Tag or Card.
-                <br />
+              <h1 className={`mb-5 ${heading}`}
+                style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2.4rem, 5.5vw, 4rem)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em" }}>
+                Control who<br />represents you.{" "}
                 <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  Profile Included.
-                </span>{" "}
-                Always Linked.
+                  One tap<br />at a time.
+                </span>
               </h1>
 
-              <p className={`text-lg mb-8 max-w-lg ${isDark ? "text-slate-300" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>
-                Start by choosing the hardware we make: <strong>NFC tag or NFC card</strong>. Customize its look, link it to your profile, and share both together with one tap.
+              <p className={`mb-6 max-w-lg ${muted}`} style={{ fontSize: "1.0625rem", lineHeight: 1.7 }}>
+                Taparoo is a programmable digital identity platform, create a digital profile, embed it into an NFC tag, and share everything with a single tap.
               </p>
 
+              {/* Feature checklist */}
+              <div className={`mb-7 p-4 rounded-2xl border ${card}`}>
+                <p className={`text-xs mb-3 ${muted}`} style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Protect belongings, pets &amp; build your digital identity</p>
+                {["One tap shares your full profile, no app needed", "Lost & found alerts for Items and Pets", "Customisable and updatable at any time", "5 profile types: Items, Pets, Business, Creator, Event"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5 mb-2 last:mb-0">
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(220,38,38,0.12)" }}>
+                      <Check size={9} style={{ color: "#DC2626" }} />
+                    </div>
+                    <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{item}</span>
+                  </div>
+                ))}
+              </div>
+
               {/* Profile type pills */}
-              <div className="flex flex-wrap gap-2 mb-8">
+              <div className="flex flex-wrap gap-2 mb-7">
                 {profileTypes.map((type, i) => {
                   const Icon = type.icon;
+                  const isActive = activeType === i;
                   return (
-                    <button
-                      key={type.id}
-                      onClick={() => setActiveType(i)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all duration-200 ${
-                        activeType === i ? "text-white shadow-md scale-105" : isDark ? "bg-slate-800 text-slate-400 border border-slate-700" : "bg-slate-100 text-slate-500 border border-slate-200"
-                      }`}
-                      style={{
-                        background: activeType === i ? type.cardGradient : undefined,
-                        fontWeight: activeType === i ? 600 : 400,
-                      }}
-                    >
-                      <Icon size={12} />
-                      {type.label}
+                    <button key={type.id} onClick={() => setActiveType(i)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all duration-200 ${isActive ? "text-white shadow-md scale-105" : isDark ? "bg-slate-800 text-slate-400 border border-slate-700" : "bg-white text-slate-500 border border-slate-200 shadow-sm"}`}
+                      style={{ background: isActive ? type.cardGradient : undefined, fontWeight: isActive ? 600 : 400 }}>
+                      <Icon size={12} />{type.label}
                     </button>
                   );
                 })}
               </div>
 
-              <div className="flex flex-wrap gap-3 mb-10">
-                <Link
-                  to="/hardware-setup"
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-white transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-lg"
-                  style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600, boxShadow: "0 8px 30px rgba(220,38,38,0.35)" }}
-                >
-                  <Zap size={16} />
-                  Choose Tag or Card
-                  <ArrowRight size={14} />
+              {/* CTAs */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <Link to="/templates"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-white transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 shadow-lg"
+                  style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 8px 28px rgba(220,38,38,0.38)" }}>
+                  Browse Templates
+                  <ChevronRight size={15} />
                 </Link>
-                <Link
-                  to="/profile"
-                  className={`flex items-center gap-2 px-6 py-3.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 ${
-                    isDark ? "bg-slate-800 text-white border border-slate-700" : "bg-white text-slate-700 border border-slate-200"
-                  }`}
-                  style={{ fontWeight: 600 }}
-                >
-                  See Linked Profile Demo
-                  <ChevronRight size={14} />
+                <Link to="/hardware-setup"
+                  className={`flex items-center gap-2 px-6 py-3.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 border ${isDark ? "bg-slate-800 text-white border-slate-700" : "bg-white text-[#1C0500] border-slate-200 shadow-sm"}`}
+                  style={{ fontWeight: 600 }}>
+                  Order Your NFC Tag
+                  <ArrowRight size={14} />
                 </Link>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
-                {["Customizable hardware", "Tag/Card + profile linked", "Works on any phone"].map((trust) => (
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                {["No credit card", "Free template", "Works on any phone"].map((trust) => (
                   <div key={trust} className="flex items-center gap-1.5 text-sm">
-                    <Check size={14} className="text-emerald-500" />
-                    <span className={isDark ? "text-slate-400" : "text-slate-500"}>{trust}</span>
+                    <Check size={13} className="text-emerald-500" />
+                    <span className={muted}>{trust}</span>
                   </div>
                 ))}
               </div>
+
+              <Link to="/profile" className="inline-flex items-center gap-1.5 text-sm hover:underline" style={{ color: "#DC2626", fontWeight: 500 }}>
+                See Latest Profile Demo <ArrowRight size={13} />
+              </Link>
             </motion.div>
 
-            {/* Right — Animated phone showing active profile type */}
-            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
+            {/* ── Right phone ── */}
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.18 }}
               className="relative flex items-center justify-center">
-              <div className="absolute w-80 h-80 rounded-full blur-[80px] opacity-30 pointer-events-none"
+              {/* Glow */}
+              <div className="absolute w-80 h-80 rounded-full blur-[100px] opacity-30 pointer-events-none"
                 style={{ background: `radial-gradient(circle, ${profileTypes[activeType].color}, transparent)` }} />
 
-              <div className="relative z-10">
-                <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeType}
-                      initial={{ opacity: 0, y: 15, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -15, scale: 0.97 }}
-                      transition={{ duration: 0.35 }}
-                    >
-                      <PhoneCard type={profileTypes[activeType]} />
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.div>
-              </div>
+              <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }} className="relative z-10">
+                <AnimatePresence mode="wait">
+                  <motion.div key={activeType}
+                    initial={{ opacity: 0, y: 18, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -18, scale: 0.96 }}
+                    transition={{ duration: 0.32 }}>
+                    <PhoneCard type={profileTypes[activeType]} size="lg" />
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
 
-              {/* Type label badge */}
+              {/* Live taps badge */}
               <motion.div
-                className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-xs shadow-lg"
-                style={{
-                  background: isDark ? "rgba(30,30,50,0.9)" : "rgba(255,255,255,0.9)",
-                  border: `1px solid ${profileTypes[activeType].color}33`,
-                  backdropFilter: "blur(12px)",
-                }}
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Wifi size={12} style={{ color: profileTypes[activeType].color }} />
-                <span className={isDark ? "text-slate-300" : "text-slate-600"} style={{ fontWeight: 500 }}>
+                className="absolute -bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-xs shadow-xl"
+                style={{ background: isDark ? "rgba(20,20,30,0.92)" : "rgba(255,255,255,0.95)", border: "1px solid rgba(220,38,38,0.2)", backdropFilter: "blur(14px)" }}
+                animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
+                <Zap size={12} style={{ color: "#DC2626" }} />
+                <span className={isDark ? "text-slate-200" : "text-slate-700"} style={{ fontWeight: 600 }}>
                   {tapCount.toLocaleString()} taps today
                 </span>
               </motion.div>
             </motion.div>
-          </div>
-        </div>
 
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill={isDark ? "#0f172a" : "#f8fafc"} />
-          </svg>
+          </div>
         </div>
       </section>
 
-      {/* ── Stats ───────────────────────────────────────────────────────────── */}
-      <section className={isDark ? "bg-slate-900" : "bg-slate-50"}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* ══════════════════════════════════════════════════════ STATS */}
+      <section className={`border-y ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
             {stats.map((stat, i) => (
-              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
-                <div className="text-4xl mb-1" style={{ fontWeight: 800, background: "linear-gradient(135deg, #DC2626, #EA580C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-0.02em" }}>
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+                className="text-center lg:px-8">
+                <div className="mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.8rem, 4vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   {stat.value}
                 </div>
-                <div className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>{stat.label}</div>
+                <div className={`text-sm ${muted}`}>{stat.label}</div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── How it works ────────────────────────────────────────────────────── */}
-      <section className={`py-24 ${isDark ? "bg-slate-950" : "bg-white"}`}>
+      {/* ══════════════════════════════════════════════════════ WHY TAPAROO EXISTS */}
+      <section className={`py-24 ${isDark ? "bg-slate-950" : "bg-[#FAFAFA]"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
+            <h2 className={`mb-3 ${heading}`}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
+              Why Taparoo Exists
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Problem */}
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className={`p-8 rounded-3xl border ${card}`}>
+              <p className={`text-sm mb-5 ${muted}`} style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Without a connected identity layer, everyday things stay disconnected.</p>
+              <div className="space-y-3">
+                {[
+                  "Lost items and pets with no way to contact the owner",
+                  "Paper cards pile up and get thrown away",
+                  "No instant sharing for businesses, creators, or events",
+                  "No tracking of who viewed your info or scanned your tag",
+                  "Disconnected profiles with no unified identity",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(239,68,68,0.12)" }}>
+                      <span style={{ color: "#EF4444", fontSize: 10, fontWeight: 800, lineHeight: 1 }}>✕</span>
+                    </div>
+                    <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ lineHeight: 1.6 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Solution */}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="p-8 rounded-3xl relative overflow-hidden"
+              style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 60%, #FBBF24 100%)" }}>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+              <p className="text-white/80 text-sm mb-5 relative z-10" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Taparoo solves with:</p>
+              <div className="space-y-3 relative z-10">
+                {[
+                  "Lost & found alerts — instant owner notifications for items and pets",
+                  "One tap shares your profile, menu, portfolio, or event details",
+                  "5 purpose-built profile types: Items, Pets, Business, Creator, Event",
+                  "Per-type pricing and optional subscription tiers",
+                  "Built-in tap analytics and engagement tracking",
+                  "Profiles you own and control, with type-specific themes",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check size={10} className="text-white" />
+                    </div>
+                    <span className="text-white text-sm" style={{ lineHeight: 1.6 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════ HOW IT WORKS */}
+      <section className={`py-24 ${isDark ? "bg-slate-900" : "bg-white"}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
-              <Clock size={13} />
-              <span style={{ fontWeight: 600 }}>Up and running in minutes</span>
+              style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.15)", color: "#DC2626" }}>
+              <Zap size={12} />
+              <span style={{ fontWeight: 600 }}>Thoughtfully designed for real life</span>
             </div>
-            <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
-              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+            <h2 className={`mb-3 ${heading}`}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
               How Taparoo Works
             </h2>
-            <p className={`text-lg max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Choose hardware first, customize it, link your profile, then activate and share.
+            <p className={`max-w-xl mx-auto ${muted}`} style={{ lineHeight: 1.7 }}>
+              Discover how to build a modern NFC experience that works for you. Three steps to get started.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {steps.map((s, i) => {
               const Icon = s.icon;
               return (
-                <motion.div key={s.step} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                  className={`relative p-8 rounded-2xl group transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-900 border border-slate-800 hover:border-orange-500/40" : "bg-white border border-slate-100 hover:border-orange-200 shadow-sm hover:shadow-lg"}`}>
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)" }}>
+                <motion.div key={s.step} initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.13 }}
+                  className={`relative p-7 rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg group ${isDark ? "bg-slate-950 border-slate-800 hover:border-orange-500/40" : "bg-white border-slate-100 hover:border-orange-200 shadow-sm"}`}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md" style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)" }}>
                       <Icon size={22} className="text-white" />
                     </div>
-                    <span className="text-5xl opacity-10" style={{ fontWeight: 900, color: "#DC2626" }}>{s.step}</span>
+                    <span className={`opacity-[0.08] ${isDark ? "text-white" : "text-[#1C0500]"}`} style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "3.5rem", fontWeight: 900, lineHeight: 1 }}>{s.step}</span>
                   </div>
-                  <h3 className={`mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{s.title}</h3>
-                  <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>{s.desc}</p>
+                  <h3 className={`mb-2 ${heading}`} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>{s.title}</h3>
+                  <p className={`text-sm ${muted}`} style={{ lineHeight: 1.7 }}>{s.desc}</p>
                   {i < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-1/2 -right-4 z-10">
-                      <ChevronRight size={20} className="text-orange-300" />
+                    <div className="hidden md:block absolute top-1/2 -right-3 z-10">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(220,38,38,0.1)" }}>
+                        <ChevronRight size={14} style={{ color: "#DC2626" }} />
+                      </div>
                     </div>
                   )}
                 </motion.div>
@@ -533,457 +449,310 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ── Template Types Showcase ──────────────────────────────────────────── */}
-      <section className={`py-24 relative overflow-hidden ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-        {/* Ambient glow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div
-            key={activeTemplate}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[140px]"
-            style={{ background: profileTypes[activeTemplate].color, opacity: 0.07 }}
-          />
-        </div>
+      {/* ══════════════════════════════════════════════════════ TEMPLATE SHOWCASE */}
+      <section className="py-24 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)" }}>
+        {/* Dot texture overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 pointer-events-none" style={{ background: "rgba(255,255,255,0.5)" }} />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full blur-[80px] opacity-15 pointer-events-none" style={{ background: "#1C0500" }} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
-              <Layers size={13} />
-              <span style={{ fontWeight: 600 }}>Tag/Card hardware paired with profile templates</span>
+          {/* Section heading */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm bg-white/20 backdrop-blur-sm text-white border border-white/25">
+              <Layers size={12} />
+              <span style={{ fontWeight: 600 }}>5 profile types, zero limits</span>
             </div>
-            <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
-              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+            <h2 className="text-white mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
               A Tag or Card Setup Built for{" "}
               <AnimatePresence mode="wait">
-                <motion.span key={activeTemplate}
-                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25 }}
-                  className="inline-block"
-                  style={{ background: profileTypes[activeTemplate].cardGradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  {profileTypes[activeTemplate].label}
+                <motion.span key={activeType}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }} className="inline-block underline decoration-white/40">
+                  {profileTypes[activeType].label}
                 </motion.span>
               </AnimatePresence>
             </h2>
-            <p className={`text-lg max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-              Pick how your tag/card will be used, then the linked profile fields and sections are prepared for that use case.
-            </p>
           </div>
 
-          {/* Tab selector */}
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
+          {/* Type tabs */}
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
             {profileTypes.map((type, i) => {
               const Icon = type.icon;
-              const isActive = activeTemplate === i;
+              const isActive = activeType === i;
               return (
-                <motion.button key={type.id} onClick={() => setActiveTemplate(i)}
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm transition-all duration-200 ${
-                    isActive ? "text-white shadow-lg" : isDark
-                      ? "bg-slate-800 text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500"
-                      : "bg-white text-slate-500 border border-slate-200 hover:text-slate-800 hover:border-slate-300 shadow-sm"
-                  }`}
-                  style={{ background: isActive ? type.cardGradient : undefined, fontWeight: isActive ? 600 : 400 }}>
-                  <Icon size={15} />
-                  {type.label}
+                <motion.button key={type.id} onClick={() => setActiveType(i)}
+                  whileTap={{ scale: 0.96 }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-200 ${isActive ? "bg-white text-[#1C0500] shadow-lg" : "bg-white/15 text-white border border-white/20 hover:bg-white/25 backdrop-blur-sm"}`}
+                  style={{ fontWeight: isActive ? 700 : 500 }}>
+                  <Icon size={13} />{type.label}
                 </motion.button>
               );
             })}
           </div>
 
-          {/* Main showcase panel */}
+          {/* Main panel */}
           <AnimatePresence mode="wait">
-            <motion.div key={activeTemplate}
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className={`rounded-3xl overflow-hidden ${isDark ? "border border-slate-800 bg-slate-950" : "border border-slate-200/80 bg-white shadow-2xl"}`}>
-              <div className="grid grid-cols-1 lg:grid-cols-2">
+            <motion.div key={activeType}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 shadow-2xl"
+              style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.2)", backdropFilter: "blur(20px)" }}>
 
-                {/* Left — gradient visual */}
-                <div className="relative flex items-center justify-center p-10 sm:p-14 overflow-hidden min-h-[400px]"
-                  style={{ background: profileTypes[activeTemplate].cardGradient }}>
-                  {/* Decorative layers */}
-                  <div className="absolute inset-0 opacity-[0.05]" style={{
-                    backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
-                    backgroundSize: "22px 22px",
-                  }} />
-                  <div className="absolute top-0 right-0 w-72 h-72 rounded-full blur-3xl opacity-20" style={{ background: "white" }} />
-                  <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full blur-2xl opacity-10" style={{ background: "black" }} />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[80px] opacity-20" style={{ background: "rgba(255,255,255,0.5)" }} />
-
-                  {/* Floating phone */}
-                  <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="relative z-10">
-                    <BigPhoneCard type={profileTypes[activeTemplate]} />
-                  </motion.div>
-
-                  {/* Template badge */}
-                  <div className="absolute top-5 left-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(0,0,0,0.28)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.18)" }}>
-                    {(() => { const Icon = profileTypes[activeTemplate].icon; return <Icon size={12} className="text-white" />; })()}
-                    <span className="text-white text-xs" style={{ fontWeight: 600 }}>{profileTypes[activeTemplate].label}</span>
-                  </div>
-
-                  {/* NFC badge */}
-                  <div className="absolute bottom-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(0,0,0,0.28)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                    <Wifi size={11} className="text-white/70" />
-                    <span className="text-white/80 text-xs" style={{ fontWeight: 500 }}>NFC + QR ready</span>
-                  </div>
-
-                  {/* Tap count floating chip */}
-                  <motion.div
-                    animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 3, repeat: Infinity }}
-                    className="absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.18)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.25)" }}>
-                    <TrendingUp size={11} className="text-white" />
-                    <span className="text-white text-xs" style={{ fontWeight: 600 }}>+{(Math.floor(Math.random() * 40) + 12)}% this week</span>
-                  </motion.div>
+              {/* Left — phone */}
+              <div className="flex items-center justify-center p-10 sm:p-14 relative min-h-[380px]">
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+                <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="relative z-10">
+                  <PhoneCard type={profileTypes[activeType]} size="lg" />
+                </motion.div>
+                {/* NFC badge */}
+                <div className="absolute bottom-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/15">
+                  <Wifi size={11} className="text-white/70" />
+                  <span className="text-white/80 text-xs" style={{ fontWeight: 500 }}>NFC + QR ready</span>
                 </div>
+                {/* Type badge */}
+                <div className="absolute top-5 left-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/15">
+                  {(() => { const Icon = profileTypes[activeType].icon; return <Icon size={11} className="text-white" />; })()}
+                  <span className="text-white text-xs" style={{ fontWeight: 600 }}>{profileTypes[activeType].label}</span>
+                </div>
+              </div>
 
-                {/* Right — detail panel */}
-                <div className="p-8 sm:p-12 flex flex-col justify-center">
-                  {/* Type pill */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl mb-5 self-start text-xs"
-                    style={{ background: `${profileTypes[activeTemplate].color}15`, color: profileTypes[activeTemplate].color, border: `1px solid ${profileTypes[activeTemplate].color}30` }}>
-                    {(() => { const Icon = profileTypes[activeTemplate].icon; return <Icon size={13} />; })()}
-                    <span style={{ fontWeight: 600 }}>{profileTypes[activeTemplate].label} Linked Profile</span>
-                  </div>
-
-                  <h3 className={`mb-3 ${isDark ? "text-white" : "text-slate-900"}`}
-                    style={{ fontSize: "clamp(1.3rem, 2.5vw, 1.75rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                    {templateDetails[profileTypes[activeTemplate].id]?.cta.replace("Create ", "").replace(" Profile", "")} Setup
-                  </h3>
-                  <p className={`text-sm mb-7 ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.75 }}>
-                    {templateDetails[profileTypes[activeTemplate].id]?.description}
+              {/* Right — details */}
+              <div className="p-8 sm:p-10 flex flex-col justify-center">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl mb-5 self-start text-xs bg-white/20 text-white border border-white/20">
+                  {(() => { const Icon = profileTypes[activeType].icon; return <Icon size={12} />; })()}
+                  <span style={{ fontWeight: 600 }}>{profileTypes[activeType].label} Setup</span>
+                </div>
+                <h3 className="text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
+                  {profileTypes[activeType].label} Profile
+                </h3>
+                <p className="text-white/75 text-sm mb-6" style={{ lineHeight: 1.75 }}>
+                  {profileTypes[activeType].description}
+                </p>
+                <div className="space-y-2.5 mb-7">
+                  {profileTypes[activeType].features.map((f, fi) => (
+                    <motion.div key={f} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: fi * 0.06, duration: 0.25 }}
+                      className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center flex-shrink-0">
+                        <Check size={9} className="text-white" />
+                      </div>
+                      <span className="text-white/85 text-sm" style={{ fontWeight: 500 }}>{f}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl mb-7 bg-black/20 border border-white/10">
+                  <Users size={13} className="text-white/50 mt-0.5 flex-shrink-0" />
+                  <p className="text-white/70 text-sm">
+                    <span style={{ fontWeight: 600 }}>Perfect for: </span>{profileTypes[activeType].forWho}
                   </p>
-
-                  {/* Feature list */}
-                  <div className="space-y-2.5 mb-7">
-                    {templateDetails[profileTypes[activeTemplate].id]?.features.map((f, fi) => (
-                      <motion.div key={f} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: fi * 0.07, duration: 0.28 }}
-                        className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                          style={{ background: `${profileTypes[activeTemplate].color}20` }}>
-                          <Check size={10} style={{ color: profileTypes[activeTemplate].color }} />
-                        </div>
-                        <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`} style={{ fontWeight: 500 }}>{f}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* For who */}
-                  <div className={`flex items-start gap-2.5 px-4 py-3 rounded-xl mb-7 ${isDark ? "bg-slate-800/80 border border-slate-700" : "bg-slate-50 border border-slate-200"}`}>
-                    <Users size={14} className={`mt-0.5 shrink-0 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                      <span style={{ fontWeight: 600 }}>Perfect for: </span>
-                      {templateDetails[profileTypes[activeTemplate].id]?.forWho}
-                    </p>
-                  </div>
-
-                  {/* CTAs */}
-                  <div className="flex flex-wrap gap-3">
-                    <Link to="/editor"
-                      className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm text-white transition-all hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 shadow-lg"
-                      style={{ background: profileTypes[activeTemplate].cardGradient, fontWeight: 600 }}>
-                      <Zap size={14} />
-                      Configure This Setup
-                    </Link>
-                    <Link to="/profile"
-                      className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm transition-all hover:-translate-y-0.5 ${
-                        isDark ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                      }`}
-                      style={{ fontWeight: 500 }}>
-                      View Linked Profile
-                      <ChevronRight size={14} />
-                    </Link>
-                  </div>
                 </div>
-
+                <Link to="/hardware-setup"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-sm transition-all hover:bg-slate-100 hover:-translate-y-0.5 shadow-lg self-start"
+                  style={{ color: "#DC2626", fontWeight: 700 }}>
+                  <Zap size={14} />
+                  Order Your NFC Tag
+                  <ArrowRight size={13} />
+                </Link>
               </div>
             </motion.div>
           </AnimatePresence>
-
-          {/* Mini icon strip */}
-          <div className="grid grid-cols-6 gap-2 sm:gap-3 mt-5">
-            {profileTypes.map((type, i) => {
-              const Icon = type.icon;
-              const isActive = activeTemplate === i;
-              return (
-                <button key={type.id} onClick={() => setActiveTemplate(i)}
-                  className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl transition-all duration-200 ${
-                    isActive
-                      ? isDark ? "bg-slate-800" : "bg-white shadow-md"
-                      : isDark ? "hover:bg-slate-800/50" : "hover:bg-white/60"
-                  }`}
-                  style={{ outline: isActive ? `2px solid ${type.color}50` : "none" }}>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-                    style={{
-                      background: isActive ? type.cardGradient : `${type.color}2A`,
-                      border: isActive ? "1px solid transparent" : `1px solid ${type.color}4D`,
-                      boxShadow: isActive ? "0 8px 18px rgba(28,5,0,0.22)" : "none",
-                    }}>
-                    <Icon size={15} style={{ color: isActive ? "#fff" : type.color, opacity: isActive ? 1 : 0.98 }} />
-                  </div>
-                  <span className={`text-xs leading-tight text-center hidden sm:block truncate w-full px-1 ${
-                    isActive ? (isDark ? "text-white" : "text-slate-900") : isDark ? "text-slate-500" : "text-slate-400"
-                  }`} style={{ fontWeight: isActive ? 600 : 400 }}>
-                    {type.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              to="/hardware-setup"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 text-white"
-              style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700, boxShadow: "0 8px 30px rgba(220,38,38,0.28)" }}
-            >
-              <ShoppingBag size={14} />
-              Order Your NFC Tag
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-
         </div>
       </section>
 
-      {/* ── Templates vs Themes Explainer ───────────────────────────────────── */}
+      {/* ══════════════════════════════════════════════════════ CONTROLLED IDENTITY */}
       <section className={`py-24 ${isDark ? "bg-slate-950" : "bg-white"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left — visual */}
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative">
-              {/* Theme swatches applied to a Pet profile */}
-              <div className={`p-6 rounded-3xl ${isDark ? "bg-slate-900 border border-slate-800" : "bg-slate-50 border border-slate-100"}`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <PawPrint size={18} className="text-amber-500" />
-                  <div>
-                    <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>Same template, different themes</p>
-                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Buddy the dog — styled 8 ways</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {themeSwatches.map((sw) => (
-                    <div key={sw.name} className="group relative cursor-pointer">
-                      <div
-                        className="rounded-xl overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg"
-                        style={{ aspectRatio: "9/16", background: sw.gradient }}
-                      >
-                        <div className="flex flex-col items-center pt-3 px-2 gap-1">
-                          <div className="w-7 h-7 rounded-full border border-white/30 overflow-hidden">
-                            <ImageWithFallback src={PHOTO_DOG} alt="Buddy" className="w-full h-full object-cover" />
-                          </div>
-                          <p className="text-white text-center" style={{ fontSize: 5, fontWeight: 700, lineHeight: 1.2 }}>🐾 Buddy</p>
-                          {[1, 2].map((n) => (
-                            <div key={n} className="w-full h-2.5 rounded" style={{ background: "rgba(255,255,255,0.2)" }} />
-                          ))}
-                        </div>
-                      </div>
-                      <p className={`text-xs text-center mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ fontSize: 10 }}>{sw.name}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right — copy */}
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-                style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#DC2626" }}>
-                <Paintbrush size={13} />
-                <span style={{ fontWeight: 600 }}>Hardware is fixed, profile style is flexible</span>
-              </div>
-
-              <h2 className={`mb-5 ${isDark ? "text-white" : "text-slate-900"}`}
-                style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-                Hardware stays standard.
-                <br />
-                <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  Linked profiles stay customizable.
-                </span>
-              </h2>
-
-              <div className="space-y-5 mb-8">
-                {[
-                  {
-                    icon: Layers, title: "Template = scan destination logic",
-                    desc: "Defines the fields and link sections shown after tap based on your use case (individual, business, pet, and more).",
-                    color: "#DC2626",
-                  },
-                  {
-                    icon: Paintbrush, title: "Theme = profile visual style",
-                    desc: "Adjust colors and look anytime without changing the linked hardware setup or profile content.",
-                    color: "#EA580C",
-                  },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={item.title} className={`flex gap-4 p-4 rounded-2xl ${isDark ? "bg-slate-900 border border-slate-800" : "bg-slate-50 border border-slate-100"}`}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}18` }}>
-                        <Icon size={18} style={{ color: item.color }} />
-                      </div>
-                      <div>
-                        <p className={`text-sm mb-1 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{item.title}</p>
-                        <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.65 }}>{item.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <Link
-                to="/hardware-setup"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 700 }}
-              >
-                <ShoppingBag size={13} />
-                Order a Tag Now
-                <ArrowRight size={14} />
-              </Link>
-
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ────────────────────────────────────────────────────────── */}
-      <section className={`py-24 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
-              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Hardware + Profile Essentials
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                  className={`p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1 ${isDark ? "bg-slate-950 border border-slate-800 hover:border-orange-500/30" : "bg-white border border-slate-100 hover:border-orange-200 hover:shadow-md"}`}>
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                    style={{
-                      background: isDark
-                        ? "linear-gradient(135deg, rgba(220,38,38,0.25), rgba(234,88,12,0.22))"
-                        : "linear-gradient(135deg, rgba(220,38,38,0.16), rgba(234,88,12,0.13))",
-                      border: isDark ? "1px solid rgba(251,191,36,0.28)" : "1px solid rgba(220,38,38,0.2)",
-                    }}
-                  >
-                    <Icon size={20} className={isDark ? "text-amber-300" : "text-orange-600"} />
-                  </div>
-                  <h3 className={`mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>{f.title}</h3>
-                  <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.7 }}>{f.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Testimonials ────────────────────────────────────────────────────── */}
-      <section className={`py-24 ${isDark ? "bg-slate-950" : "bg-white"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-sm"
-              style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.15)", color: "#EA580C" }}>
-              <Award size={13} />
-              <span style={{ fontWeight: 600 }}>Used by owners, teams, and shops</span>
+              style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.15)", color: "#DC2626" }}>
+              <Lock size={12} />
+              <span style={{ fontWeight: 600 }}>Your identity, your rules — across every profile type</span>
             </div>
-            <h2 className={`mb-4 ${isDark ? "text-white" : "text-slate-900"}`}
-              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Every Type, Every Story
+            <h2 className={`mb-3 ${heading}`}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
+              Controlled Identity,{" "}
+              <span style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                Not Just Sharing
+              </span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div key={t.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className={`p-6 rounded-2xl ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white border border-slate-100 shadow-sm"}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: t.stars }).map((_, si) => (
-                      <Star key={si} size={14} className="text-amber-400 fill-amber-400" />
-                    ))}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+            {/* Left — checklist */}
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <div className="space-y-4">
+                {[
+                  { title: "Profile updates reflect instantly", desc: "Change your info and every scan shows the latest version — whether it's a pet ID, business menu, creator portfolio, or event schedule." },
+                  { title: "Type-locked tags, purpose-built profiles", desc: "Each tag is assigned a profile type at creation. Items and Pets get lost & found. Business gets menus. Creators get portfolios. Events get schedules." },
+                  { title: "Built-in privacy controls", desc: "Choose what to show publicly across any profile type. Keep personal data private. Toggle sections on or off anytime." },
+                  { title: "Own your data, pick your tier", desc: "Free tier for Items and Pets. Optional Basic and Premium subscriptions for Business, Creator, and Event profiles with advanced features." },
+                ].map((item, i) => (
+                  <motion.div key={item.title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    className={`flex gap-4 p-5 rounded-2xl border ${card}`}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(220,38,38,0.1)" }}>
+                      <Check size={15} style={{ color: "#DC2626" }} />
+                    </div>
+                    <div>
+                      <p className={`text-sm mb-1 ${heading}`} style={{ fontWeight: 700 }}>{item.title}</p>
+                      <p className={`text-sm ${muted}`} style={{ lineHeight: 1.65 }}>{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right — callout */}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <div className="rounded-3xl overflow-hidden h-full"
+                style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 60%, #FBBF24 100%)" }}>
+                <div className="p-8 sm:p-10 relative">
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
+                  <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs bg-white/20 text-white border border-white/20 mb-6">
+                      <Shield size={11} />
+                      <span style={{ fontWeight: 600 }}>Built on trust</span>
+                    </div>
+                    <blockquote className="text-white mb-6" style={{ fontSize: "1.2rem", fontWeight: 700, lineHeight: 1.55, letterSpacing: "-0.01em" }}>
+                      "One platform for every NFC identity — protect what matters, share what counts, control everything."
+                    </blockquote>
+                    <p className="text-white/75 text-sm mb-8" style={{ lineHeight: 1.7 }}>
+                      Whether you're tracking a lost pet, running a café, sharing your creative portfolio, or managing event badges — your profile type, your data, your rules. Always.
+                    </p>
+                    <Link to="/hardware-setup"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-sm hover:bg-slate-50 transition-all hover:-translate-y-0.5 shadow-lg"
+                      style={{ color: "#DC2626", fontWeight: 700 }}>
+                      Order Now NFC Tag
+                      <ArrowRight size={13} />
+                    </Link>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" style={{ fontWeight: 600 }}>
-                    {t.type}
-                  </span>
                 </div>
-                <p className={`text-sm mb-5 ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ lineHeight: 1.7 }}>"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-100">
-                    <ImageWithFallback src={t.photo} alt={t.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className={`text-sm ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 600 }}>{t.name}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{t.title}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ── Trust strip ─────────────────────────────────────────────────────── */}
-      <section className={`py-12 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
+      {/* ══════════════════════════════════════════════════════ BUILT FOR REAL-WORLD USE */}
+      <section className={`py-24 ${isDark ? "bg-slate-900" : "bg-[#FAFAFA]"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
-            {[
-              { icon: Shield, label: "SOC 2 Certified" },
-              { icon: Globe, label: "GDPR Compliant" },
-              { icon: Users, label: "50K+ Users" },
-              { icon: Award, label: "99.9% Uptime" },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className="flex items-center gap-2">
-                  <Icon size={18} className={isDark ? "text-orange-300" : "text-orange-500"} />
-                  <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ fontWeight: 500 }}>{item.label}</span>
+          <div className="text-center mb-14">
+            <h2 className={`mb-3 ${heading}`}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.025em" }}>
+              Built for Real-World Use
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Lost & Found (Items + Pets) */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0 }}
+              className={`p-7 rounded-2xl border ${card}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "rgba(220,38,38,0.1)" }}>
+                  <Package size={21} style={{ color: "#DC2626" }} />
                 </div>
-              );
-            })}
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "rgba(245,158,11,0.12)" }}>
+                  <PawPrint size={21} style={{ color: "#F59E0B" }} />
+                </div>
+              </div>
+              <h3 className={`mb-3 ${heading}`} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>Lost & Found for Items + Pets</h3>
+              <div className="space-y-2.5">
+                {["Instant owner notification on scan", "Lost & found alert mode", "Return instructions & reward info", "Vet info & medical notes for pets", "Works on any phone, no app needed"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5">
+                    <Check size={13} style={{ color: "#DC2626", flexShrink: 0 }} />
+                    <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* For Businesses */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+              className={`p-7 rounded-2xl border ${card}`}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style={{ background: "rgba(14,165,233,0.1)" }}>
+                <Building2 size={21} style={{ color: "#0EA5E9" }} />
+              </div>
+              <h3 className={`mb-3 ${heading}`} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>For Businesses</h3>
+              <div className="space-y-2.5">
+                {["Brand profile with full cover", "Location, menu & booking links", "Services, pricing & opening hours", "Customer review & rating links", "Custom branded NFC cards"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5">
+                    <Check size={13} style={{ color: "#0EA5E9", flexShrink: 0 }} />
+                    <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* For Creators & Events */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+              className={`p-7 rounded-2xl border ${card}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "rgba(236,72,153,0.1)" }}>
+                  <Sparkles size={21} style={{ color: "#EC4899" }} />
+                </div>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.1)" }}>
+                  <CalendarDays size={21} style={{ color: "#8B5CF6" }} />
+                </div>
+              </div>
+              <h3 className={`mb-3 ${heading}`} style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>For Creators & Events</h3>
+              <div className="space-y-2.5">
+                {["Portfolio, links & booking details", "Event badge & schedule sharing", "Ticket & registration links", "Audience engagement tracking", "Upcoming shows & tour dates"].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5">
+                    <Check size={13} style={{ color: "#8B5CF6", flexShrink: 0 }} />
+                    <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ── Final CTA ───────────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════════════════ FINAL CTA */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FBBF24 100%)" }} />
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+        <div className="absolute inset-0 opacity-15" style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] opacity-20" style={{ background: "rgba(255,255,255,0.6)" }} />
+
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-white mb-4" style={{ fontSize: "clamp(1.75rem, 4vw, 3rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Ready to Launch Your
-              <br />NFC Tag or Card?
+          <motion.div initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <h2 className="text-white mb-5"
+              style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.1 }}>
+              Own your Identity.<br />
+              Control your access.<br />
+              Track your Impact.
             </h2>
-            <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-              Start with hardware, customize it, and pair it with your profile. Both are essential, and both are activated together.
+            <p className="text-white/80 mb-10 max-w-xl mx-auto" style={{ fontSize: "1.0625rem", lineHeight: 1.7 }}>
+              Start with one of our pre-built NFC-ready profiles to quickly build a seamless identity experience. Join 50,000+ professionals already using Taparoo.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link to="/hardware-setup"
-                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-orange-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-lg"
-                style={{ fontWeight: 700 }}>
-                <Zap size={16} />
-                Choose Tag or Card
-              </Link>
-              <Link to="/editor"
-                className="flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/40 text-white transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5"
-                style={{ fontWeight: 600 }}>
-                Customize Profile
+                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-xl"
+                style={{ color: "#DC2626", fontWeight: 700 }}>
+                <Tag size={16} />
+                Choose a Tag
                 <ArrowRight size={14} />
               </Link>
+              <Link to="/login?mode=signup"
+                className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white/15 text-white border border-white/25 transition-all duration-200 hover:bg-white/25 hover:-translate-y-0.5 backdrop-blur-sm"
+                style={{ fontWeight: 600 }}>
+                <Zap size={16} />
+                Apply Instantly
+                <ArrowRight size={14} />
+              </Link>
+              <Link to="/faq"
+                className="flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/30 text-white transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5"
+                style={{ fontWeight: 600 }}>
+                Get Help
+              </Link>
             </div>
-            <p className="text-white/60 text-sm mt-6">Hardware + profile activation are tied together in one flow.</p>
+            <p className="text-white/55 text-sm mt-8">No credit card required · Free forever plan available</p>
           </motion.div>
         </div>
       </section>
+
     </div>
   );
 }

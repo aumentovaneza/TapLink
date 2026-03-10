@@ -8,6 +8,7 @@ import type { AppConfig } from "../lib/config";
 import { loadConfig } from "../lib/config";
 import { requireAuth } from "../lib/guards";
 import { prisma } from "../lib/prisma";
+import { canCreateProfileFromOwnership, loadUnitOwnershipSnapshot } from "../lib/profile-entitlement";
 import { getTemplateDefaults, normalizeTemplateType } from "../lib/template-defaults";
 
 const linkInputSchema = z.object({
@@ -349,6 +350,13 @@ export async function profileRoutes(fastify: FastifyInstance, options: ProfileRo
     const parsed = createProfileSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
+    }
+
+    const ownership = await loadUnitOwnershipSnapshot(prisma, request.user.sub);
+    if (!canCreateProfileFromOwnership(ownership)) {
+      return reply.status(403).send({
+        error: "You need at least one claimed unit or a paid hardware order before creating a profile. Claim a unit or complete checkout first.",
+      });
     }
 
     const templateType = normalizeTemplateType(parsed.data.templateType);

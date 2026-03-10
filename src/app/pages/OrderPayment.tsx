@@ -21,6 +21,7 @@ type PaymentStatus = "awaiting_confirmation" | "confirmed" | "expired" | "cancel
 interface PaymentOrder {
   id: string;
   productType: ProductType;
+  profileType?: string | null;
   quantity: number;
   status: OrderStatus;
   statusNote: string | null;
@@ -31,6 +32,8 @@ interface PaymentOrder {
     amountPhp: number;
     currency: "PHP";
     unitPricePhp: number;
+    itemSubtotalPhp: number;
+    shippingFeePhp: number;
     expiresAt: string;
     confirmedAt: string | null;
     reference: string | null;
@@ -42,6 +45,32 @@ interface PaymentOrder {
       uploadedAt: string;
     } | null;
   };
+  pricing: {
+    currency: "PHP";
+    unitPricePhp: number;
+    quantity: number;
+    itemSubtotalPhp: number;
+    shippingFeePhp: number;
+    shippingAreaCode?: string | null;
+    shippingAreaLabel?: string | null;
+    totalWeightGrams?: number | null;
+    billableWeightGrams?: number | null;
+    shippingIncludedInDisplayedPrice?: boolean;
+    totalPhp: number;
+  };
+  shipping: {
+    fullName: string;
+    phone: string;
+    email: string | null;
+    line1: string;
+    line2: string | null;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    notes: string | null;
+    confirmedAt: string | null;
+  } | null;
   timeline: {
     expectedProcessingAt: string;
     expectedDoneAt: string;
@@ -384,7 +413,15 @@ export function OrderPayment() {
                   1. Scan to Pay
                 </p>
                 <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Pay PHP {order.payment.amountPhp.toLocaleString("en-PH")} for order #{order.id.slice(-8)}.
+                  Pay PHP {order.pricing.totalPhp.toLocaleString("en-PH")} for order #{order.id.slice(-8)}.
+                </p>
+                <p className={`mt-1 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                  {order.profileType && (
+                    <span className="capitalize">{order.profileType} · </span>
+                  )}
+                  Unit PHP {order.pricing.unitPricePhp.toLocaleString("en-PH")} × {order.pricing.quantity} · Items PHP{" "}
+                  {order.pricing.itemSubtotalPhp.toLocaleString("en-PH")} · Shipping included PHP{" "}
+                  {order.pricing.shippingFeePhp.toLocaleString("en-PH")}
                 </p>
 
                 {paymentMethods.length === 0 && (
@@ -435,7 +472,25 @@ export function OrderPayment() {
                     Transaction ID: {order.payment.transactionId}
                   </p>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                    Amount: PHP {order.payment.amountPhp.toLocaleString("en-PH")}
+                    Unit price: PHP {order.pricing.unitPricePhp.toLocaleString("en-PH")}
+                  </p>
+                  <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    Item subtotal: PHP {order.pricing.itemSubtotalPhp.toLocaleString("en-PH")}
+                  </p>
+                  <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    Shipping coverage ({order.pricing.shippingAreaLabel || "calculated by destination"}): PHP{" "}
+                    {order.pricing.shippingFeePhp.toLocaleString("en-PH")}
+                  </p>
+                  {typeof order.pricing.billableWeightGrams === "number" && (
+                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      Billable weight: {order.pricing.billableWeightGrams}g
+                    </p>
+                  )}
+                  <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                    Shipping is already covered in this total. No surprise add-on fee at checkout.
+                  </p>
+                  <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`} style={{ fontWeight: 700 }}>
+                    Total amount: PHP {order.pricing.totalPhp.toLocaleString("en-PH")}
                   </p>
                   <button
                     onClick={() => void copyTransactionId()}
@@ -448,6 +503,36 @@ export function OrderPayment() {
                     Copy Transaction ID
                   </button>
                 </div>
+
+                {order.shipping && (
+                  <div className={`mt-4 rounded-xl border p-4 ${isDark ? "border-slate-700 bg-slate-950" : "border-slate-200 bg-slate-50"}`}>
+                    <p className={isDark ? "text-slate-300" : "text-slate-700"} style={{ fontWeight: 700 }}>
+                      Shipping Information
+                    </p>
+                    <p className={`mt-2 text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      {order.shipping.fullName} · {order.shipping.phone}
+                    </p>
+                    {order.shipping.email && (
+                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>{order.shipping.email}</p>
+                    )}
+                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      {order.shipping.line1}
+                      {order.shipping.line2 ? `, ${order.shipping.line2}` : ""}
+                    </p>
+                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      {order.shipping.city}, {order.shipping.province} {order.shipping.postalCode}
+                    </p>
+                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>{order.shipping.country}</p>
+                    {order.shipping.notes && (
+                      <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                        Notes: {order.shipping.notes}
+                      </p>
+                    )}
+                    <p className={`mt-1 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                      Confirmed at: {formatDateTime(order.shipping.confirmedAt)}
+                    </p>
+                  </div>
+                )}
 
                 <div className={`mt-4 rounded-xl border p-4 ${isDark ? "border-slate-700 bg-slate-950" : "border-slate-200 bg-slate-50"}`}>
                   <p className={isDark ? "text-slate-300" : "text-slate-700"} style={{ fontWeight: 700 }}>

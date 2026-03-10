@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import {
@@ -26,6 +26,7 @@ export function Login() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
@@ -44,6 +45,13 @@ export function Login() {
       navigate(dashboardPathForRole(currentUser.role), { replace: true });
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const queryMode = new URLSearchParams(location.search).get("mode");
+    if (queryMode === "signin" || queryMode === "signup" || queryMode === "forgot") {
+      setMode(queryMode);
+    }
+  }, [location.search]);
 
   const validate = () => {
     const errs: Record<string, string> = {};

@@ -3,24 +3,20 @@ import { Link } from "react-router";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  User, Building2, PawPrint, Coffee, Palette, Calendar,
-  ShoppingBag, ArrowRight, Check, Zap, Star,
-  Globe, Phone, Mail, MapPin, Clock, Ticket, Instagram,
-  Linkedin, Heart, Search, ChevronRight, Layers, Paintbrush,
-  Sparkles
+  Building2, PawPrint, Package, CalendarDays,
+  ArrowRight, Check, Zap, Star,
+  Globe, Phone, Mail, MapPin, Ticket, Instagram,
+  Heart, Search, ChevronRight, Layers, Paintbrush,
+  Sparkles, ShoppingBag, ShieldCheck
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { themes as allThemes } from "../data/themes";
 
-const PHOTO_PERSON = "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc21pbGluZ3xlbnwxfHx8fDE3NzE3NTMwODh8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_PERSON2 = "https://images.unsplash.com/photo-1626784579980-db39c1a13aa9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMGRlc2lnbmVyJTIwd29tYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzE2NjI0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080";
+const PHOTO_ITEMS = "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_DOG = "https://images.unsplash.com/photo-1721656363841-93e97a879979?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXRlJTIwZG9nJTIwZ29sZGVuJTIwcmV0cmlldmVyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxNzU1NzEwfDA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_CAFE = "https://images.unsplash.com/photo-1593536488177-1eb3c2d4e3d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZSUyMGNvZmZlZSUyMHNob3AlMjBpbnRlcmlvcnxlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_BIZ = "https://images.unsplash.com/photo-1766561991819-290a7bc7bb7d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBidXNpbmVzcyUyMHN0b3JlZnJvbnQlMjBicmFuZGluZ3xlbnwxfHx8fDE3NzE3NTU3MTF8MA&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_MUSIC = "https://images.unsplash.com/photo-1771191057577-e216395637a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBlcmZvcm1lciUyMHN0YWdlfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_CREATOR = "https://images.unsplash.com/photo-1617190071136-3ed95a229659?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMGFydGlzdCUyMHN0dWRpbyUyMHBvcnRyYWl0JTIwY29sb3JmdWx8ZW58MXx8fHwxNzcxNzY1MDg3fDA&ixlib=rb-4.1.0&q=80&w=1080";
 const PHOTO_EVENT = "https://images.unsplash.com/photo-1761223976145-a85ffe11fc57?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldmVudCUyMGNvbmZlcmVuY2UlMjBzdGFnZSUyMHNldHVwfGVufDF8fHx8MTc3MTc1NTcxNHww&ixlib=rb-4.1.0&q=80&w=1080";
-const PHOTO_CREATIVE = "https://images.unsplash.com/photo-1758598497635-48cbbb1f6555?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b3VuZyUyMGVudHJlcHJlbmV1ciUyMG1hbiUyMHNtaWxpbmclMjBvZmZpY2V8ZW58MXx8fHwxNzcxNzUzMDkxfDA&ixlib=rb-4.1.0&q=80&w=1080";
 
 // ─── Template type definitions ────────────────────────────────────────────────
 
@@ -31,7 +27,7 @@ interface TemplateType {
   tagline: string;
   description: string;
   category: string;
-  icon: typeof User;
+  icon: typeof Package;
   accentColor: string;
   bgGradient: string;
   cardBg: string;
@@ -45,61 +41,40 @@ interface TemplateType {
   popular?: boolean;
   new?: boolean;
   usedBy: string;
+  hardware: string;
 }
 
 const templateTypes: TemplateType[] = [
   {
-    id: "individual",
-    name: "Individual",
-    tagline: "Your personal digital card",
-    description: "Perfect for professionals, freelancers, and anyone who wants to share who they are — their links, skills, and story — in one tap.",
+    id: "items",
+    name: "Items",
+    tagline: "Track and protect what matters",
+    description: "Attach an NFC teardrop tag to your personal belongings — laptops, bags, keys, gear. If it's ever lost, anyone who taps the tag sees your contact info and can report the find instantly.",
     category: "Personal",
-    icon: User,
+    icon: Package,
     accentColor: "#DC2626",
-    bgGradient: "linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)",
+    bgGradient: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)",
     cardBg: "linear-gradient(135deg, #DC2626 0%, #EA580C 100%)",
-    photo: PHOTO_PERSON,
-    photoShape: "circle",
-    profileName: "Alex Rivera",
-    profileSub: "Product Designer · San Francisco",
-    links: [
-      { icon: Linkedin, label: "LinkedIn", accent: "#0077B5" },
-      { icon: Globe, label: "Portfolio", accent: "#DC2626" },
-      { icon: Mail, label: "Email Me", accent: "#EA4335" },
-      { icon: Phone, label: "Book a Call", accent: "#10B981" },
-    ],
-    sections: ["Bio & Photo", "Job Title & Company", "Social Links", "Custom Buttons"],
-    popular: true,
-    usedBy: "Professionals, freelancers, job seekers",
-  },
-  {
-    id: "business",
-    name: "Business",
-    tagline: "Your brand on a tag",
-    description: "Ideal for shops, agencies, studios, and companies. Showcase your services, hours, location, and website — all in a single tap.",
-    category: "Business",
-    icon: Building2,
-    accentColor: "#0EA5E9",
-    bgGradient: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
-    cardBg: "linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)",
-    photo: PHOTO_BIZ,
+    photo: PHOTO_ITEMS,
     photoShape: "rounded",
-    profileName: "Designly Studio",
-    profileSub: "Brand & UX Agency · ⭐ 4.9",
+    profileName: "MacBook Pro 16\"",
+    profileSub: "Serial: FVFC...4Q · Owner Verified",
     links: [
-      { icon: Globe, label: "Our Website", accent: "#0EA5E9" },
-      { icon: ShoppingBag, label: "Our Services", accent: "#0369A1" },
-      { icon: Phone, label: "Call Us", accent: "#10B981" },
-      { icon: MapPin, label: "Get Directions", accent: "#F59E0B" },
+      { icon: Phone, label: "Contact Owner", accent: "#EF4444" },
+      { icon: ShieldCheck, label: "Warranty Info", accent: "#10B981" },
+      { icon: Globe, label: "Product Manual", accent: "#0EA5E9" },
+      { icon: MapPin, label: "Report Found", accent: "#8B5CF6" },
     ],
-    sections: ["Business Name & Logo", "Tagline & Description", "Opening Hours", "Services & Links"],
-    usedBy: "Shops, agencies, studios, companies",
+    sections: ["Item Name & Photo", "Serial & Purchase Info", "Owner Contact", "Lost & Found"],
+    popular: true,
+    usedBy: "Travelers, students, professionals, anyone with valuables",
+    hardware: "Teardrop tag",
   },
   {
-    id: "pet",
-    name: "Pet",
-    tagline: "A profile for your furry friend",
-    description: "Give your pet their own digital identity tag. If they ever get lost, anyone who scans the tag instantly sees your contact info.",
+    id: "pets",
+    name: "Pets",
+    tagline: "Keep your pet safe with one tap",
+    description: "Give your pet their own NFC teardrop tag. If they wander off, anyone who taps the tag is instantly connected to you. The owner gets a notification with the finder's location — no app needed.",
     category: "Personal",
     icon: PawPrint,
     accentColor: "#F59E0B",
@@ -107,95 +82,49 @@ const templateTypes: TemplateType[] = [
     cardBg: "linear-gradient(135deg, #D97706 0%, #F59E0B 100%)",
     photo: PHOTO_DOG,
     photoShape: "circle",
-    profileName: "🐾 Buddy",
+    profileName: "Buddy",
     profileSub: "Golden Retriever · 3 years old",
     links: [
-      { icon: Phone, label: "🚨 I'm Lost! Call Owner", accent: "#EF4444" },
-      { icon: Heart, label: "My Vet Contact", accent: "#EC4899" },
-      { icon: Instagram, label: "My Instagram", accent: "#E1306C" },
+      { icon: Phone, label: "I'm Lost! Call Owner", accent: "#EF4444" },
+      { icon: Heart, label: "Vet Contact", accent: "#EC4899" },
+      { icon: Instagram, label: "Buddy's Instagram", accent: "#E1306C" },
       { icon: MapPin, label: "Owner's Address", accent: "#8B5CF6" },
     ],
-    sections: ["Pet Name & Photo", "Breed & Age Info", "Owner Contact", "Emergency Details"],
-    new: true,
-    usedBy: "Pet owners, dog walkers, breeders",
-  },
-  {
-    id: "cafe",
-    name: "Café & Restaurant",
-    tagline: "Turn a tag into a full experience",
-    description: "Replace paper menus, loyalty cards, and flyers. Let customers order, book, follow, and find you — right from the table.",
-    category: "Food & Drinks",
-    icon: Coffee,
-    accentColor: "#92400E",
-    bgGradient: "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
-    cardBg: "linear-gradient(135deg, #92400E 0%, #D97706 100%)",
-    photo: PHOTO_CAFE,
-    photoShape: "banner",
-    profileName: "The Bean House",
-    profileSub: "Coffee & Brunch · Open until 6 PM",
-    links: [
-      { icon: Globe, label: "📋 View Menu", accent: "#92400E" },
-      { icon: ShoppingBag, label: "📦 Order Online", accent: "#D97706" },
-      { icon: Calendar, label: "📅 Reserve a Table", accent: "#10B981" },
-      { icon: MapPin, label: "📍 Get Directions", accent: "#EF4444" },
-    ],
-    sections: ["Restaurant Name & Photo", "Menu & Hours", "Order & Reservation Links", "Social Media"],
+    sections: ["Pet Name & Photo", "Breed & Age", "Owner Contact", "Emergency & Vet Details"],
     popular: true,
-    usedBy: "Cafes, restaurants, food trucks, bars",
+    usedBy: "Pet owners, dog walkers, breeders, pet sitters",
+    hardware: "Teardrop tag",
   },
   {
-    id: "creative",
-    name: "Creative Portfolio",
-    tagline: "Show your work, get hired",
-    description: "Tailored for artists, photographers, designers, and filmmakers. Showcase your portfolio, list your services, and make it easy to hire you.",
-    category: "Creative",
-    icon: Palette,
-    accentColor: "#EC4899",
-    bgGradient: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)",
-    cardBg: "linear-gradient(135deg, #BE185D 0%, #EC4899 100%)",
-    photo: PHOTO_CREATIVE,
-    photoShape: "circle",
-    profileName: "Jordan Lee",
-    profileSub: "Brand Photographer · Available",
-    profileBadge: "✅ Open for Bookings",
+    id: "business",
+    name: "Business",
+    tagline: "Your brand on an NFC card",
+    description: "A digital business card for cafes, shops, salons, gyms, and professional services. Customers tap to see your menu, hours, services, and location. Upload your own SVG logo for a fully branded card.",
+    category: "Business",
+    icon: Building2,
+    accentColor: "#0EA5E9",
+    bgGradient: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
+    cardBg: "linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)",
+    photo: PHOTO_BIZ,
+    photoShape: "rounded",
+    profileName: "The Bean House",
+    profileSub: "Cafe & Brunch · Open until 6 PM",
+    profileBadge: "4.9 Rating",
     links: [
-      { icon: Globe, label: "🖼️ View Portfolio", accent: "#EC4899" },
-      { icon: Instagram, label: "Instagram", accent: "#E1306C" },
-      { icon: Mail, label: "💬 Hire Me", accent: "#8B5CF6" },
-      { icon: Globe, label: "💰 View Rates", accent: "#F59E0B" },
+      { icon: Globe, label: "View Menu", accent: "#0EA5E9" },
+      { icon: ShoppingBag, label: "Order Online", accent: "#D97706" },
+      { icon: Phone, label: "Call Us", accent: "#10B981" },
+      { icon: MapPin, label: "Get Directions", accent: "#F59E0B" },
     ],
-    sections: ["Portfolio Gallery", "Skills & Services", "Availability Status", "Contact & Rates"],
-    usedBy: "Photographers, designers, artists, filmmakers",
-  },
-  {
-    id: "event",
-    name: "Event",
-    tagline: "Every attendee, one tap away",
-    description: "Perfect for conferences, pop-ups, parties, and meetups. Let guests RSVP, buy tickets, view schedules, and find the venue instantly.",
-    category: "Events",
-    icon: Calendar,
-    accentColor: "#8B5CF6",
-    bgGradient: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)",
-    cardBg: "linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)",
-    photo: PHOTO_EVENT,
-    photoShape: "banner",
-    profileName: "TechConf 2026",
-    profileSub: "March 15 · San Francisco, CA",
-    profileBadge: "🎟️ 200 spots left",
-    links: [
-      { icon: Ticket, label: "🎟️ Get Tickets", accent: "#8B5CF6" },
-      { icon: Globe, label: "📋 View Schedule", accent: "#6D28D9" },
-      { icon: MapPin, label: "📍 Venue & Directions", accent: "#EF4444" },
-      { icon: Calendar, label: "📅 Add to Calendar", accent: "#10B981" },
-    ],
-    sections: ["Event Name & Banner", "Date, Time & Location", "Tickets & RSVP", "Schedule & Speakers"],
-    usedBy: "Conferences, parties, pop-ups, meetups",
+    sections: ["Business Name & Logo", "Category & Hours", "Menu & Services", "Location & Contact"],
+    usedBy: "Cafes, shops, salons, gyms, agencies, studios",
+    hardware: "NFC Card",
   },
   {
     id: "creator",
     name: "Creator",
-    tagline: "Every creative, one powerful profile",
-    description: "For musicians, painters, podcasters, DJs, illustrators, photographers, and every other creative professional. Showcase your work, share your platforms, and make it easy to hire or book you.",
+    tagline: "One card for everything you create",
+    description: "Built for musicians, artists, podcasters, photographers, designers, and every creative professional. Showcase your portfolio, link all your platforms, and make it easy for people to hire or book you — all from a single NFC card tap.",
     category: "Creative",
     icon: Sparkles,
     accentColor: "#EC4899",
@@ -205,48 +134,52 @@ const templateTypes: TemplateType[] = [
     photoShape: "circle",
     profileName: "Maya Lee",
     profileSub: "Illustrator · Podcaster · 45K Fans",
-    profileBadge: "✅ Open for Commissions",
+    profileBadge: "Open for Commissions",
     links: [
-      { icon: Globe, label: "🖼️ Portfolio", accent: "#EC4899" },
-      { icon: Globe, label: "🎙️ Podcast", accent: "#9333EA" },
-      { icon: ShoppingBag, label: "👕 Shop & Merch", accent: "#F97316" },
-      { icon: Mail, label: "💬 Hire / Book Me", accent: "#8B5CF6" },
+      { icon: Globe, label: "Portfolio", accent: "#EC4899" },
+      { icon: Globe, label: "Podcast", accent: "#9333EA" },
+      { icon: ShoppingBag, label: "Shop & Merch", accent: "#F97316" },
+      { icon: Mail, label: "Hire / Book Me", accent: "#8B5CF6" },
     ],
-    sections: ["Creator Bio & Photo", "Portfolio & Platforms", "Social Media", "Bookings, Shop & Events"],
-    usedBy: "Musicians, painters, podcasters, DJs, photographers, illustrators, designers, performers",
+    sections: ["Creator Bio & Photo", "Portfolio & Platforms", "Social Links", "Bookings & Merch"],
+    new: true,
+    usedBy: "Musicians, painters, podcasters, photographers, designers, DJs",
+    hardware: "NFC Card",
   },
   {
-    id: "retail",
-    name: "Retail & Products",
-    tagline: "Tag a product, tell its story",
-    description: "Attach NFC tags to products, packaging, or shelves. Customers tap to see details, reviews, how-to guides, or to add to cart.",
-    category: "Business",
-    icon: ShoppingBag,
-    accentColor: "#EF4444",
-    bgGradient: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)",
-    cardBg: "linear-gradient(135deg, #B91C1C 0%, #EF4444 100%)",
-    photo: PHOTO_BIZ,
-    photoShape: "rounded",
-    profileName: "ArcShoe Runner Pro",
-    profileSub: "Running Shoes · Size Guide Available",
+    id: "event",
+    name: "Event",
+    tagline: "Every attendee, one tap away",
+    description: "Perfect for conferences, meetups, pop-ups, and parties. Give each attendee an NFC badge they can tap to see the schedule, RSVP, buy tickets, find the venue, and connect with speakers — all without downloading an app.",
+    category: "Events",
+    icon: CalendarDays,
+    accentColor: "#8B5CF6",
+    bgGradient: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)",
+    cardBg: "linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)",
+    photo: PHOTO_EVENT,
+    photoShape: "banner",
+    profileName: "TechConf 2026",
+    profileSub: "March 15 · San Francisco, CA",
+    profileBadge: "200 spots left",
     links: [
-      { icon: ShoppingBag, label: "🛒 Add to Cart", accent: "#EF4444" },
-      { icon: Globe, label: "📖 Product Guide", accent: "#B91C1C" },
-      { icon: Star, label: "⭐ Read Reviews", accent: "#F59E0B" },
-      { icon: Phone, label: "💬 Ask a Question", accent: "#10B981" },
+      { icon: Ticket, label: "Get Tickets", accent: "#8B5CF6" },
+      { icon: Globe, label: "View Schedule", accent: "#6D28D9" },
+      { icon: MapPin, label: "Venue & Directions", accent: "#EF4444" },
+      { icon: CalendarDays, label: "Add to Calendar", accent: "#10B981" },
     ],
-    sections: ["Product Name & Photo", "Description & Specs", "Purchase Links", "Reviews & Support"],
-    usedBy: "Retailers, e-commerce brands, pop-ups",
+    sections: ["Event Name & Banner", "Date, Time & Location", "Tickets & RSVP", "Schedule & Speakers"],
+    usedBy: "Conferences, meetups, parties, pop-ups, trade shows",
+    hardware: "NFC Badge",
   },
 ];
 
 // themes imported from ../data/themes via allThemes
 
-const categories = ["All", "Personal", "Business", "Food & Drinks", "Creative", "Events"];
+const categories = ["All", "Personal", "Business", "Creative", "Events"];
 
 // ─── Phone Preview Component ──────────────────────────────────────────────────
 
-function PhonePreview({ template, isDark }: { template: TemplateType; isDark: boolean }) {
+function PhonePreview({ template }: { template: TemplateType }) {
   return (
     <div className="relative mx-auto" style={{ width: 140, height: 280 }}>
       {/* Shell */}
@@ -343,7 +276,7 @@ function TemplateCard({ template, isDark }: { template: TemplateType; isDark: bo
           className="flex-shrink-0 flex items-center justify-center rounded-xl p-4"
           style={{ background: template.bgGradient, minWidth: 160 }}
         >
-          <PhonePreview template={template} isDark={isDark} />
+          <PhonePreview template={template} />
         </div>
 
         {/* Info */}
@@ -386,6 +319,11 @@ function TemplateCard({ template, isDark }: { template: TemplateType; isDark: bo
                 ))}
               </div>
             </div>
+
+            {/* Hardware format */}
+            <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <span style={{ fontWeight: 600 }}>Hardware:</span> {template.hardware}
+            </p>
           </div>
 
           {/* Footer */}
@@ -394,11 +332,11 @@ function TemplateCard({ template, isDark }: { template: TemplateType; isDark: bo
               <span style={{ fontWeight: 600 }}>Best for:</span> {template.usedBy}
             </p>
             <Link
-              to="/editor"
+              to="/hardware-setup"
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
               style={{ background: `linear-gradient(135deg, ${template.accentColor}, ${template.accentColor}CC)`, fontWeight: 600 }}
             >
-              Use Template
+              Get Started
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -425,6 +363,14 @@ export function TemplateGallery() {
     return matchSearch && matchCat;
   });
 
+  const typeIconMap: Record<string, typeof Package> = {
+    items: Package,
+    pets: PawPrint,
+    business: Building2,
+    creator: Sparkles,
+    event: CalendarDays,
+  };
+
   return (
     <div className={`min-h-screen pt-16 ${isDark ? "bg-slate-950" : "bg-white"}`}>
       {/* Hero */}
@@ -446,11 +392,11 @@ export function TemplateGallery() {
               Choose Your Profile Type
             </h1>
             <p className={`text-lg max-w-2xl mx-auto mb-8 ${isDark ? "text-slate-300" : "text-slate-600"}`} style={{ lineHeight: 1.7 }}>
-              Templates define the <span style={{ fontWeight: 700, color: "#DC2626" }}>structure and purpose</span> of your profile.
-              After picking a template, choose a <span style={{ fontWeight: 700, color: "#EA580C" }}>visual theme</span> to make it uniquely yours.
+              Each profile type is <span style={{ fontWeight: 700, color: "#DC2626" }}>locked to a specific NFC hardware format</span> — teardrop tags for Items and Pets, cards for Business and Creator, badges for Events.
+              Pick a type, then choose a <span style={{ fontWeight: 700, color: "#EA580C" }}>visual theme</span> to make it yours.
             </p>
 
-            {/* Templates vs Themes explainer */}
+            {/* Templates vs Themes toggle */}
             <div className={`inline-flex items-stretch gap-0 rounded-2xl p-1 mb-8 ${isDark ? "bg-slate-800/60 border border-slate-700" : "bg-white/80 border border-slate-200 shadow-sm"}`}
               style={{ backdropFilter: "blur(12px)" }}>
               <button
@@ -464,7 +410,7 @@ export function TemplateGallery() {
                 }}
               >
                 <Layers size={15} />
-                Templates
+                Profile Types
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ml-1 ${activeView === "templates" ? "bg-white/20 text-white" : isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500"}`}>
                   {templateTypes.length}
                 </span>
@@ -496,8 +442,8 @@ export function TemplateGallery() {
                   <Layers size={12} className="text-indigo-600" />
                 </div>
                 <div>
-                  <p className={`${isDark ? "text-white" : "text-slate-800"}`} style={{ fontWeight: 700 }}>Template</p>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Profile structure, fields & purpose</p>
+                  <p className={`${isDark ? "text-white" : "text-slate-800"}`} style={{ fontWeight: 700 }}>Profile Type</p>
+                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Purpose, fields, hardware format & features</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -525,7 +471,7 @@ export function TemplateGallery() {
                   <Search size={15} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-slate-400"}`} />
                   <input
                     type="text"
-                    placeholder="Search templates..."
+                    placeholder="Search profile types..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className={`w-full h-11 pl-10 pr-4 bg-transparent outline-none text-sm ${isDark ? "text-white placeholder:text-slate-500" : "text-slate-900 placeholder:text-slate-400"}`}
@@ -562,7 +508,7 @@ export function TemplateGallery() {
                   ))}
                   {filtered.length === 0 && (
                     <div className="py-20 text-center">
-                      <p className={`text-lg mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 600 }}>No templates found</p>
+                      <p className={`text-lg mb-2 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 600 }}>No profile types found</p>
                       <button onClick={() => { setSearch(""); setActiveCategory("All"); }} className="text-sm text-indigo-500 hover:text-indigo-400" style={{ fontWeight: 600 }}>
                         Clear filters
                       </button>
@@ -582,7 +528,7 @@ export function TemplateGallery() {
                   </div>
                   <div>
                     <p className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>Ready to style your profile?</p>
-                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Browse visual themes — applied to any template in the editor.</p>
+                    <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Browse visual themes — apply any theme to any profile type in the editor.</p>
                   </div>
                 </div>
                 <button
@@ -610,17 +556,17 @@ export function TemplateGallery() {
                     {allThemes.length} themes — all with graphic overlays
                   </p>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`} style={{ lineHeight: 1.65 }}>
-                    Any theme works with any template. Graphic themes are designed to match specific profile types, but you can mix and match freely. Unlock custom color palettes in the editor too.
+                    Some themes are designed for specific profile types (Pets, Business, Creator, etc.), but you can mix and match freely. Unlock custom color palettes in the editor too.
                   </p>
                 </div>
               </div>
 
-              {/* ── Graphic themes section ── */}
+              {/* ── Type-specific themes section ── */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles size={15} className="text-amber-400" />
                   <p className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
-                    Designed for specific profiles
+                    Designed for specific profile types
                   </p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? "bg-amber-950/40 text-amber-400" : "bg-amber-50 text-amber-600"}`} style={{ fontWeight: 600 }}>
                     {allThemes.filter(t => t.suggestedFor && t.suggestedFor.length > 0).length} themes
@@ -629,7 +575,6 @@ export function TemplateGallery() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {allThemes.filter(t => t.suggestedFor && t.suggestedFor.length > 0).map((t, i) => {
                     const G = t.Graphic;
-                    const typeIconMap: Record<string, typeof User> = { individual: User, business: Building2, pet: PawPrint, cafe: Coffee, event: Calendar, creator: Sparkles };
                     return (
                       <motion.div
                         key={t.id}
@@ -687,12 +632,12 @@ export function TemplateGallery() {
                 </div>
               </div>
 
-              {/* ── Classic themes section ── */}
+              {/* ── Universal themes section ── */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
                   <Paintbrush size={15} className={isDark ? "text-slate-400" : "text-slate-500"} />
                   <p className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
-                    Works with all profiles
+                    Works with all profile types
                   </p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`} style={{ fontWeight: 600 }}>
                     {allThemes.filter(t => !t.suggestedFor || t.suggestedFor.length === 0).length} themes
@@ -737,7 +682,7 @@ export function TemplateGallery() {
                           </div>
                         </div>
                         <p className={`text-sm text-center ${isDark ? "text-white" : "text-slate-800"}`} style={{ fontWeight: 700 }}>{t.name}</p>
-                        <p className={`text-xs text-center mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>All templates</p>
+                        <p className={`text-xs text-center mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>All profile types</p>
                       </motion.div>
                     );
                   })}
@@ -749,7 +694,7 @@ export function TemplateGallery() {
                 <div className="w-10 h-10 rounded-xl flex-shrink-0" style={{ background: "linear-gradient(135deg, #f97316, #ec4899, #8b5cf6)" }} />
                 <div className="flex-1 min-w-0">
                   <p className={`mb-1 ${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>
-                    🎨 Customize any theme with 13 color palettes
+                    Customize any theme with 13 color palettes
                   </p>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                     In the editor, pick any theme then override its colors with a custom palette — Midnight, Deep Ocean, Cosmic, Rose Gold, Cotton Candy, and more. You can also toggle the graphic overlay on or off if you just want a clean color gradient.
@@ -770,14 +715,14 @@ export function TemplateGallery() {
                   border: isDark ? "1px solid rgba(79,70,229,0.2)" : "1px solid #E0E7FF",
                 }}>
                 <div>
-                  <p className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>Haven't picked a template yet?</p>
+                  <p className={`${isDark ? "text-white" : "text-slate-900"}`} style={{ fontWeight: 700 }}>Haven't picked a profile type yet?</p>
                   <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Choose a profile type first, then apply your theme in the editor.</p>
                 </div>
                 <button onClick={() => setActiveView("templates")}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm flex-shrink-0"
                   style={{ background: "linear-gradient(135deg, #DC2626, #EA580C)", fontWeight: 600 }}>
                   <Layers size={14} />
-                  Browse Templates
+                  Browse Profile Types
                 </button>
               </div>
             </motion.div>

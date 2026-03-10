@@ -6,10 +6,12 @@ import { randomUppercaseCode } from "../lib/auth";
 import { requireAuth } from "../lib/guards";
 import { prisma } from "../lib/prisma";
 import { getTemplateDefaults, normalizeTemplateType } from "../lib/template-defaults";
+import { isMarkedLost } from "./events";
 
 const claimTagSchema = z.object({
   claimCode: z.string().trim().min(4).max(12).transform((value) => value.toUpperCase()),
-  templateType: z.string().trim().min(1).default("individual"),
+  templateType: z.string().trim().min(1).default("items"),
+  businessCategory: z.string().trim().optional(),
 });
 
 const verifyClaimSchema = z.object({
@@ -84,24 +86,24 @@ function relativeLastTap(lastTapAt: Date | null): string {
 }
 
 function buildProfileSubtitle(templateType: string, fields: Record<string, string>): string {
-  if (templateType === "individual") {
-    return [fields.title, fields.company].filter(Boolean).join(" · ");
+  if (templateType === "individual" || templateType === "items") {
+    return [fields.title ?? fields.itemType, fields.company ?? fields.description].filter(Boolean).join(" · ");
   }
 
-  if (templateType === "business") {
-    return [fields.category, fields.tagline].filter(Boolean).join(" · ");
+  if (templateType === "business" || templateType === "cafe") {
+    return [fields.category ?? fields.cuisine, fields.tagline].filter(Boolean).join(" · ");
   }
 
-  if (templateType === "pet") {
+  if (templateType === "pet" || templateType === "pets") {
     return [fields.species, fields.breed].filter(Boolean).join(" · ");
-  }
-
-  if (templateType === "cafe") {
-    return [fields.cuisine, fields.tagline].filter(Boolean).join(" · ");
   }
 
   if (templateType === "event") {
     return [fields.type, fields.date].filter(Boolean).join(" · ");
+  }
+
+  if (templateType === "creator") {
+    return [fields.creativeType, fields.status].filter(Boolean).join(" · ");
   }
 
   return fields.bio ?? "";
@@ -259,7 +261,15 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
 
-    const templateType = normalizeTemplateType(parsed.data.templateType);
+    // Tag's profileType overrides the requested templateType if set
+    const existingTagForType = await prisma.tag.findUnique({
+      where: { claimCode: parsed.data.claimCode },
+      select: { profileType: true },
+    });
+    const tagProfileType = existingTagForType?.profileType;
+    const templateType = tagProfileType
+      ? tagProfileType.toLowerCase()
+      : normalizeTemplateType(parsed.data.templateType);
     const defaults = getTemplateDefaults(templateType);
 
     const settings = await prisma.adminSetting.upsert({
@@ -403,6 +413,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         claimCode: true,
         ownerId: true,
         status: true,
+        profileType: true,
       },
     });
 
@@ -420,6 +431,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         tagCode: tag.code,
         claimCode: tag.claimCode,
         status: toClientStatus(tag.status),
+        profileType: tag.profileType ? tag.profileType.toLowerCase() : null,
       },
     });
   });
@@ -691,6 +703,8 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
 
     const fields = (profile.fields ?? {}) as Record<string, string>;
 
+    const profileIsLost = isMarkedLost(profile.fields);
+
     if (tag.status === "INACTIVE") {
       return reply.send({
         id: tag.code,
@@ -704,6 +718,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
           gradient: themeGradients[profile.theme] ?? themeGradients.wave,
           tapCount: tag.taps,
           templateType: profile.templateType,
+          isLost: profileIsLost,
         },
       });
     }
@@ -720,6 +735,7 @@ export async function tagRoutes(fastify: FastifyInstance): Promise<void> {
         gradient: themeGradients[profile.theme] ?? themeGradients.wave,
         tapCount: tag.taps,
         templateType: profile.templateType,
+        isLost: profileIsLost,
       },
     });
   });

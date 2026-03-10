@@ -21,10 +21,12 @@ import { clearSession, getAccessToken } from "../../lib/session";
 
 type OrderStatus = "pending" | "processing" | "ready" | "shipped" | "completed" | "cancelled";
 type ProductType = "tag" | "card";
+type PaymentStatus = "awaiting_confirmation" | "confirmed" | "expired" | "cancelled";
 
 interface AdminOrderItem {
   id: string;
   productType: ProductType;
+  profileType?: string | null;
   quantity: number;
   useDefaultDesign: boolean;
   design: {
@@ -55,6 +57,46 @@ interface AdminOrderItem {
     name: string;
     email: string;
   } | null;
+  payment: {
+    status: PaymentStatus;
+    transactionId: string;
+    amountPhp: number;
+    unitPricePhp: number;
+    itemSubtotalPhp: number;
+    shippingFeePhp: number;
+    reference: string | null;
+    confirmedAt: string | null;
+    cancelledAt: string | null;
+    expiredAt: string | null;
+    receipt: {
+      fileName: string;
+      storagePath: string;
+      mimeType: string;
+      sizeBytes: number;
+      uploadedAt: string;
+    } | null;
+  };
+  pricing: {
+    currency: "PHP";
+    unitPricePhp: number;
+    quantity: number;
+    itemSubtotalPhp: number;
+    shippingFeePhp: number;
+    totalPhp: number;
+  };
+  shipping: {
+    fullName: string;
+    phone: string;
+    email: string | null;
+    line1: string;
+    line2: string | null;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    notes: string | null;
+    confirmedAt: string | null;
+  } | null;
 }
 
 interface AdminOrdersResponse {
@@ -62,6 +104,10 @@ interface AdminOrdersResponse {
 }
 
 interface UpdateOrderResponse {
+  order: AdminOrderItem;
+}
+
+interface AdminPaymentUpdateResponse {
   order: AdminOrderItem;
 }
 
@@ -77,6 +123,13 @@ const STATUS_META: Record<
   shipped: { label: "Shipped", cls: "bg-orange-100 text-orange-700", Icon: Truck },
   completed: { label: "Completed", cls: "bg-emerald-100 text-emerald-700", Icon: CheckCircle2 },
   cancelled: { label: "Cancelled", cls: "bg-slate-100 text-slate-600", Icon: XCircle },
+};
+
+const PAYMENT_STATUS_META: Record<PaymentStatus, { label: string; cls: string }> = {
+  awaiting_confirmation: { label: "Awaiting Confirmation", cls: "bg-amber-100 text-amber-700" },
+  confirmed: { label: "Confirmed", cls: "bg-emerald-100 text-emerald-700" },
+  expired: { label: "Expired", cls: "bg-rose-100 text-rose-700" },
+  cancelled: { label: "Cancelled", cls: "bg-slate-100 text-slate-600" },
 };
 
 function formatDateTime(input: string): string {
@@ -163,6 +216,8 @@ export function AdminOrders() {
   const [draftNote, setDraftNote] = useState<Record<string, string>>({});
   const [savingById, setSavingById] = useState<Record<string, boolean>>({});
   const [exportingById, setExportingById] = useState<Record<string, boolean>>({});
+  const [paymentActionById, setPaymentActionById] = useState<Record<string, "confirm" | "cancel" | null>>({});
+  const [openingReceiptById, setOpeningReceiptById] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -274,6 +329,89 @@ export function AdminOrders() {
     }
   };
 
+  const managePayment = async (order: AdminOrderItem, action: "confirm" | "cancel") => {
+    setPaymentActionById((current) => ({ ...current, [order.id]: action }));
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await apiRequest<AdminPaymentUpdateResponse>(`/admin/orders/${encodeURIComponent(order.id)}/payment`, {
+        method: "POST",
+        auth: true,
+        body: {
+          action,
+        },
+      });
+
+      setOrders((current) => current.map((item) => (item.id === response.order.id ? response.order : item)));
+      setNotice(
+        action === "confirm"
+          ? `Payment confirmed for order ${order.id.slice(-6)}.`
+          : `Payment cancelled for order ${order.id.slice(-6)}.`
+      );
+      window.setTimeout(() => setNotice(""), 1800);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSession();
+        navigate("/login", { replace: true });
+        return;
+      }
+      if (err instanceof ApiError && err.status === 403) {
+        navigate("/my-tags", { replace: true });
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Unable to update payment.");
+    } finally {
+      setPaymentActionById((current) => ({ ...current, [order.id]: null }));
+    }
+  };
+
+  const openReceipt = async (order: AdminOrderItem) => {
+    const token = getAccessToken();
+    if (!token) {
+      clearSession();
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    setOpeningReceiptById((current) => ({ ...current, [order.id]: true }));
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${encodeURIComponent(order.id)}/payment-receipt`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        clearSession();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (response.status === 403) {
+        navigate("/my-tags", { replace: true });
+        return;
+      }
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: unknown };
+        const message = typeof payload.error === "string" ? payload.error : "Unable to open receipt.";
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      window.open(objectUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to open receipt.");
+    } finally {
+      setOpeningReceiptById((current) => ({ ...current, [order.id]: false }));
+    }
+  };
+
   const downloadBambuSvg = async (order: AdminOrderItem) => {
     const token = getAccessToken();
     if (!token) {
@@ -354,7 +492,7 @@ export function AdminOrders() {
                   Order Management
                 </h1>
                 <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Process user hardware orders and update their status.
+                  Process hardware orders and manage payment confirmations.
                 </p>
               </div>
             </div>
@@ -482,11 +620,16 @@ export function AdminOrders() {
                   {filtered.map((order) => {
                     const meta = STATUS_META[order.status];
                     const StatusIcon = meta.Icon;
+                    const paymentMeta = PAYMENT_STATUS_META[order.payment.status];
                     const nextStatus = draftStatus[order.id] ?? order.status;
                     const nextNote = draftNote[order.id] ?? order.statusNote ?? "";
                     const isDirty = nextStatus !== order.status || nextNote.trim() !== (order.statusNote ?? "");
                     const saving = Boolean(savingById[order.id]);
                     const exporting = Boolean(exportingById[order.id]);
+                    const paymentAction = paymentActionById[order.id];
+                    const isManagingPayment = Boolean(paymentAction);
+                    const isOpeningReceipt = Boolean(openingReceiptById[order.id]);
+                    const canManagePayment = order.status === "pending" && order.payment.status === "awaiting_confirmation";
 
                     return (
                       <motion.div
@@ -509,6 +652,14 @@ export function AdminOrders() {
                               <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? "bg-slate-700 text-slate-300" : "bg-white text-slate-600"}`}>
                                 {order.productType.toUpperCase()} x{order.quantity}
                               </span>
+                              {order.profileType && (
+                                <span className={`rounded-full px-2 py-0.5 text-[11px] capitalize ${isDark ? "bg-indigo-900/40 text-indigo-300" : "bg-indigo-50 text-indigo-700"}`}>
+                                  {order.profileType}
+                                </span>
+                              )}
+                              <span className={`rounded-full px-2 py-0.5 text-[11px] ${paymentMeta.cls}`}>
+                                Payment: {paymentMeta.label}
+                              </span>
                               {order.useDefaultDesign && (
                                 <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? "bg-slate-700 text-slate-300" : "bg-white text-slate-600"}`}>
                                   Default design
@@ -523,6 +674,15 @@ export function AdminOrders() {
                               Created: {formatDateTime(order.createdAt)}
                               {order.processedAt ? ` · Processed: ${formatDateTime(order.processedAt)}` : ""}
                             </p>
+                            <p className={`mt-0.5 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                              Pricing: PHP {order.pricing.unitPricePhp.toLocaleString("en-PH")} × {order.pricing.quantity} + shipping PHP{" "}
+                              {order.pricing.shippingFeePhp.toLocaleString("en-PH")} = PHP {order.pricing.totalPhp.toLocaleString("en-PH")}
+                            </p>
+                            {order.shipping && (
+                              <p className={`mt-0.5 text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
+                                Ship to: {order.shipping.fullName} · {order.shipping.city}, {order.shipping.province}
+                              </p>
+                            )}
                             {order.profile && (
                               <p className={`mt-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                                 Linked profile:{" "}
@@ -598,6 +758,46 @@ export function AdminOrders() {
                             <p className={`text-[11px] uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`} style={{ fontWeight: 700 }}>
                               Admin Processing
                             </p>
+                            <div className={`mt-2 rounded-md border px-2 py-2 text-xs ${isDark ? "border-slate-700 bg-slate-800/40 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                              <p style={{ fontWeight: 700 }}>Payment</p>
+                              <p className={isDark ? "text-slate-400" : "text-slate-600"}>
+                                {paymentMeta.label} · Txn {order.payment.transactionId}
+                              </p>
+                              {order.payment.reference && (
+                                <p className={isDark ? "text-slate-400" : "text-slate-600"}>Ref: {order.payment.reference}</p>
+                              )}
+                              <p className={isDark ? "text-slate-400" : "text-slate-600"}>
+                                Total PHP {order.pricing.totalPhp.toLocaleString("en-PH")}
+                              </p>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <button
+                                  onClick={() => void managePayment(order, "confirm")}
+                                  disabled={!canManagePayment || isManagingPayment}
+                                  className="rounded-lg px-2.5 py-1 text-[11px] text-white transition-all disabled:opacity-50"
+                                  style={{ background: "linear-gradient(135deg, #16A34A, #15803D)", fontWeight: 700 }}
+                                >
+                                  {paymentAction === "confirm" ? "Confirming..." : "Confirm Payment"}
+                                </button>
+                                <button
+                                  onClick={() => void managePayment(order, "cancel")}
+                                  disabled={!canManagePayment || isManagingPayment}
+                                  className="rounded-lg px-2.5 py-1 text-[11px] text-white transition-all disabled:opacity-50"
+                                  style={{ background: "linear-gradient(135deg, #DC2626, #B91C1C)", fontWeight: 700 }}
+                                >
+                                  {paymentAction === "cancel" ? "Cancelling..." : "Cancel Payment"}
+                                </button>
+                                <button
+                                  onClick={() => void openReceipt(order)}
+                                  disabled={!order.payment.receipt || isOpeningReceipt}
+                                  className={`rounded-lg border px-2.5 py-1 text-[11px] transition-all disabled:opacity-40 ${
+                                    isDark ? "border-slate-600 bg-slate-800 text-slate-200" : "border-slate-300 bg-white text-slate-700"
+                                  }`}
+                                  style={{ fontWeight: 700 }}
+                                >
+                                  {isOpeningReceipt ? "Opening..." : "View Receipt"}
+                                </button>
+                              </div>
+                            </div>
                             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                               <select
                                 value={nextStatus}

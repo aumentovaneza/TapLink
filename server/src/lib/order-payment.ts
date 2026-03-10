@@ -23,6 +23,13 @@ export interface OrderPaymentMetadata {
   amountPhp: number;
   currency: "PHP";
   unitPricePhp: number;
+  itemSubtotalPhp: number;
+  shippingFeePhp: number;
+  shippingAreaCode?: string;
+  shippingAreaLabel?: string;
+  totalWeightGrams?: number;
+  billableWeightGrams?: number;
+  shippingIncludedInDisplayedPrice?: boolean;
   quantity: number;
   createdAt: string;
   expiresAt: string;
@@ -51,6 +58,13 @@ export interface OrderPaymentView {
   amountPhp: number;
   currency: "PHP";
   unitPricePhp: number;
+  itemSubtotalPhp: number;
+  shippingFeePhp: number;
+  shippingAreaCode: string | null;
+  shippingAreaLabel: string | null;
+  totalWeightGrams: number | null;
+  billableWeightGrams: number | null;
+  shippingIncludedInDisplayedPrice: boolean;
   quantity: number;
   createdAt: string;
   expiresAt: string;
@@ -99,6 +113,22 @@ function readNumber(record: Record<string, unknown>, key: string): number | null
   return null;
 }
 
+function readBoolean(record: Record<string, unknown>, key: string): boolean | null {
+  const value = record[key];
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    if (value === "true") {
+      return true;
+    }
+    if (value === "false") {
+      return false;
+    }
+  }
+  return null;
+}
+
 function createTransactionId(orderId: string): string {
   const compact = orderId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   if (compact.length >= 6) {
@@ -116,11 +146,20 @@ export function createInitialPaymentMetadata(input: {
   orderId: string;
   productType: HardwareProductType;
   quantity: number;
+  unitPricePhp?: number;
+  shippingFeePhp?: number;
+  shippingAreaCode?: string;
+  shippingAreaLabel?: string;
+  totalWeightGrams?: number;
+  billableWeightGrams?: number;
+  shippingIncludedInDisplayedPrice?: boolean;
   now?: Date;
 }): OrderPaymentMetadata {
   const now = input.now ?? new Date();
-  const unitPricePhp = unitPricePhpForProduct(input.productType);
-  const amountPhp = unitPricePhp * input.quantity;
+  const unitPricePhp = Number.isFinite(input.unitPricePhp) ? Math.max(0, Math.floor(input.unitPricePhp ?? 0)) : unitPricePhpForProduct(input.productType);
+  const itemSubtotalPhp = unitPricePhp * input.quantity;
+  const shippingFeePhp = Number.isFinite(input.shippingFeePhp) ? Math.max(0, Math.floor(input.shippingFeePhp ?? 0)) : 0;
+  const amountPhp = itemSubtotalPhp + shippingFeePhp;
 
   return {
     status: "awaiting_confirmation",
@@ -128,6 +167,22 @@ export function createInitialPaymentMetadata(input: {
     amountPhp,
     currency: "PHP",
     unitPricePhp,
+    itemSubtotalPhp,
+    shippingFeePhp,
+    shippingAreaCode: input.shippingAreaCode,
+    shippingAreaLabel: input.shippingAreaLabel,
+    totalWeightGrams:
+      typeof input.totalWeightGrams === "number" && Number.isFinite(input.totalWeightGrams)
+        ? Math.max(0, Math.floor(input.totalWeightGrams))
+        : undefined,
+    billableWeightGrams:
+      typeof input.billableWeightGrams === "number" && Number.isFinite(input.billableWeightGrams)
+        ? Math.max(0, Math.floor(input.billableWeightGrams))
+        : undefined,
+    shippingIncludedInDisplayedPrice:
+      typeof input.shippingIncludedInDisplayedPrice === "boolean"
+        ? input.shippingIncludedInDisplayedPrice
+        : true,
     quantity: input.quantity,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + PAYMENT_WINDOW_MS).toISOString(),
@@ -170,9 +225,16 @@ export function readPaymentView(args: {
       : fallback.status;
 
   const transactionId = readString(paymentRecord ?? {}, "transactionId") ?? fallback.transactionId;
-  const amountPhp = readNumber(paymentRecord ?? {}, "amountPhp") ?? fallback.amountPhp;
   const unitPricePhp = readNumber(paymentRecord ?? {}, "unitPricePhp") ?? fallback.unitPricePhp;
   const quantity = readNumber(paymentRecord ?? {}, "quantity") ?? fallback.quantity;
+  const itemSubtotalPhp = readNumber(paymentRecord ?? {}, "itemSubtotalPhp") ?? unitPricePhp * quantity;
+  const shippingFeePhp = readNumber(paymentRecord ?? {}, "shippingFeePhp") ?? 0;
+  const shippingAreaCode = readString(paymentRecord ?? {}, "shippingAreaCode");
+  const shippingAreaLabel = readString(paymentRecord ?? {}, "shippingAreaLabel");
+  const totalWeightGrams = readNumber(paymentRecord ?? {}, "totalWeightGrams");
+  const billableWeightGrams = readNumber(paymentRecord ?? {}, "billableWeightGrams");
+  const shippingIncludedInDisplayedPrice = readBoolean(paymentRecord ?? {}, "shippingIncludedInDisplayedPrice") ?? true;
+  const amountPhp = readNumber(paymentRecord ?? {}, "amountPhp") ?? itemSubtotalPhp + shippingFeePhp;
   const createdAt = readString(paymentRecord ?? {}, "createdAt") ?? fallback.createdAt;
   const expiresAt = readString(paymentRecord ?? {}, "expiresAt") ?? fallback.expiresAt;
   const confirmedAt = readString(paymentRecord ?? {}, "confirmedAt");
@@ -197,6 +259,13 @@ export function readPaymentView(args: {
     amountPhp,
     currency: "PHP",
     unitPricePhp,
+    itemSubtotalPhp,
+    shippingFeePhp,
+    shippingAreaCode,
+    shippingAreaLabel,
+    totalWeightGrams,
+    billableWeightGrams,
+    shippingIncludedInDisplayedPrice,
     quantity,
     createdAt,
     expiresAt,
@@ -261,4 +330,3 @@ export function withTimelineMetadata(
     timeline,
   };
 }
-
